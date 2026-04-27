@@ -1,0 +1,302 @@
+extends Node3D
+
+const XP_VALUE_BASE := 10.0
+const FLASH_DURATION := 0.1
+
+var hp: float = 20.0
+var max_hp: float = 20.0
+var speed: float = 3.0
+var contact_damage: float = 10.0
+var xp_value: float = XP_VALUE_BASE
+var enemy_type: String = "minion"
+var is_boss: bool = false
+
+var _flash_timer: float = 0.0
+var _original_color: Color = Color.WHITE
+var _mat: StandardMaterial3D
+var _dead: bool = false
+
+func _ready() -> void:
+	add_to_group("enemies")
+	var meta_type: String = get_meta("_enemy_type", "minion")
+	var meta_wave: int = get_meta("_enemy_wave", 1)
+	setup(meta_type, meta_wave)
+	_build_visual()
+	_build_hitbox()
+
+func _build_visual() -> void:
+	var model_map := {
+		"minion": "res://assets/models/Skeleton_Minion.glb",
+		"warrior": "res://assets/models/Skeleton_Warrior.glb",
+		"mage": "res://assets/models/Skeleton_Mage.glb",
+		"rogue": "res://assets/models/Skeleton_Rogue.glb",
+		"necromancer": "res://assets/models/Necromancer.glb",
+		"golem": "res://assets/models/Skeleton_Golem.glb",
+	}
+	var neon_colors := {
+		"minion": Color(1.0, 0.0, 0.6),
+		"warrior": Color(0.9, 0.0, 0.3),
+		"mage": Color(0.7, 0.0, 1.0),
+		"rogue": Color(0.0, 1.0, 0.5),
+		"necromancer": Color(0.6, 0.0, 0.9),
+		"golem": Color(1.0, 0.3, 0.0),
+	}
+	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
+	var model_path: String = model_map.get(enemy_type, "")
+
+	if model_path != "" and ResourceLoader.exists(model_path):
+		var scene: PackedScene = load(model_path)
+		if scene:
+			var inst := scene.instantiate()
+			inst.name = "Model"
+			var s := 0.5 if not is_boss else 1.0
+			inst.scale = Vector3(s, s, s)
+			add_child(inst)
+			_apply_neon(inst, neon_color)
+			_add_glow_light(neon_color)
+			return
+
+	var mesh_inst := MeshInstance3D.new()
+	mesh_inst.name = "Mesh"
+	if is_boss:
+		var box := BoxMesh.new()
+		box.size = Vector3(1.5, 2.5, 1.5)
+		mesh_inst.mesh = box
+		mesh_inst.position.y = 1.25
+	else:
+		var capsule := CapsuleMesh.new()
+		capsule.radius = 0.3
+		capsule.height = 1.0
+		mesh_inst.mesh = capsule
+		mesh_inst.position.y = 0.5
+
+	_mat = StandardMaterial3D.new()
+	_mat.albedo_color = neon_color
+	_mat.emission_enabled = true
+	_mat.emission = neon_color
+	_mat.emission_energy_multiplier = 2.0
+	_original_color = neon_color
+	mesh_inst.material_override = _mat
+	add_child(mesh_inst)
+	_add_glow_light(neon_color)
+
+func _apply_neon(node: Node, color: Color) -> void:
+	if node is MeshInstance3D:
+		var mi: MeshInstance3D = node
+		for i in mi.get_surface_override_material_count():
+			var base_mat = mi.mesh.surface_get_material(i) if mi.mesh else null
+			if base_mat and base_mat is StandardMaterial3D:
+				var m: StandardMaterial3D = base_mat.duplicate()
+				m.emission_enabled = true
+				m.emission = color * 0.4
+				m.emission_energy_multiplier = 1.8
+				mi.set_surface_override_material(i, m)
+				if _mat == null:
+					_mat = m
+					_original_color = m.albedo_color
+	for child in node.get_children():
+		_apply_neon(child, color)
+
+func _add_glow_light(color: Color) -> void:
+	var light := OmniLight3D.new()
+	light.name = "EnemyGlow"
+	light.light_color = color
+	light.light_energy = 1.0 if not is_boss else 3.0
+	light.omni_range = 3.0 if not is_boss else 6.0
+	light.omni_attenuation = 2.0
+	light.position.y = 1.0
+	add_child(light)
+
+func _build_hitbox() -> void:
+	var area := Area3D.new()
+	area.name = "Hitbox"
+	area.collision_layer = 2
+	area.collision_mask = 0
+	area.monitoring = false
+	area.monitorable = true
+	var col := CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = 0.7 if not is_boss else 1.5
+	col.shape = shape
+	col.position.y = 0.7 if not is_boss else 1.5
+	area.add_child(col)
+	add_child(area)
+
+func _process(delta: float) -> void:
+	if _dead:
+		return
+	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+	if not player:
+		return
+
+	var spd := speed
+	if GameState.gravity_well_strength > 0.0:
+		var dist := global_position.distance_to(player.global_position)
+		if dist < 6.0:
+			spd *= maxf(0.3, 1.0 - GameState.gravity_well_strength * (1.0 - dist / 6.0))
+
+	var dir := (player.global_position - global_position)
+	dir.y = 0.0
+	if dir.length_squared() > 0.01:
+		dir = dir.normalized()
+		position += dir * spd * delta
+		var model := get_node_or_null("Model")
+		if model:
+			var target_angle := atan2(dir.x, dir.z)
+			model.rotation.y = lerp_angle(model.rotation.y, target_angle, 8.0 * delta)
+	position.y = 0.0
+
+	if _flash_timer > 0.0:
+		_flash_timer -= delta
+		if _flash_timer <= 0.0 and _mat:
+			_mat.emission = _original_color
+			_mat.emission_energy_multiplier = 2.0
+
+func take_damage(amount: float) -> void:
+	if _dead:
+		return
+	hp -= amount
+	_flash_timer = FLASH_DURATION
+	if _mat:
+		_mat.emission = Color.WHITE
+		_mat.emission_energy_multiplier = 6.0
+	# Knockback
+	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+	if player:
+		var kb_dir := (global_position - player.global_position).normalized()
+		kb_dir.y = 0.0
+		position += kb_dir * 0.3
+	if hp <= 0.0:
+		_die()
+
+func _die() -> void:
+	_dead = true
+	GameState.add_kill()
+	Audio.sfx_enemy_death()
+	_spawn_xp()
+	if is_boss:
+		GameState.request_shake(4.0)
+		GameState.request_hit_stop(0.1)
+	else:
+		GameState.request_shake(1.0)
+	_death_vfx()
+
+func _spawn_xp() -> void:
+	var orb_container := get_parent().get_parent().get_node_or_null("XPOrbs")
+	if not orb_container:
+		queue_free()
+		return
+	var count := 1 if not is_boss else 5
+	for i in count:
+		var orb := Node3D.new()
+		orb.name = "XPOrb"
+		orb.set_script(load("res://scripts/xp_orb.gd"))
+		var offset := Vector3(randf_range(-0.5, 0.5), 0, randf_range(-0.5, 0.5))
+		orb.position = global_position + offset
+		orb.set_meta("xp_value", xp_value)
+		orb_container.add_child(orb)
+
+func _death_vfx() -> void:
+	var container := get_parent()
+	if not container:
+		queue_free()
+		return
+	var death_colors := {
+		"minion": Color(1.0, 0.0, 0.6),
+		"warrior": Color(0.9, 0.0, 0.3),
+		"mage": Color(0.7, 0.0, 1.0),
+		"rogue": Color(0.0, 1.0, 0.5),
+		"necromancer": Color(0.6, 0.0, 0.9),
+		"golem": Color(1.0, 0.3, 0.0),
+	}
+	var color: Color = death_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
+
+	# Expanding ring
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.8 if not is_boss else 2.0
+	cyl.bottom_radius = 0.8 if not is_boss else 2.0
+	cyl.height = 0.03
+	ring.mesh = cyl
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(color.r, color.g, color.b, 0.8)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = color
+	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = ring_mat
+	ring.position = global_position
+	ring.position.y = 0.3
+	container.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.set_parallel(true)
+	rtw.tween_property(ring, "scale", Vector3(3.0, 1.0, 3.0), 0.3)
+	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.3)
+	rtw.set_parallel(false)
+	rtw.tween_callback(ring.queue_free)
+
+	# Spark burst
+	var spark_count := 6 if not is_boss else 12
+	for i in spark_count:
+		var spark := MeshInstance3D.new()
+		var ss := SphereMesh.new()
+		ss.radius = 0.06 if not is_boss else 0.12
+		spark.mesh = ss
+		var smat := StandardMaterial3D.new()
+		smat.albedo_color = Color(color.r, color.g, color.b, 0.9)
+		smat.emission_enabled = true
+		smat.emission = color
+		smat.emission_energy_multiplier = 5.0
+		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		spark.material_override = smat
+		spark.position = global_position + Vector3(0, 0.5, 0)
+		container.add_child(spark)
+		var angle := TAU / float(spark_count) * float(i) + randf() * 0.3
+		var spark_dir := Vector3(cos(angle), randf_range(0.3, 1.0), sin(angle))
+		spark_dir = spark_dir.normalized() * randf_range(1.5, 3.0)
+		var stw := spark.create_tween()
+		stw.set_parallel(true)
+		stw.tween_property(spark, "position", spark.position + spark_dir, 0.25)
+		stw.tween_property(smat, "albedo_color:a", 0.0, 0.25)
+		stw.set_parallel(false)
+		stw.tween_callback(spark.queue_free)
+	queue_free()
+
+func setup(type: String, wave: int) -> void:
+	enemy_type = type
+	var wave_scale := 1.0 + wave * 0.1
+	match type:
+		"minion":
+			hp = 15.0 * wave_scale
+			speed = 4.5
+			xp_value = 8.0
+			is_boss = false
+		"warrior":
+			hp = 35.0 * wave_scale
+			speed = 3.0
+			xp_value = 15.0
+			is_boss = false
+		"mage":
+			hp = 25.0 * wave_scale
+			speed = 2.5
+			xp_value = 12.0
+			is_boss = false
+		"rogue":
+			hp = 18.0 * wave_scale
+			speed = 6.0
+			xp_value = 14.0
+			contact_damage = 12.0
+			is_boss = false
+		"necromancer":
+			hp = 45.0 * wave_scale
+			speed = 2.0
+			xp_value = 25.0
+			contact_damage = 15.0
+			is_boss = false
+		"golem":
+			hp = 300.0 * wave_scale
+			speed = 1.8
+			xp_value = 80.0
+			contact_damage = 25.0
+			is_boss = true
+	max_hp = hp

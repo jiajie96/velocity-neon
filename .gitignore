@@ -1,0 +1,21 @@
+# Godot 4+ specific ignores
+.godot/
+
+# Godot-specific ignores
+*.translation
+*.import
+
+# Imported resources
+.import/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Screenshots (dev only)
+screenshots/
