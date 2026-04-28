@@ -71,6 +71,7 @@ func _process(delta: float) -> void:
 func _collect() -> void:
 	_collected = true
 	GameState.add_xp(xp_value)
+	_spawn_collect_burst()
 
 	var mesh := get_node_or_null("Mesh")
 	if mesh:
@@ -79,3 +80,54 @@ func _collect() -> void:
 		tw.tween_callback(queue_free)
 	else:
 		queue_free()
+
+func _spawn_collect_burst() -> void:
+	var container := get_parent()
+	if not container:
+		return
+	# Ring flash
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.3
+	cyl.bottom_radius = 0.3
+	cyl.height = 0.02
+	ring.mesh = cyl
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(0.2, 1.0, 0.3, 0.7)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(0.1, 1.0, 0.2)
+	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = ring_mat
+	ring.position = global_position
+	ring.position.y = 0.4
+	container.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.set_parallel(true)
+	rtw.tween_property(ring, "scale", Vector3(3.0, 1.0, 3.0), 0.2)
+	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.2)
+	rtw.set_parallel(false)
+	rtw.tween_callback(ring.queue_free)
+	# Spark particles
+	for i in 4:
+		var spark := MeshInstance3D.new()
+		var ss := SphereMesh.new()
+		ss.radius = 0.04
+		spark.mesh = ss
+		var smat := StandardMaterial3D.new()
+		smat.albedo_color = Color(0.3, 1.0, 0.4, 0.9)
+		smat.emission_enabled = true
+		smat.emission = Color(0.2, 1.0, 0.3)
+		smat.emission_energy_multiplier = 4.0
+		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		spark.material_override = smat
+		spark.position = global_position + Vector3(0, 0.4, 0)
+		container.add_child(spark)
+		var angle := TAU / 4.0 * float(i) + randf() * 0.5
+		var spark_dir := Vector3(cos(angle), randf_range(0.3, 0.8), sin(angle)) * randf_range(0.5, 1.0)
+		var stw := spark.create_tween()
+		stw.set_parallel(true)
+		stw.tween_property(spark, "position", spark.position + spark_dir, 0.2)
+		stw.tween_property(smat, "albedo_color:a", 0.0, 0.2)
+		stw.set_parallel(false)
+		stw.tween_callback(spark.queue_free)

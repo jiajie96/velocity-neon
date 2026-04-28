@@ -14,17 +14,23 @@ var upgrade_buttons: Array[Button] = []
 var game_over_panel: PanelContainer
 var title_screen: PanelContainer
 var controls_label: Label
+var boss_bar_container: Control
+var boss_bar: ProgressBar
+var boss_name_label: Label
+var _boss_ref: WeakRef = WeakRef.new()
 
 var _current_choices: Array = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("hud_node")
 	_build_title_screen()
 	_build_top_bar()
 	_build_bottom_bar()
 	_build_wave_announce()
 	_build_upgrade_panel()
 	_build_game_over()
+	_build_boss_bar()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -102,10 +108,9 @@ Auto-Aim         Shoots nearest enemy automatically
 SPACE            Phase Dash (invincible + fire trail)
 Q                Ultimate Ability (area damage burst)
 Scroll Wheel     Zoom camera in/out
-R                Restart game
-ESC              Quit
+ESC              Restart (game over) / Quit
 
-Survive waves of enemies. Kill them for XP.
+Survive relentless waves of enemies. Kill them for XP.
 Level up to choose powerful upgrades.
 Every 5th wave summons a BOSS."""
 	controls_text.add_theme_color_override("font_color", Color(0.7, 0.65, 0.85))
@@ -348,6 +353,71 @@ func _build_upgrade_panel() -> void:
 	upgrade_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(upgrade_panel)
 
+# === BOSS HP BAR ===
+
+func _build_boss_bar() -> void:
+	boss_bar_container = Control.new()
+	boss_bar_container.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	boss_bar_container.position = Vector2(-200, 70)
+	boss_bar_container.custom_minimum_size = Vector2(400, 40)
+	boss_bar_container.visible = false
+	add_child(boss_bar_container)
+
+	boss_name_label = Label.new()
+	boss_name_label.text = "GOLEM"
+	boss_name_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.0))
+	boss_name_label.add_theme_font_size_override("font_size", 14)
+	boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_name_label.position = Vector2(0, 0)
+	boss_name_label.custom_minimum_size = Vector2(400, 20)
+	boss_bar_container.add_child(boss_name_label)
+
+	boss_bar = ProgressBar.new()
+	boss_bar.custom_minimum_size = Vector2(400, 12)
+	boss_bar.position = Vector2(0, 22)
+	boss_bar.max_value = 100
+	boss_bar.value = 100
+	boss_bar.show_percentage = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(1.0, 0.3, 0.0, 0.9)
+	fill.set_corner_radius_all(3)
+	boss_bar.add_theme_stylebox_override("fill", fill)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.15, 0.05, 0.02, 0.8)
+	bg.border_color = Color(1.0, 0.3, 0.0, 0.4)
+	bg.set_border_width_all(1)
+	bg.set_corner_radius_all(3)
+	boss_bar.add_theme_stylebox_override("background", bg)
+	boss_bar_container.add_child(boss_bar)
+
+func _update_boss_bar() -> void:
+	var boss: Node3D = _boss_ref.get_ref() as Node3D
+	if boss and not boss.is_queued_for_deletion() and boss.get("hp") != null:
+		boss_bar.max_value = boss.max_hp
+		boss_bar.value = boss.hp
+		if not boss_bar_container.visible:
+			boss_bar_container.visible = true
+			boss_bar_container.modulate.a = 0.0
+			var tw := create_tween()
+			tw.tween_property(boss_bar_container, "modulate:a", 1.0, 0.3)
+	else:
+		if boss_bar_container.visible:
+			var tw := create_tween()
+			tw.tween_property(boss_bar_container, "modulate:a", 0.0, 0.4)
+			tw.tween_callback(func(): boss_bar_container.visible = false)
+			_boss_ref = WeakRef.new()
+
+func track_boss(boss_node: Node3D) -> void:
+	_boss_ref = weakref(boss_node)
+	var type_name: String = boss_node.get("enemy_type") if boss_node.get("enemy_type") else "BOSS"
+	boss_name_label.text = type_name.to_upper()
+	boss_bar.max_value = boss_node.max_hp
+	boss_bar.value = boss_node.hp
+	boss_bar_container.visible = true
+	boss_bar_container.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(boss_bar_container, "modulate:a", 1.0, 0.3)
+
 # === GAME OVER ===
 
 func _build_game_over() -> void:
@@ -464,6 +534,7 @@ func _on_player_died() -> void:
 
 func _process(delta: float) -> void:
 	_update_indicators()
+	_update_boss_bar()
 
 func _update_indicators() -> void:
 	var player: Node = get_tree().get_first_node_in_group("player_node")

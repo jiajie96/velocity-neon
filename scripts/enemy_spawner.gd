@@ -1,9 +1,9 @@
 extends Node
 
-const SPAWN_DISTANCE := 25.0
-const WAVE_INTERVAL := 3.0
-const SPAWN_INTERVAL_BASE := 1.0
-const ENEMIES_PER_WAVE_BASE := 8
+const SPAWN_DISTANCE := 22.0
+const WAVE_INTERVAL := 2.0
+const SPAWN_INTERVAL_BASE := 0.6
+const ENEMIES_PER_WAVE_BASE := 5
 
 var _spawned_this_wave: int = 0
 var _target_this_wave: int = 0
@@ -18,8 +18,9 @@ func _ready() -> void:
 func _on_wave_changed(wave: int) -> void:
 	_wave_active = true
 	_spawned_this_wave = 0
-	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 3
-	_spawn_interval = maxf(0.15, SPAWN_INTERVAL_BASE - wave * 0.05)
+	var intensity := wave * wave
+	_target_this_wave = ENEMIES_PER_WAVE_BASE + intensity * 4
+	_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
 	_spawn_timer = 0.2
 	_wave_timer = 0.0
 
@@ -106,12 +107,17 @@ func _spawn_boss(wave: int) -> void:
 		spawn_center = player.global_position
 	var angle := randf() * TAU
 	var pos := spawn_center + Vector3(cos(angle), 0, sin(angle)) * (SPAWN_DISTANCE + 5.0)
-	_create_enemy("golem", pos)
+	var boss := _create_enemy("golem", pos)
+	if boss:
+		# Notify HUD to show boss HP bar
+		var hud := get_tree().get_first_node_in_group("hud_node")
+		if hud and hud.has_method("track_boss"):
+			hud.track_boss(boss)
 
-func _create_enemy(type: String, pos: Vector3) -> void:
+func _create_enemy(type: String, pos: Vector3) -> Node3D:
 	var container := get_parent().get_node_or_null("Enemies")
 	if not container:
-		return
+		return null
 	var enemy := Node3D.new()
 	enemy.name = "Enemy_" + type
 	enemy.set_script(load("res://scripts/enemy.gd"))
@@ -119,3 +125,4 @@ func _create_enemy(type: String, pos: Vector3) -> void:
 	enemy.set_meta("_enemy_type", type)
 	enemy.set_meta("_enemy_wave", GameState.wave)
 	container.add_child(enemy)
+	return enemy

@@ -6,7 +6,7 @@ const ULTIMATE_COOLDOWN := 12.0
 const ULTIMATE_RADIUS := 8.0
 const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
-const CONTACT_COOLDOWN := 0.5
+const CONTACT_COOLDOWN := 0.8
 const RAILGUN_COOLDOWN := 2.0
 const SCATTER_COOLDOWN := 1.5
 const ORBITAL_RADIUS := 2.5
@@ -85,11 +85,10 @@ func _build_hurtbox() -> void:
 	area.monitorable = true
 	var col := CollisionShape3D.new()
 	var shape := SphereShape3D.new()
-	shape.radius = 0.6
+	shape.radius = 0.5
 	col.shape = shape
 	col.position.y = 0.6
 	area.add_child(col)
-	area.area_entered.connect(_on_enemy_contact)
 	add_child(area)
 
 func _build_light() -> void:
@@ -112,7 +111,7 @@ func _process(delta: float) -> void:
 	_shoot_scatter(delta)
 	_update_orbitals(delta)
 	_ultimate(delta)
-	contact_cd = maxf(contact_cd - delta, 0.0)
+	_check_contact_damage(delta)
 
 func _move(delta: float) -> void:
 	if is_dashing:
@@ -469,8 +468,22 @@ func _find_nearest_enemy() -> Node3D:
 				nearest = e
 	return nearest
 
-func _on_enemy_contact(area: Area3D) -> void:
-	if contact_cd > 0.0:
+func _check_contact_damage(delta: float) -> void:
+	contact_cd = maxf(contact_cd - delta, 0.0)
+	if contact_cd > 0.0 or is_dashing or GameState.invincible:
 		return
-	contact_cd = CONTACT_COOLDOWN
-	GameState.take_damage(CONTACT_DAMAGE)
+	var hurtbox: Area3D = get_node_or_null("Hurtbox")
+	if not hurtbox:
+		return
+	var overlaps := hurtbox.get_overlapping_areas()
+	if overlaps.size() > 0:
+		var enemy := overlaps[0].get_parent()
+		var dmg := CONTACT_DAMAGE
+		if enemy and enemy.get("contact_damage"):
+			dmg = enemy.contact_damage
+		contact_cd = CONTACT_COOLDOWN
+		GameState.take_damage(dmg)
+		var kb_dir: Vector3 = (global_position - enemy.global_position).normalized() if enemy else Vector3.BACK
+		kb_dir.y = 0.0
+		position += kb_dir * 1.5
+		GameState.request_shake(1.5, kb_dir)

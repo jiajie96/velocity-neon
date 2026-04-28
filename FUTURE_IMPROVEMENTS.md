@@ -151,9 +151,9 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [ ] Hit-stop (freeze frame 1-2 frames on heavy hits)
 - [ ] Enemy knockback on hit
 - [ ] Player weapon flash/muzzle on fire
-- [ ] XP orb collection burst particles
+- [x] XP orb collection burst particles
 - [ ] Level-up screen flash + brief invincibility
-- [ ] Boss HP bar (separate from wave UI)
+- [x] Boss HP bar (separate from wave UI)
 - [ ] Kill streak counter with escalating announcements ("DOUBLE KILL", "UNSTOPPABLE")
 - [ ] After-image effect during dash (translucent copies of player)
 - [ ] Weapon glow intensity scales with fire rate

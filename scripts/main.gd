@@ -158,6 +158,3 @@ func _unhandled_input(event: InputEvent) -> void:
 				pass
 			else:
 				get_tree().quit()
-		if event.keycode == KEY_R:
-			GameState.reset()
-			get_tree().reload_current_scene()
