@@ -286,78 +286,171 @@ func _build_wave_announce() -> void:
 	wave_announce.modulate.a = 0.0
 	add_child(wave_announce)
 
-# === UPGRADE PANEL ===
+# === UPGRADE PANEL (3-column card layout) ===
+
+var _card_containers: Array[PanelContainer] = []
+var _card_icons: Array[Label] = []
+var _card_titles: Array[Label] = []
+var _card_descs: Array[Label] = []
+var _card_stacks: Array[Label] = []
 
 func _build_upgrade_panel() -> void:
 	upgrade_panel = PanelContainer.new()
 	upgrade_panel.set_anchors_preset(Control.PRESET_CENTER)
-	upgrade_panel.custom_minimum_size = Vector2(520, 340)
-	upgrade_panel.position = Vector2(-260, -170)
+	upgrade_panel.custom_minimum_size = Vector2(720, 420)
+	upgrade_panel.position = Vector2(-360, -210)
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.03, 0.02, 0.08, 0.95)
-	style.border_color = Color(0.0, 0.8, 1.0, 0.6)
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8
-	style.corner_radius_bottom_right = 8
+	style.bg_color = Color(0.02, 0.01, 0.06, 0.95)
+	style.border_color = Color(0.0, 0.8, 1.0, 0.4)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(10)
+	style.content_margin_left = 20
+	style.content_margin_right = 20
+	style.content_margin_top = 15
+	style.content_margin_bottom = 20
 	upgrade_panel.add_theme_stylebox_override("panel", style)
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
-	upgrade_panel.add_child(vbox)
-
-	var title_margin := MarginContainer.new()
-	title_margin.add_theme_constant_override("margin_top", 15)
-	title_margin.add_theme_constant_override("margin_left", 15)
-	vbox.add_child(title_margin)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 12)
+	upgrade_panel.add_child(outer)
 
 	var title := Label.new()
-	title.text = "LEVEL UP — CHOOSE UPGRADE"
+	title.text = "LEVEL UP"
 	title.add_theme_color_override("font_color", Color(0.0, 1.0, 0.9))
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 24)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_margin.add_child(title)
+	outer.add_child(title)
 
-	var btn_margin := MarginContainer.new()
-	btn_margin.add_theme_constant_override("margin_left", 20)
-	btn_margin.add_theme_constant_override("margin_right", 20)
-	btn_margin.add_theme_constant_override("margin_bottom", 15)
-	vbox.add_child(btn_margin)
-
-	var inner := VBoxContainer.new()
-	inner.add_theme_constant_override("separation", 8)
-	btn_margin.add_child(inner)
+	var cards_row := HBoxContainer.new()
+	cards_row.add_theme_constant_override("separation", 16)
+	cards_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.add_child(cards_row)
 
 	for i in 3:
+		var card := PanelContainer.new()
+		card.name = "Card%d" % i
+		card.custom_minimum_size = Vector2(210, 320)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+		var card_style := StyleBoxFlat.new()
+		card_style.bg_color = Color(0.05, 0.03, 0.12, 0.95)
+		card_style.border_color = Color(0.5, 0.3, 1.0, 0.5)
+		card_style.set_border_width_all(2)
+		card_style.set_corner_radius_all(8)
+		card_style.content_margin_left = 12
+		card_style.content_margin_right = 12
+		card_style.content_margin_top = 12
+		card_style.content_margin_bottom = 12
+		card.add_theme_stylebox_override("panel", card_style)
+
+		var card_vbox := VBoxContainer.new()
+		card_vbox.add_theme_constant_override("separation", 8)
+		card_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		card.add_child(card_vbox)
+
+		# Icon area — large neon glow icon
+		var icon_panel := PanelContainer.new()
+		icon_panel.custom_minimum_size = Vector2(180, 120)
+		var icon_bg := StyleBoxFlat.new()
+		icon_bg.bg_color = Color(0.03, 0.015, 0.06, 0.9)
+		icon_bg.set_corner_radius_all(6)
+		icon_bg.border_color = Color(0.3, 0.2, 0.6, 0.3)
+		icon_bg.set_border_width_all(1)
+		icon_panel.add_theme_stylebox_override("panel", icon_bg)
+
+		var icon_label := Label.new()
+		icon_label.name = "Icon"
+		icon_label.text = ">>"
+		icon_label.add_theme_font_size_override("font_size", 48)
+		icon_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
+		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		icon_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		icon_panel.add_child(icon_label)
+		card_vbox.add_child(icon_panel)
+		_card_icons.append(icon_label)
+
+		# Title
+		var title_label := Label.new()
+		title_label.name = "Title"
+		title_label.text = "UPGRADE"
+		title_label.add_theme_font_size_override("font_size", 16)
+		title_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card_vbox.add_child(title_label)
+		_card_titles.append(title_label)
+
+		# Description
+		var desc_label := Label.new()
+		desc_label.name = "Desc"
+		desc_label.text = "Does something cool"
+		desc_label.add_theme_font_size_override("font_size", 13)
+		desc_label.add_theme_color_override("font_color", Color(0.65, 0.6, 0.8))
+		desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_label.custom_minimum_size.y = 36
+		card_vbox.add_child(desc_label)
+		_card_descs.append(desc_label)
+
+		# Stacks indicator
+		var stacks_label := Label.new()
+		stacks_label.name = "Stacks"
+		stacks_label.text = ""
+		stacks_label.add_theme_font_size_override("font_size", 11)
+		stacks_label.add_theme_color_override("font_color", Color(0.5, 0.45, 0.65))
+		stacks_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card_vbox.add_child(stacks_label)
+		_card_stacks.append(stacks_label)
+
+		# Invisible button overlay for click handling
 		var btn := Button.new()
 		btn.name = "UpgradeBtn%d" % i
-		btn.custom_minimum_size = Vector2(460, 60)
-		btn.add_theme_font_size_override("font_size", 15)
-		var bn := StyleBoxFlat.new()
-		bn.bg_color = Color(0.08, 0.05, 0.15, 0.9)
-		bn.border_color = Color(0.5, 0.3, 1.0, 0.5)
-		bn.set_border_width_all(1)
-		bn.set_corner_radius_all(6)
-		btn.add_theme_stylebox_override("normal", bn)
-		var bh := StyleBoxFlat.new()
-		bh.bg_color = Color(0.15, 0.08, 0.3, 0.95)
-		bh.border_color = Color(0.0, 1.0, 0.9, 0.8)
-		bh.set_border_width_all(2)
-		bh.set_corner_radius_all(6)
-		btn.add_theme_stylebox_override("hover", bh)
-		btn.add_theme_color_override("font_color", Color(0.9, 0.85, 1.0))
-		btn.add_theme_color_override("font_hover_color", Color(0.0, 1.0, 0.9))
+		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+		btn.flat = true
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		# Transparent styles
+		var btn_normal := StyleBoxFlat.new()
+		btn_normal.bg_color = Color(0, 0, 0, 0)
+		btn.add_theme_stylebox_override("normal", btn_normal)
+		var btn_hover := StyleBoxFlat.new()
+		btn_hover.bg_color = Color(0.0, 1.0, 0.9, 0.08)
+		btn_hover.set_corner_radius_all(8)
+		btn.add_theme_stylebox_override("hover", btn_hover)
+		var btn_pressed := StyleBoxFlat.new()
+		btn_pressed.bg_color = Color(0.0, 1.0, 0.9, 0.15)
+		btn_pressed.set_corner_radius_all(8)
+		btn.add_theme_stylebox_override("pressed", btn_pressed)
 		btn.pressed.connect(_on_upgrade_chosen.bind(i))
-		inner.add_child(btn)
+		# Mouse enter/exit for card glow effect
+		btn.mouse_entered.connect(_on_card_hover.bind(i, true))
+		btn.mouse_exited.connect(_on_card_hover.bind(i, false))
+		card.add_child(btn)
 		upgrade_buttons.append(btn)
+		_card_containers.append(card)
+
+		cards_row.add_child(card)
 
 	upgrade_panel.visible = false
 	upgrade_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(upgrade_panel)
+
+func _on_card_hover(index: int, entered: bool) -> void:
+	if index >= _card_containers.size():
+		return
+	var card := _card_containers[index]
+	var panel_style := card.get_theme_stylebox("panel") as StyleBoxFlat
+	if not panel_style:
+		return
+	if entered:
+		var u_color := Color(0.0, 1.0, 0.9)
+		if index < _current_choices.size():
+			u_color = _current_choices[index].color
+		panel_style.border_color = Color(u_color.r, u_color.g, u_color.b, 0.9)
+		panel_style.bg_color = Color(0.08, 0.05, 0.18, 0.98)
+	else:
+		panel_style.border_color = Color(0.5, 0.3, 1.0, 0.5)
+		panel_style.bg_color = Color(0.05, 0.03, 0.12, 0.95)
 
 # === BOSS HP BAR ===
 
@@ -567,12 +660,26 @@ func _on_leveled_up(level: int) -> void:
 
 func _show_upgrade_choices() -> void:
 	_current_choices = UpgradeSystem.get_random_choices(3)
-	for i in upgrade_buttons.size():
+	for i in 3:
 		if i < _current_choices.size():
 			var u = _current_choices[i]
-			upgrade_buttons[i].text = "  %s  %s  —  %s" % [u.icon, u.title, u.description]
+			_card_containers[i].visible = true
+			_card_icons[i].text = u.icon
+			_card_icons[i].add_theme_color_override("font_color", u.color)
+			_card_titles[i].text = u.title
+			_card_titles[i].add_theme_color_override("font_color", u.color.lerp(Color.WHITE, 0.4))
+			_card_descs[i].text = u.description
+			if u.max_stacks > 1:
+				_card_stacks[i].text = "%d / %d" % [u.stacks, u.max_stacks]
+			else:
+				_card_stacks[i].text = ""
+			# Reset card border on show
+			var panel_style := _card_containers[i].get_theme_stylebox("panel") as StyleBoxFlat
+			if panel_style:
+				panel_style.border_color = Color(u.color.r, u.color.g, u.color.b, 0.4)
 			upgrade_buttons[i].visible = true
 		else:
+			_card_containers[i].visible = false
 			upgrade_buttons[i].visible = false
 	upgrade_panel.visible = true
 
