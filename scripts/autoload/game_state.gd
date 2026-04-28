@@ -14,10 +14,10 @@ signal enemy_killed_at(pos: Vector3)
 var hp: float = 100.0
 var max_hp: float = 100.0
 var speed: float = 8.0
-var fire_rate: float = 2.5
+var fire_rate: float = 3.5
 var damage: float = 10.0
 var projectile_count: int = 1
-var projectile_speed: float = 22.0
+var projectile_speed: float = 45.0
 var magnet_range: float = 5.0
 var hp_regen: float = 0.0
 var dash_cooldown: float = 1.5
@@ -102,10 +102,10 @@ func reset() -> void:
 	hp = 100.0
 	max_hp = 100.0
 	speed = 8.0
-	fire_rate = 2.5
+	fire_rate = 3.5
 	damage = 10.0
 	projectile_count = 1
-	projectile_speed = 22.0
+	projectile_speed = 45.0
 	magnet_range = 5.0
 	hp_regen = 0.0
 	dash_cooldown = 1.5

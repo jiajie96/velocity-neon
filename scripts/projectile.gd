@@ -14,7 +14,7 @@ var _alive: float = 0.0
 var _hit: bool = false
 
 var _colors := {
-	"pulse": Color(1.0, 0.95, 0.3),
+	"pulse": Color(0.3, 0.9, 1.0),
 	"scatter": Color(1.0, 0.5, 0.0),
 	"chain": Color(0.4, 0.9, 1.0),
 }
@@ -40,6 +40,16 @@ func _build_visual() -> void:
 		sphere.radius = 0.1
 		sphere.height = 0.2
 		mesh_inst.mesh = sphere
+	elif weapon_type == "pulse":
+		# Thin laser bolt — elongated cylinder pointing in travel direction
+		var bolt := CylinderMesh.new()
+		bolt.top_radius = 0.03
+		bolt.bottom_radius = 0.03
+		bolt.height = 0.8
+		mesh_inst.mesh = bolt
+		# Rotate cylinder to lie along travel direction
+		mesh_inst.rotation.x = PI / 2.0
+		mesh_inst.rotation.y = atan2(direction.x, direction.z)
 	else:
 		var sphere := SphereMesh.new()
 		sphere.radius = 0.12
@@ -52,15 +62,15 @@ func _build_visual() -> void:
 	mat.albedo_color = color
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 5.0
+	mat.emission_energy_multiplier = 8.0 if weapon_type == "pulse" else 5.0
 	mesh_inst.material_override = mat
 	add_child(mesh_inst)
 
 	if weapon_type != "scatter":
 		var light := OmniLight3D.new()
 		light.light_color = color
-		light.light_energy = 1.5
-		light.omni_range = 3.0
+		light.light_energy = 1.2 if weapon_type == "pulse" else 1.5
+		light.omni_range = 2.5
 		light.omni_attenuation = 2.0
 		add_child(light)
 
@@ -81,14 +91,24 @@ func _spawn_trail_timer(color: Color) -> void:
 
 func _spawn_trail_particle(color: Color) -> void:
 	var p := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.06
-	p.mesh = sphere
+	if weapon_type == "pulse":
+		# Thin streak segment for laser trail
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.015
+		cyl.bottom_radius = 0.02
+		cyl.height = 0.4
+		p.mesh = cyl
+		p.rotation.x = PI / 2.0
+		p.rotation.y = atan2(direction.x, direction.z)
+	else:
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.06
+		p.mesh = sphere
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(color.r, color.g, color.b, 0.6)
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 3.0
+	mat.emission_energy_multiplier = 4.0 if weapon_type == "pulse" else 3.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	p.material_override = mat
 	p.position = global_position
@@ -97,7 +117,7 @@ func _spawn_trail_particle(color: Color) -> void:
 	if container:
 		container.add_child(p)
 		var tw := p.create_tween()
-		tw.tween_property(mat, "albedo_color:a", 0.0, 0.15)
+		tw.tween_property(mat, "albedo_color:a", 0.0, 0.1)
 		tw.tween_callback(p.queue_free)
 
 func _build_hitbox() -> void:

@@ -244,13 +244,13 @@ func _spawn_muzzle_flash(dir: Vector3) -> void:
 		return
 	var flash := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
-	sphere.radius = 0.2
+	sphere.radius = 0.15
 	flash.mesh = sphere
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.95, 0.5, 0.9)
+	mat.albedo_color = Color(0.3, 0.95, 1.0, 0.9)
 	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.9, 0.3)
-	mat.emission_energy_multiplier = 8.0
+	mat.emission = Color(0.3, 0.9, 1.0)
+	mat.emission_energy_multiplier = 10.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	flash.material_override = mat
 	flash.position = global_position + Vector3(0, 0.8, 0) + dir * 0.6
