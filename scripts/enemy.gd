@@ -166,8 +166,39 @@ func take_damage(amount: float) -> void:
 		var kb_dir := (global_position - player.global_position).normalized()
 		kb_dir.y = 0.0
 		position += kb_dir * 0.3
+	_spawn_damage_number(amount)
 	if hp <= 0.0:
 		_die()
+
+func _spawn_damage_number(amount: float) -> void:
+	var cam := get_viewport().get_camera_3d()
+	if not cam:
+		return
+	var screen_pos := cam.unproject_position(global_position + Vector3(0, 1.8, 0))
+	var canvas := get_tree().get_first_node_in_group("hud_node") as Control
+	if not canvas:
+		return
+	var label := Label.new()
+	label.text = str(int(amount))
+	var is_big_hit := amount >= 30.0
+	label.add_theme_font_size_override("font_size", 20 if not is_big_hit else 28)
+	label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3) if not is_big_hit else Color(1.0, 0.3, 0.1))
+	if is_big_hit:
+		label.add_theme_color_override("font_outline_color", Color(1.0, 0.0, 0.0))
+		label.add_theme_constant_override("outline_size", 3)
+	label.position = screen_pos + Vector2(randf_range(-20, 20), randf_range(-10, 5))
+	label.z_index = 100
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(label)
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 50.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(label, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	if is_big_hit:
+		tw.tween_property(label, "scale", Vector2(1.3, 1.3), 0.08).set_ease(Tween.EASE_OUT)
+		tw.chain().tween_property(label, "scale", Vector2(1.0, 1.0), 0.15)
+	tw.set_parallel(false)
+	tw.tween_callback(label.queue_free)
 
 func _die() -> void:
 	_dead = true

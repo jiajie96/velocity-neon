@@ -148,12 +148,14 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - **Slow-motion**: Brief 0.1s slow-mo on kill streaks (every 10th kill) or big explosions
 
 ### Juice Checklist
-- [ ] Hit-stop (freeze frame 1-2 frames on heavy hits)
-- [ ] Enemy knockback on hit
-- [ ] Player weapon flash/muzzle on fire
+- [x] Hit-stop (freeze frame 1-2 frames on heavy hits)
+- [x] Enemy knockback on hit
+- [x] Player weapon flash/muzzle on fire
 - [x] XP orb collection burst particles
-- [ ] Level-up screen flash + brief invincibility
+- [x] Level-up screen flash + brief invincibility
 - [x] Boss HP bar (separate from wave UI)
+- [x] Floating damage numbers (color-coded, big hit scaling)
+- [x] Low HP danger vignette (red pulsing screen edges)
 - [ ] Kill streak counter with escalating announcements ("DOUBLE KILL", "UNSTOPPABLE")
 - [ ] After-image effect during dash (translucent copies of player)
 - [ ] Weapon glow intensity scales with fire rate

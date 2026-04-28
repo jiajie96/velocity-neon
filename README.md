@@ -50,6 +50,9 @@ Six enemy types, each with a unique 3D model and neon glow:
 - **Hit-stop** — brief time freeze on heavy hits for impact feel
 - **Directional camera shake** — biased toward damage source
 - **Boss HP bar** — dedicated top-center health bar during boss waves with fade-in/out
+- **Floating damage numbers** — color-coded damage text on enemy hits, with big-hit scaling for heavy damage
+- **Low HP danger vignette** — red pulsing screen edges when HP drops below 30%
+- **Level-up flash + invincibility** — cyan screen flash and 1.5s invincibility after picking an upgrade
 - **XP orb collect burst** — green ring flash + spark particles on orb pickup
 - **Synthwave soundtrack** — gameplay and boss music with smooth crossfading between tracks
 - **Full SFX** — shooting, impacts, deaths, level-ups, dashes, UI clicks

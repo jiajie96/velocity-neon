@@ -18,9 +18,10 @@ func _ready() -> void:
 func _on_wave_changed(wave: int) -> void:
 	_wave_active = true
 	_spawned_this_wave = 0
-	var intensity := wave * wave
-	_target_this_wave = ENEMIES_PER_WAVE_BASE + intensity * 4
-	_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
+	# Gentler scaling: linear base + mild quadratic ramp
+	# Wave 1: 8, Wave 5: 27, Wave 10: 60, Wave 15: 105, Wave 20: 165
+	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 3 + int(wave * wave * 0.3)
+	_spawn_interval = maxf(0.12, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.3))
 	_spawn_timer = 0.2
 	_wave_timer = 0.0
 

@@ -18,6 +18,10 @@ var boss_bar_container: Control
 var boss_bar: ProgressBar
 var boss_name_label: Label
 var _boss_ref: WeakRef = WeakRef.new()
+var _vignette: ColorRect
+var _vignette_mat: ShaderMaterial
+var _vignette_pulse: float = 0.0
+var _levelup_flash: ColorRect
 
 var _current_choices: Array = []
 
@@ -31,6 +35,8 @@ func _ready() -> void:
 	_build_upgrade_panel()
 	_build_game_over()
 	_build_boss_bar()
+	_build_danger_vignette()
+	_build_levelup_flash()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -390,6 +396,62 @@ func _build_boss_bar() -> void:
 	boss_bar.add_theme_stylebox_override("background", bg)
 	boss_bar_container.add_child(boss_bar)
 
+func _build_danger_vignette() -> void:
+	_vignette = ColorRect.new()
+	_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vignette.color = Color(0, 0, 0, 0)
+
+	var shader_code := """
+shader_type canvas_item;
+uniform float intensity : hint_range(0.0, 1.0) = 0.0;
+uniform float pulse : hint_range(0.0, 1.0) = 0.0;
+void fragment() {
+	float dist = distance(UV, vec2(0.5));
+	float vignette = smoothstep(0.25, 0.7, dist);
+	float alpha = vignette * intensity * (0.6 + 0.4 * pulse);
+	COLOR = vec4(0.9, 0.05, 0.05, alpha * 0.55);
+}
+"""
+	var shader := Shader.new()
+	shader.code = shader_code
+	_vignette_mat = ShaderMaterial.new()
+	_vignette_mat.shader = shader
+	_vignette_mat.set_shader_parameter("intensity", 0.0)
+	_vignette_mat.set_shader_parameter("pulse", 0.0)
+	_vignette.material = _vignette_mat
+	add_child(_vignette)
+
+func _build_levelup_flash() -> void:
+	_levelup_flash = ColorRect.new()
+	_levelup_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_levelup_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_levelup_flash.color = Color(0.0, 1.0, 0.9, 0.0)
+	add_child(_levelup_flash)
+
+func _trigger_levelup_flash() -> void:
+	if not _levelup_flash:
+		return
+	_levelup_flash.color = Color(0.0, 1.0, 0.9, 0.45)
+	var tw := create_tween()
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+
+func _update_danger_vignette(delta: float) -> void:
+	if not _vignette_mat:
+		return
+	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	var target_intensity := 0.0
+	if hp_ratio < 0.3 and not GameState.game_over:
+		target_intensity = (1.0 - hp_ratio / 0.3)
+	var current := _vignette_mat.get_shader_parameter("intensity") as float
+	_vignette_mat.set_shader_parameter("intensity", lerpf(current, target_intensity, 5.0 * delta))
+	if target_intensity > 0.01:
+		_vignette_pulse += delta * (3.0 + target_intensity * 2.0)
+		_vignette_mat.set_shader_parameter("pulse", (sin(_vignette_pulse) + 1.0) * 0.5)
+	else:
+		_vignette_pulse = 0.0
+		_vignette_mat.set_shader_parameter("pulse", 0.0)
+
 func _update_boss_bar() -> void:
 	var boss: Node3D = _boss_ref.get_ref() as Node3D
 	if boss and not boss.is_queued_for_deletion() and boss.get("hp") != null:
@@ -520,6 +582,10 @@ func _on_upgrade_chosen(index: int) -> void:
 	Audio.sfx_upgrade()
 	UpgradeSystem.apply_upgrade(_current_choices[index])
 	upgrade_panel.visible = false
+	_trigger_levelup_flash()
+	# Brief invincibility so player doesn't die instantly after picking
+	GameState.invincible = true
+	get_tree().create_timer(1.5).timeout.connect(func(): GameState.invincible = false)
 	GameState.upgrade_selected.emit()
 
 func _on_player_died() -> void:
@@ -535,6 +601,7 @@ func _on_player_died() -> void:
 func _process(delta: float) -> void:
 	_update_indicators()
 	_update_boss_bar()
+	_update_danger_vignette(delta)
 
 func _update_indicators() -> void:
 	var player: Node = get_tree().get_first_node_in_group("player_node")
