@@ -91,10 +91,9 @@ func add_kill() -> void:
 	kills += 1
 	kills_changed.emit(kills)
 
-func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
-	shake_amount = maxf(shake_amount, intensity)
-	if direction.length_squared() > 0.01:
-		shake_direction = direction.normalized()
+func request_shake(_intensity: float, _direction: Vector3 = Vector3.ZERO) -> void:
+	# Screen shake disabled — felt too aggressive during gameplay
+	pass
 
 func request_hit_stop(duration: float = 0.04) -> void:
 	hit_stop_requested.emit(duration)

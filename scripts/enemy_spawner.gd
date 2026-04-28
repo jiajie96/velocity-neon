@@ -57,7 +57,9 @@ func _spawn_enemy() -> void:
 		spawn_center = player.global_position
 
 	var angle := randf() * TAU
-	var pos := spawn_center + Vector3(cos(angle), 0, sin(angle)) * SPAWN_DISTANCE
+	# Early waves spawn further out so enemies visibly approach
+	var dist := SPAWN_DISTANCE + maxf(0.0, (6 - GameState.wave)) * 5.0
+	var pos := spawn_center + Vector3(cos(angle), 0, sin(angle)) * dist
 
 	pos.x = clampf(pos.x, -48.0, 48.0)
 	pos.z = clampf(pos.z, -48.0, 48.0)
