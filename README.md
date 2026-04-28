@@ -19,6 +19,7 @@ A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBoo
 | **Space** | Phase Dash — invincible + fire trail |
 | **Q** | Ultimate — area damage burst |
 | **Scroll Wheel** | Zoom camera in/out |
+| **R** | Restart (game over) |
 | **ESC** | Restart (game over) / Quit |
 
 ## Features
@@ -50,7 +51,7 @@ Six enemy types, each with a unique 3D model and neon glow:
 - **Directional camera shake** — biased toward damage source
 - **Boss HP bar** — dedicated top-center health bar during boss waves with fade-in/out
 - **XP orb collect burst** — green ring flash + spark particles on orb pickup
-- **Synthwave soundtrack** — gameplay and boss music from OpenGameArt (CC-BY 4.0)
+- **Synthwave soundtrack** — gameplay and boss music with smooth crossfading between tracks
 - **Full SFX** — shooting, impacts, deaths, level-ups, dashes, UI clicks
 
 ## Running

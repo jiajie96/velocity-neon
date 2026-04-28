@@ -3,15 +3,23 @@ extends Node
 const MAX_SFX := 12
 const MUSIC_FADE_TIME := 1.5
 
-var _music: AudioStreamPlayer
+var _music_a: AudioStreamPlayer
+var _music_b: AudioStreamPlayer
+var _active_music: AudioStreamPlayer
 var _sfx_pool: Array[AudioStreamPlayer] = []
 var _cache: Dictionary = {}
+var _fade_tween: Tween
 
 func _ready() -> void:
-	_music = AudioStreamPlayer.new()
-	_music.name = "Music"
-	_music.volume_db = -6.0
-	add_child(_music)
+	_music_a = AudioStreamPlayer.new()
+	_music_a.name = "MusicA"
+	_music_a.volume_db = -6.0
+	add_child(_music_a)
+	_music_b = AudioStreamPlayer.new()
+	_music_b.name = "MusicB"
+	_music_b.volume_db = -80.0
+	add_child(_music_b)
+	_active_music = _music_a
 	for i in MAX_SFX:
 		var p := AudioStreamPlayer.new()
 		p.name = "SFX_%d" % i
@@ -31,14 +39,31 @@ func play_music(path: String, vol_db: float = -6.0) -> void:
 	var stream := _load(path)
 	if not stream:
 		return
-	if _music.stream == stream and _music.playing:
+	if _active_music.stream == stream and _active_music.playing:
 		return
-	_music.stream = stream
-	_music.volume_db = vol_db
-	_music.play()
+
+	# Kill any running fade to avoid conflicts
+	if _fade_tween and _fade_tween.is_valid():
+		_fade_tween.kill()
+
+	var old := _active_music
+	var incoming := _music_b if _active_music == _music_a else _music_a
+	incoming.stream = stream
+	incoming.volume_db = -80.0
+	incoming.play()
+
+	_fade_tween = create_tween().set_parallel(true)
+	_fade_tween.tween_property(incoming, "volume_db", vol_db, MUSIC_FADE_TIME)
+	_fade_tween.tween_property(old, "volume_db", -80.0, MUSIC_FADE_TIME)
+	_fade_tween.chain().tween_callback(func(): old.stop())
+
+	_active_music = incoming
 
 func stop_music() -> void:
-	_music.stop()
+	if _fade_tween and _fade_tween.is_valid():
+		_fade_tween.kill()
+	_music_a.stop()
+	_music_b.stop()
 
 func play_sfx(path: String, vol_db: float = 0.0, pitch: float = 1.0) -> void:
 	var stream := _load(path)
