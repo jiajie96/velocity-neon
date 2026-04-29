@@ -9,6 +9,9 @@ signal player_died
 signal upgrade_selected
 signal hit_stop_requested(duration: float)
 signal enemy_killed_at(pos: Vector3)
+signal kill_streak(count: int)
+signal boss_defeated
+signal dash_reset
 
 # Player stats
 var hp: float = 100.0
@@ -51,11 +54,26 @@ var game_started: bool = false
 var shake_amount: float = 0.0
 var shake_direction: Vector3 = Vector3.ZERO
 
+# Kill streak tracking
+var _streak_count: int = 0
+var _streak_timer: float = 0.0
+const STREAK_WINDOW := 2.0
+
+# Wave damage tracking (for no-damage bonus)
+var _wave_damage_taken: bool = false
+
+func _process(delta: float) -> void:
+	if _streak_timer > 0.0:
+		_streak_timer -= delta
+		if _streak_timer <= 0.0:
+			_streak_count = 0
+
 func take_damage(amount: float) -> void:
 	if invincible or game_over:
 		return
 	hp = clampf(hp - amount, 0.0, max_hp)
 	shake_amount = 2.0 * log(amount + 1.0) / log(10.0)
+	_wave_damage_taken = true
 	hp_changed.emit(hp, max_hp)
 	if amount >= 5.0:
 		Audio.sfx_player_hit()
@@ -79,17 +97,34 @@ func add_xp(amount: float) -> void:
 		xp_changed.emit(xp, xp_to_next)
 
 func next_wave() -> void:
+	# Award bonus XP for surviving previous wave without taking damage
+	if wave > 0 and not _wave_damage_taken:
+		var bonus := 20.0 + wave * 5.0
+		add_xp(bonus)
+	_wave_damage_taken = false
 	wave += 1
 	Audio.sfx_wave_start()
 	wave_changed.emit(wave)
 	if wave % 5 == 0:
-		Audio.play_music("res://assets/audio/music/cyberpunk_battle.ogg", -4.0)
+		# Use epic_boss for wave 10+ bosses, cyberpunk_battle for early bosses
+		if wave >= 10:
+			Audio.play_music("res://assets/audio/music/epic_boss.ogg", -4.0)
+		else:
+			Audio.play_music("res://assets/audio/music/cyberpunk_battle.ogg", -4.0)
 	elif wave > 1:
 		Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
 
 func add_kill() -> void:
 	kills += 1
 	kills_changed.emit(kills)
+	# Kill streak tracking
+	_streak_count += 1
+	_streak_timer = STREAK_WINDOW
+	if _streak_count >= 3:
+		kill_streak.emit(_streak_count)
+	# Reset dash cooldown every 10 rapid kills
+	if _streak_count > 0 and _streak_count % 10 == 0:
+		dash_reset.emit()
 
 func request_shake(_intensity: float, _direction: Vector3 = Vector3.ZERO) -> void:
 	# Screen shake disabled — felt too aggressive during gameplay
@@ -128,3 +163,6 @@ func reset() -> void:
 	game_started = false
 	shake_amount = 0.0
 	shake_direction = Vector3.ZERO
+	_streak_count = 0
+	_streak_timer = 0.0
+	_wave_damage_taken = false

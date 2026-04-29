@@ -22,6 +22,9 @@ var _vignette: ColorRect
 var _vignette_mat: ShaderMaterial
 var _vignette_pulse: float = 0.0
 var _levelup_flash: ColorRect
+var _streak_label: Label
+var _overclock_label: Label
+var _regen_label: Label
 
 var _current_choices: Array = []
 
@@ -37,6 +40,9 @@ func _ready() -> void:
 	_build_boss_bar()
 	_build_danger_vignette()
 	_build_levelup_flash()
+	_build_streak_label()
+	_build_overclock_indicator()
+	_build_regen_indicator()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -44,6 +50,8 @@ func _ready() -> void:
 	GameState.kills_changed.connect(_on_kills_changed)
 	GameState.leveled_up.connect(_on_leveled_up)
 	GameState.player_died.connect(_on_player_died)
+	GameState.kill_streak.connect(_on_kill_streak)
+	GameState.boss_defeated.connect(_on_boss_defeated)
 
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
@@ -438,6 +446,8 @@ func _build_upgrade_panel() -> void:
 func _on_card_hover(index: int, entered: bool) -> void:
 	if index >= _card_containers.size():
 		return
+	if entered:
+		Audio.sfx_ui_hover()
 	var card := _card_containers[index]
 	var panel_style := card.get_theme_stylebox("panel") as StyleBoxFlat
 	if not panel_style:
@@ -521,6 +531,92 @@ func _build_levelup_flash() -> void:
 	_levelup_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_levelup_flash.color = Color(0.0, 1.0, 0.9, 0.0)
 	add_child(_levelup_flash)
+
+func _build_streak_label() -> void:
+	_streak_label = Label.new()
+	_streak_label.text = ""
+	_streak_label.add_theme_font_size_override("font_size", 32)
+	_streak_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
+	_streak_label.add_theme_color_override("font_outline_color", Color(1.0, 0.3, 0.0))
+	_streak_label.add_theme_constant_override("outline_size", 3)
+	_streak_label.set_anchors_preset(Control.PRESET_CENTER)
+	_streak_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_streak_label.position = Vector2(-200, 40)
+	_streak_label.custom_minimum_size = Vector2(400, 50)
+	_streak_label.modulate.a = 0.0
+	_streak_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_streak_label)
+
+func _build_overclock_indicator() -> void:
+	_overclock_label = Label.new()
+	_overclock_label.text = "OVERCLOCK ACTIVE"
+	_overclock_label.add_theme_font_size_override("font_size", 13)
+	_overclock_label.add_theme_color_override("font_color", Color(1.0, 0.1, 0.3, 0.9))
+	_overclock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_overclock_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_overclock_label.position = Vector2(-100, -70)
+	_overclock_label.custom_minimum_size = Vector2(200, 20)
+	_overclock_label.visible = false
+	_overclock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_overclock_label)
+
+func _build_regen_indicator() -> void:
+	_regen_label = Label.new()
+	_regen_label.text = "+HP"
+	_regen_label.add_theme_font_size_override("font_size", 12)
+	_regen_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 0.0))
+	_regen_label.position = Vector2(275, 10)
+	_regen_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_regen_label)
+
+func _on_kill_streak(count: int) -> void:
+	if not _streak_label:
+		return
+	var text := ""
+	var color := Color(1.0, 0.8, 0.0)
+	if count >= 20:
+		text = "UNSTOPPABLE"
+		color = Color(1.0, 0.0, 0.3)
+	elif count >= 15:
+		text = "RAMPAGE"
+		color = Color(1.0, 0.2, 0.0)
+	elif count >= 10:
+		text = "KILLING SPREE"
+		color = Color(1.0, 0.5, 0.0)
+	elif count >= 5:
+		text = "MULTI KILL"
+		color = Color(1.0, 0.7, 0.0)
+	elif count >= 3:
+		text = "TRIPLE KILL"
+		color = Color(1.0, 0.9, 0.2)
+	else:
+		return
+	_streak_label.text = text
+	_streak_label.add_theme_color_override("font_color", color)
+	_streak_label.modulate.a = 1.0
+	_streak_label.scale = Vector2(1.3, 1.3)
+	var tw := create_tween()
+	tw.tween_property(_streak_label, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.8)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4)
+
+func _on_boss_defeated() -> void:
+	if not _levelup_flash:
+		return
+	# Gold flash for boss defeat
+	_levelup_flash.color = Color(1.0, 0.8, 0.0, 0.5)
+	var tw := create_tween()
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	# Show "BOSS DEFEATED" text via streak label
+	if _streak_label:
+		_streak_label.text = "BOSS DEFEATED"
+		_streak_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
+		_streak_label.modulate.a = 1.0
+		_streak_label.scale = Vector2(1.5, 1.5)
+		var stw := create_tween()
+		stw.tween_property(_streak_label, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT)
+		stw.tween_interval(1.5)
+		stw.tween_property(_streak_label, "modulate:a", 0.0, 0.5)
 
 func _trigger_levelup_flash() -> void:
 	if not _levelup_flash:
@@ -709,6 +805,8 @@ func _process(delta: float) -> void:
 	_update_indicators()
 	_update_boss_bar()
 	_update_danger_vignette(delta)
+	_update_overclock_indicator(delta)
+	_update_regen_indicator(delta)
 
 func _update_indicators() -> void:
 	var player: Node = get_tree().get_first_node_in_group("player_node")
@@ -730,6 +828,35 @@ func _update_indicators() -> void:
 		else:
 			ult_indicator.text = "ULT [Q]"
 			ult_indicator.add_theme_color_override("font_color", Color(0.9, 0.4, 1.0, 0.8))
+
+var _overclock_pulse_t: float = 0.0
+
+func _update_overclock_indicator(delta: float) -> void:
+	if not _overclock_label:
+		return
+	if GameState.overclock_active and not GameState.game_over:
+		_overclock_label.visible = true
+		_overclock_pulse_t += delta * 4.0
+		var alpha := 0.5 + 0.5 * sin(_overclock_pulse_t)
+		_overclock_label.add_theme_color_override("font_color", Color(1.0, 0.1, 0.3, alpha))
+	else:
+		_overclock_label.visible = false
+		_overclock_pulse_t = 0.0
+
+var _regen_tick_t: float = 0.0
+
+func _update_regen_indicator(delta: float) -> void:
+	if not _regen_label:
+		return
+	if GameState.hp_regen > 0.0 and GameState.hp < GameState.max_hp and not GameState.game_over:
+		_regen_tick_t += delta
+		if _regen_tick_t >= 1.0:
+			_regen_tick_t -= 1.0
+			_regen_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 0.8))
+			var tw := create_tween()
+			tw.tween_property(_regen_label, "theme_override_colors/font_color:a", 0.0, 0.6)
+	else:
+		_regen_tick_t = 0.0
 
 func _unhandled_input(event: InputEvent) -> void:
 	if title_screen and title_screen.visible:

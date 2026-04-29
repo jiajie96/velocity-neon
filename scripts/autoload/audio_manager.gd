@@ -113,3 +113,9 @@ func sfx_upgrade() -> void:
 
 func sfx_ui_click() -> void:
 	play_sfx("res://assets/audio/sfx/ui_click.ogg", -4.0)
+
+func sfx_ui_hover() -> void:
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -8.0, 1.2)
+
+func sfx_boss_defeat() -> void:
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", 0.0, 0.8)

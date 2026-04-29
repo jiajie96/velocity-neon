@@ -13,6 +13,7 @@ const ORBITAL_RADIUS := 2.5
 const ORBITAL_SPEED := 3.0
 const ORBITAL_DAMAGE := 8.0
 const ORBITAL_HIT_CD := 0.5
+const DASH_AFTERIMAGE_INTERVAL := 0.04
 
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
@@ -28,12 +29,14 @@ var _orbital_nodes: Array[MeshInstance3D] = []
 var _orbital_angle: float = 0.0
 var _orbital_hit_timers: Dictionary = {}
 var _model_loaded: bool = false
+var _afterimage_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player_node")
 	_build_visual()
 	_build_hurtbox()
 	_build_light()
+	GameState.dash_reset.connect(_on_dash_reset)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -142,6 +145,10 @@ func _dash(delta: float) -> void:
 	dash_cd_timer = maxf(dash_cd_timer - delta, 0.0)
 	if is_dashing:
 		dash_timer -= delta
+		_afterimage_timer -= delta
+		if _afterimage_timer <= 0.0:
+			_afterimage_timer = DASH_AFTERIMAGE_INTERVAL
+			_spawn_afterimage()
 		position += dash_dir * GameState.dash_speed * delta
 		position.y = 0.0
 		position.x = clampf(position.x, -48.0, 48.0)
@@ -193,6 +200,32 @@ func _spawn_dash_trail() -> void:
 		var tw := p.create_tween()
 		tw.tween_property(mat, "albedo_color:a", 0.0, 0.4)
 		tw.tween_callback(p.queue_free)
+
+func _spawn_afterimage() -> void:
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var ghost := MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.radius = 0.35
+	capsule.height = 1.3
+	ghost.mesh = capsule
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.0, 0.85, 1.0, 0.4)
+	mat.emission_enabled = true
+	mat.emission = Color(0.0, 0.7, 1.0)
+	mat.emission_energy_multiplier = 3.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ghost.material_override = mat
+	ghost.position = position
+	ghost.position.y = 0.65
+	container.add_child(ghost)
+	var tw := ghost.create_tween()
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.25)
+	tw.tween_callback(ghost.queue_free)
+
+func _on_dash_reset() -> void:
+	dash_cd_timer = 0.0
 
 # === PRIMARY WEAPON ===
 

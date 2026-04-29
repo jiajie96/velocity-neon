@@ -15,6 +15,11 @@ var _flash_timer: float = 0.0
 var _original_color: Color = Color.WHITE
 var _mat: StandardMaterial3D
 var _dead: bool = false
+var _mage_shoot_timer: float = 2.0
+const MAGE_SHOOT_CD := 2.5
+const MAGE_RANGE := 12.0
+const MAGE_PROJ_SPEED := 10.0
+const MAGE_PROJ_DAMAGE := 8.0
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -137,9 +142,19 @@ func _process(delta: float) -> void:
 
 	var dir := (player.global_position - global_position)
 	dir.y = 0.0
+	var dist_to_player := dir.length()
 	if dir.length_squared() > 0.01:
 		dir = dir.normalized()
-		position += dir * spd * delta
+		# Mages hold position at range and shoot instead of charging in
+		if enemy_type == "mage" and dist_to_player < MAGE_RANGE:
+			_mage_shoot_timer -= delta
+			if _mage_shoot_timer <= 0.0:
+				_mage_shoot_timer = MAGE_SHOOT_CD
+				_fire_mage_bolt(dir)
+			# Slow approach — mages still drift closer but much slower
+			position += dir * spd * 0.3 * delta
+		else:
+			position += dir * spd * delta
 		var model := get_node_or_null("Model")
 		if model:
 			var target_angle := atan2(dir.x, dir.z)
@@ -151,6 +166,50 @@ func _process(delta: float) -> void:
 		if _flash_timer <= 0.0 and _mat:
 			_mat.emission = _original_color
 			_mat.emission_energy_multiplier = 2.0
+
+func _fire_mage_bolt(dir: Vector3) -> void:
+	var container := get_parent().get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var bolt := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.15
+	bolt.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.7, 0.0, 1.0, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(0.7, 0.0, 1.0)
+	mat.emission_energy_multiplier = 5.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bolt.material_override = mat
+	bolt.position = global_position + Vector3(0, 1.0, 0)
+	container.add_child(bolt)
+	# Simple area for hitting player
+	var area := Area3D.new()
+	area.collision_layer = 2
+	area.collision_mask = 1
+	area.monitoring = true
+	area.monitorable = false
+	var col := CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = 0.4
+	col.shape = shape
+	area.add_child(col)
+	bolt.add_child(area)
+	var bolt_dir := dir
+	var bolt_spd := MAGE_PROJ_SPEED
+	var bolt_dmg := MAGE_PROJ_DAMAGE
+	var bolt_alive := 0.0
+	area.area_entered.connect(func(_a: Area3D):
+		if not GameState.invincible:
+			GameState.take_damage(bolt_dmg)
+		bolt.queue_free()
+	)
+	# Move bolt via tween destination
+	var end_pos := bolt.position + bolt_dir * 20.0
+	var tw := bolt.create_tween()
+	tw.tween_property(bolt, "position", end_pos, 20.0 / bolt_spd)
+	tw.tween_callback(bolt.queue_free)
 
 func take_damage(amount: float) -> void:
 	if _dead:
@@ -208,6 +267,10 @@ func _die() -> void:
 	if is_boss:
 		GameState.request_shake(4.0)
 		GameState.request_hit_stop(0.1)
+		Audio.sfx_boss_defeat()
+		GameState.boss_defeated.emit()
+		# Switch back to normal music after boss
+		Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
 	else:
 		GameState.request_shake(1.0)
 	_death_vfx()
