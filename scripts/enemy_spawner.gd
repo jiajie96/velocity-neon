@@ -1,9 +1,9 @@
 extends Node
 
-const SPAWN_DISTANCE := 22.0
-const WAVE_INTERVAL := 2.0
-const SPAWN_INTERVAL_BASE := 0.6
-const ENEMIES_PER_WAVE_BASE := 5
+const SPAWN_DISTANCE := 20.0
+const WAVE_INTERVAL := 1.2
+const SPAWN_INTERVAL_BASE := 0.35
+const ENEMIES_PER_WAVE_BASE := 8
 
 var _spawned_this_wave: int = 0
 var _target_this_wave: int = 0
@@ -18,11 +18,11 @@ func _ready() -> void:
 func _on_wave_changed(wave: int) -> void:
 	_wave_active = true
 	_spawned_this_wave = 0
-	# Gentler scaling: linear base + mild quadratic ramp
-	# Wave 1: 8, Wave 5: 27, Wave 10: 60, Wave 15: 105, Wave 20: 165
-	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 3 + int(wave * wave * 0.3)
-	_spawn_interval = maxf(0.12, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.3))
-	_spawn_timer = 0.2
+	# Aggressive scaling: more enemies, faster spawns
+	# Wave 1: 13, Wave 5: 43, Wave 10: 98, Wave 15: 173, Wave 20: 268
+	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 5 + int(wave * wave * 0.5)
+	_spawn_interval = maxf(0.08, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.4))
+	_spawn_timer = 0.1
 	_wave_timer = 0.0
 
 	if wave % 5 == 0:
@@ -57,8 +57,8 @@ func _spawn_enemy() -> void:
 		spawn_center = player.global_position
 
 	var angle := randf() * TAU
-	# Early waves spawn further out so enemies visibly approach
-	var dist := SPAWN_DISTANCE + maxf(0.0, (6 - GameState.wave)) * 5.0
+	# Enemies spawn close — keeps pressure high from the start
+	var dist := SPAWN_DISTANCE + maxf(0.0, (3 - GameState.wave)) * 3.0
 	var pos := spawn_center + Vector3(cos(angle), 0, sin(angle)) * dist
 
 	pos.x = clampf(pos.x, -48.0, 48.0)
@@ -70,35 +70,37 @@ func _spawn_enemy() -> void:
 func _pick_type() -> String:
 	var wave := GameState.wave
 	var roll := randf()
-	if wave < 3:
-		if roll < 0.85:
+	if wave < 2:
+		# Wave 1 is pure minions — ease the player in
+		return "minion"
+	elif wave < 4:
+		if roll < 0.40:
 			return "minion"
-		else:
-			return "rogue"
-	elif wave < 5:
-		if roll < 0.50:
-			return "minion"
-		elif roll < 0.75:
+		elif roll < 0.65:
 			return "warrior"
-		else:
-			return "rogue"
-	elif wave < 8:
-		if roll < 0.35:
-			return "minion"
-		elif roll < 0.55:
-			return "warrior"
-		elif roll < 0.75:
+		elif roll < 0.85:
 			return "rogue"
 		else:
 			return "mage"
-	else:
+	elif wave < 7:
 		if roll < 0.25:
 			return "minion"
 		elif roll < 0.45:
 			return "warrior"
-		elif roll < 0.60:
+		elif roll < 0.65:
 			return "rogue"
-		elif roll < 0.80:
+		elif roll < 0.85:
+			return "mage"
+		else:
+			return "necromancer"
+	else:
+		if roll < 0.20:
+			return "minion"
+		elif roll < 0.35:
+			return "warrior"
+		elif roll < 0.50:
+			return "rogue"
+		elif roll < 0.75:
 			return "mage"
 		else:
 			return "necromancer"
@@ -116,6 +118,13 @@ func _spawn_boss(wave: int) -> void:
 		var hud := get_tree().get_first_node_in_group("hud_node")
 		if hud and hud.has_method("track_boss"):
 			hud.track_boss(boss)
+		# Boss entrance slow-mo + camera zoom for dramatic flair
+		GameState.request_hit_stop(0.15)
+		GameState.request_shake(3.0)
+		# Temporary zoom-out so player can see the boss arriving
+		var cam_rig := get_tree().root.find_child("CameraRig", true, false)
+		if cam_rig and cam_rig.has_method("boss_zoom_out"):
+			cam_rig.boss_zoom_out()
 
 func _create_enemy(type: String, pos: Vector3) -> Node3D:
 	var container := get_parent().get_node_or_null("Enemies")

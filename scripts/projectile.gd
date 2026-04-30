@@ -9,9 +9,12 @@ var damage: float = 10.0
 var shatter: bool = false
 var weapon_type: String = "pulse"
 var chain_level: int = 0
+var piercing: int = 0
 var lifetime: float = DEFAULT_LIFETIME
 var _alive: float = 0.0
 var _hit: bool = false
+var _pierce_count: int = 0
+var _pierced_enemies: Array[int] = []
 
 var _colors := {
 	"pulse": Color(0.3, 0.9, 1.0),
@@ -26,6 +29,7 @@ func _ready() -> void:
 	shatter = get_meta("shatter", false)
 	weapon_type = get_meta("weapon_type", "pulse")
 	chain_level = get_meta("chain_level", 0)
+	piercing = get_meta("piercing", 0)
 	lifetime = get_meta("lifetime", DEFAULT_LIFETIME)
 	_build_visual()
 	_build_hitbox()
@@ -144,21 +148,36 @@ func _process(delta: float) -> void:
 	position.y = lerpf(position.y, 0.8, 5.0 * delta)
 
 func _on_hit(area: Area3D) -> void:
-	if _hit:
-		return
-	_hit = true
 	var enemy := area.get_parent()
-	if enemy and enemy.has_method("take_damage"):
-		enemy.take_damage(damage)
-		if chain_level > 0 and weapon_type == "pulse":
-			_do_chain(enemy, chain_level)
-		GameState.request_hit_stop(0.025)
+	if not enemy or not enemy.has_method("take_damage"):
+		return
+	# Skip enemies we already pierced through
+	var eid := enemy.get_instance_id()
+	if eid in _pierced_enemies:
+		return
+	_pierced_enemies.append(eid)
 
-	if shatter:
-		_spawn_shatter_fragments()
+	# Check if we can pierce further
+	var can_pierce := piercing > 0 and _pierce_count < piercing
+	if not can_pierce:
+		if _hit:
+			return
+		_hit = true
 
+	enemy.take_damage(damage)
+	if chain_level > 0 and weapon_type == "pulse":
+		_do_chain(enemy, chain_level)
+	GameState.request_hit_stop(0.025)
 	_hit_vfx()
-	queue_free()
+
+	if can_pierce:
+		_pierce_count += 1
+		# Reduce damage slightly per pierce
+		damage *= 0.75
+	else:
+		if shatter:
+			_spawn_shatter_fragments()
+		queue_free()
 
 func _do_chain(source_enemy: Node3D, bounces: int) -> void:
 	var enemies := get_tree().get_nodes_in_group("enemies")

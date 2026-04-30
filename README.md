@@ -20,42 +20,63 @@ A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBoo
 | **Q** | Ultimate — area damage burst |
 | **Scroll Wheel** | Zoom camera in/out |
 | **R** | Restart (game over) |
-| **ESC** | Restart (game over) / Quit |
+| **ESC** | Pause menu (Resume / Restart / Quit) |
 
 ## Features
 
 ### Combat
 - **Auto-aim targeting** — always locks onto the nearest enemy
-- **4 weapon systems** — Pulse Cannon (default), Railgun (piercing beam), Scatter Shot (shotgun cone), Chain Arc (bouncing lightning), Orbital Guard (orbiting damage spheres)
-- **Phase Dash** — invincibility frames with a fire trail that damages enemies
+- **Critical hits** — 10% base crit chance for 2x damage with distinct orange VFX
+- **Kill streaks** — rapid kills trigger escalating announcements (DOUBLE KILL through UNSTOPPABLE)
+- **5 weapon systems** — Pulse Cannon (default), Railgun (piercing beam), Scatter Shot (shotgun cone), Chain Arc (bouncing lightning), Orbital Guard (orbiting damage spheres), plus Piercing Rounds upgrade
+- **Phase Dash** — invincibility frames with after-image trail effect and fire trail
 - **Ultimate Ability** — area-of-effect burst with screen shake and hit-stop
 
 ### Enemies
 Six enemy types, each with a unique 3D model and neon glow:
 - **Minion** — basic skeleton, low HP, moderate speed
 - **Warrior** — armored, slow, high HP
-- **Mage** — ranged specialist, purple glow
-- **Rogue** — fast and agile, green glow
-- **Necromancer** — tanky caster, appears in later waves
-- **Golem** (Boss) — massive, spawns every 5th wave
+- **Mage** — ranged specialist, purple glow, fires homing bolts from distance
+- **Rogue** — fast and agile, green glow, periodically sidesteps to dodge projectiles
+- **Necromancer** — ranged summoner, stays at distance and periodically summons minion skeletons with a purple VFX ring
+- **Golem** (Boss) — massive, spawns every 5th wave with dedicated boss music
 
 ### Progression
 - Kill enemies to drop **XP orbs**
 - Level up to choose **1 of 3 random upgrades**
-- Upgrades include: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, and all 4 weapon unlocks
+- Upgrades include: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, phase shift (dash cooldown), piercing rounds, and all 4 weapon unlocks
+- **Wave survival bonus** — complete a wave without taking damage for bonus XP with "PERFECT WAVE" announcement
+- **Level-up magnet pulse** — all XP orbs get pulled toward you when you level up
 
 ### Visuals & Audio
 - **Neon cyberpunk aesthetic** — dark ground with animated grid shader, emissive materials, bloom/glow post-processing
-- **Screen shake** with logarithmic scaling: `S = α · log₁₀(D + 1)`
+- **Subtle screen shake** — gentle directional shake with logarithmic scaling
 - **Hit-stop** — brief time freeze on heavy hits for impact feel
-- **Directional camera shake** — biased toward damage source
 - **Boss HP bar** — dedicated top-center health bar during boss waves with fade-in/out
-- **Floating damage numbers** — color-coded damage text on enemy hits, with big-hit scaling for heavy damage
+- **Floating damage numbers** — color-coded damage text on enemy hits, with big-hit scaling
 - **Low HP danger vignette** — red pulsing screen edges when HP drops below 30%
+- **HP bar color shift** — bar transitions from cyan to red at low health
 - **Level-up flash + invincibility** — cyan screen flash and 1.5s invincibility after picking an upgrade
 - **XP orb collect burst** — green ring flash + spark particles on orb pickup
-- **Synthwave soundtrack** — gameplay and boss music with smooth crossfading between tracks
-- **Full SFX** — shooting, impacts, deaths, level-ups, dashes, UI clicks
+- **Dash after-images** — translucent player copies trail behind during Phase Dash
+- **Boss defeat celebration** — golden screen flash, victory sting, and "BOSS DEFEATED" announcement
+- **Kill streak announcements** — DOUBLE KILL, TRIPLE KILL, MULTI KILL, KILLING SPREE, RAMPAGE, UNSTOPPABLE
+- **Critical hit VFX** — orange CRIT text with larger font, extra knockback, and orange flash
+- **Weapon glow scaling** — player light intensity and color shift as fire rate increases
+- **Wave countdown timer** — shows time until next wave between rounds
+- **Boss wave entrance** — dramatic scaled-up text with bounce animation for boss waves
+- **Game over stats** — shows total damage dealt, kills/min, avg DPS alongside wave, kills, level, and time survived
+- **Overclock HUD warning** — pulsing red indicator when overclock is active and draining HP
+- **HP regen visual tick** — subtle "+HP" flash near health bar when regeneration heals
+- **Pause menu** — ESC to pause with Resume, Restart, and Quit options
+- **Time survived** — total survival time displayed on game over screen
+- **Evolving soundtrack** — music rotates through 4 tracks as waves progress, with boss-specific tracks and victory stings
+- **Full SFX** — shooting, impacts, deaths, XP pickups, level-ups, dashes, UI clicks, upgrade dice roll, hover sounds
+- **Ambient neon hum** — low background drone that shifts pitch and volume as HP changes, adding tension at low health
+- **Dash speed lines** — radial blur overlay during Phase Dash for kinetic feel
+- **Enemy count HUD** — live enemy count display during waves
+- **DPS counter** — real-time damage-per-second readout
+- **Boss entrance zoom** — camera pulls out temporarily when a boss spawns for dramatic flair
 
 ## Running
 

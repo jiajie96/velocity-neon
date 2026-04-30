@@ -21,6 +21,17 @@ const MAGE_RANGE := 12.0
 const MAGE_PROJ_SPEED := 10.0
 const MAGE_PROJ_DAMAGE := 8.0
 
+# Rogue dodge behavior
+var _rogue_dodge_timer: float = 1.5
+const ROGUE_DODGE_CD := 1.8
+const ROGUE_DODGE_DIST := 2.5
+
+# Necromancer summoning behavior
+var _necro_summon_timer: float = 4.0
+const NECRO_SUMMON_CD := 5.0
+const NECRO_SUMMON_COUNT := 2
+const NECRO_KEEP_RANGE := 10.0
+
 func _ready() -> void:
 	add_to_group("enemies")
 	var meta_type: String = get_meta("_enemy_type", "minion")
@@ -153,6 +164,29 @@ func _process(delta: float) -> void:
 				_fire_mage_bolt(dir)
 			# Slow approach — mages still drift closer but much slower
 			position += dir * spd * 0.3 * delta
+		elif enemy_type == "necromancer":
+			# Necromancers stay at range and summon minions
+			_necro_summon_timer -= delta
+			if _necro_summon_timer <= 0.0:
+				_necro_summon_timer = NECRO_SUMMON_CD
+				_necro_summon()
+			if dist_to_player < NECRO_KEEP_RANGE:
+				# Back away slowly to maintain distance
+				position -= dir * spd * 0.4 * delta
+			else:
+				position += dir * spd * 0.3 * delta
+		elif enemy_type == "rogue":
+			# Rogues sidestep periodically to dodge projectiles
+			_rogue_dodge_timer -= delta
+			if _rogue_dodge_timer <= 0.0:
+				_rogue_dodge_timer = ROGUE_DODGE_CD + randf_range(-0.3, 0.3)
+				var side := Vector3(-dir.z, 0, dir.x) * (1.0 if randf() > 0.5 else -1.0)
+				var dodge_pos := position + side * ROGUE_DODGE_DIST
+				dodge_pos.x = clampf(dodge_pos.x, -48.0, 48.0)
+				dodge_pos.z = clampf(dodge_pos.z, -48.0, 48.0)
+				var tw := create_tween()
+				tw.tween_property(self, "position", dodge_pos, 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+			position += dir * spd * delta
 		else:
 			position += dir * spd * delta
 		var model := get_node_or_null("Model")
@@ -211,25 +245,75 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 	tw.tween_property(bolt, "position", end_pos, 20.0 / bolt_spd)
 	tw.tween_callback(bolt.queue_free)
 
+func _necro_summon() -> void:
+	var container := get_parent()
+	if not container:
+		return
+	# Limit total enemies to avoid flooding the scene
+	var current_enemies := get_tree().get_nodes_in_group("enemies").size()
+	if current_enemies > 80:
+		return
+	# Summon VFX — purple flash ring at feet
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 1.0
+	cyl.bottom_radius = 1.0
+	cyl.height = 0.03
+	ring.mesh = cyl
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(0.6, 0.0, 0.9, 0.7)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(0.6, 0.0, 0.9)
+	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = ring_mat
+	ring.position = global_position
+	ring.position.y = 0.2
+	container.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.set_parallel(true)
+	rtw.tween_property(ring, "scale", Vector3(2.5, 1.0, 2.5), 0.4)
+	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.4)
+	rtw.set_parallel(false)
+	rtw.tween_callback(ring.queue_free)
+	# Spawn minions around the necromancer
+	for i in NECRO_SUMMON_COUNT:
+		var angle := TAU / float(NECRO_SUMMON_COUNT) * float(i) + randf() * 0.5
+		var offset := Vector3(cos(angle), 0, sin(angle)) * 2.0
+		var spawn_pos := global_position + offset
+		spawn_pos.x = clampf(spawn_pos.x, -48.0, 48.0)
+		spawn_pos.z = clampf(spawn_pos.z, -48.0, 48.0)
+		var minion := Node3D.new()
+		minion.name = "Enemy_minion"
+		minion.set_script(load("res://scripts/enemy.gd"))
+		minion.position = spawn_pos
+		minion.set_meta("_enemy_type", "minion")
+		minion.set_meta("_enemy_wave", GameState.wave)
+		container.add_child(minion)
+
 func take_damage(amount: float) -> void:
 	if _dead:
 		return
-	hp -= amount
+	# Critical hit check
+	var is_crit := randf() < GameState.crit_chance
+	var final_amount := amount * (2.0 if is_crit else 1.0)
+	hp -= final_amount
+	GameState.add_damage_dealt(final_amount)
 	_flash_timer = FLASH_DURATION
 	if _mat:
-		_mat.emission = Color.WHITE
-		_mat.emission_energy_multiplier = 6.0
-	# Knockback
+		_mat.emission = Color(1.0, 0.6, 0.0) if is_crit else Color.WHITE
+		_mat.emission_energy_multiplier = 10.0 if is_crit else 6.0
+	# Knockback — crits knock back harder
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:
 		var kb_dir := (global_position - player.global_position).normalized()
 		kb_dir.y = 0.0
-		position += kb_dir * 0.3
-	_spawn_damage_number(amount)
+		position += kb_dir * (0.6 if is_crit else 0.3)
+	_spawn_damage_number(final_amount, is_crit)
 	if hp <= 0.0:
 		_die()
 
-func _spawn_damage_number(amount: float) -> void:
+func _spawn_damage_number(amount: float, is_crit: bool = false) -> void:
 	var cam := get_viewport().get_camera_3d()
 	if not cam:
 		return
@@ -238,13 +322,21 @@ func _spawn_damage_number(amount: float) -> void:
 	if not canvas:
 		return
 	var label := Label.new()
-	label.text = str(int(amount))
-	var is_big_hit := amount >= 30.0
-	label.add_theme_font_size_override("font_size", 20 if not is_big_hit else 28)
-	label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3) if not is_big_hit else Color(1.0, 0.3, 0.1))
-	if is_big_hit:
+	label.text = ("CRIT " if is_crit else "") + str(int(amount))
+	var is_big_hit := amount >= 30.0 or is_crit
+	if is_crit:
+		label.add_theme_font_size_override("font_size", 32)
+		label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0))
+		label.add_theme_color_override("font_outline_color", Color(1.0, 0.2, 0.0))
+		label.add_theme_constant_override("outline_size", 4)
+	elif is_big_hit:
+		label.add_theme_font_size_override("font_size", 28)
+		label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.1))
 		label.add_theme_color_override("font_outline_color", Color(1.0, 0.0, 0.0))
 		label.add_theme_constant_override("outline_size", 3)
+	else:
+		label.add_theme_font_size_override("font_size", 20)
+		label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3))
 	label.position = screen_pos + Vector2(randf_range(-20, 20), randf_range(-10, 5))
 	label.z_index = 100
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -253,8 +345,8 @@ func _spawn_damage_number(amount: float) -> void:
 	tw.set_parallel(true)
 	tw.tween_property(label, "position:y", label.position.y - 50.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tw.tween_property(label, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-	if is_big_hit:
-		tw.tween_property(label, "scale", Vector2(1.3, 1.3), 0.08).set_ease(Tween.EASE_OUT)
+	if is_big_hit or is_crit:
+		tw.tween_property(label, "scale", Vector2(1.4, 1.4), 0.08).set_ease(Tween.EASE_OUT)
 		tw.chain().tween_property(label, "scale", Vector2(1.0, 1.0), 0.15)
 	tw.set_parallel(false)
 	tw.tween_callback(label.queue_free)
@@ -268,9 +360,15 @@ func _die() -> void:
 		GameState.request_shake(4.0)
 		GameState.request_hit_stop(0.1)
 		Audio.sfx_boss_defeat()
+		Audio.play_victory_sting()
 		GameState.boss_defeated.emit()
-		# Switch back to normal music after boss
-		Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
+		# Brief victory moment before resuming normal music
+		var tree := get_tree()
+		if tree:
+			tree.create_timer(3.0).timeout.connect(func():
+				if not GameState.game_over:
+					Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
+			)
 	else:
 		GameState.request_shake(1.0)
 	_death_vfx()

@@ -39,11 +39,13 @@ static func _ensure_init() -> void:
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		Upgrade.new("overclock", "OVERCLOCK", "2x fire rate, drains HP", Color(1.0, 0.0, 0.3), "OC", 1),
+		Upgrade.new("phase_shift", "PHASE SHIFT", "Dash cooldown -25%", Color(0.3, 0.9, 1.0), "<<", 3),
 		# Weapon upgrades
 		Upgrade.new("railgun", "RAILGUN", "Piercing beam every 2s", Color(0.3, 0.5, 1.0), "==", 3),
 		Upgrade.new("scatter", "SCATTER SHOT", "5-pellet burst every 1.5s", Color(1.0, 0.5, 0.0), ".:"),
 		Upgrade.new("chain", "CHAIN ARC", "Shots chain to nearby foes", Color(0.4, 0.9, 1.0), "//", 3),
 		Upgrade.new("orbital", "ORBITAL GUARD", "Orbiting damage orbs", Color(0.0, 1.0, 0.6), "@@", 3),
+		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -82,6 +84,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.gravity_well_strength += 0.35
 		"overclock":
 			GameState.overclock_active = true
+		"phase_shift":
+			GameState.dash_cooldown *= 0.75
 		"railgun":
 			GameState.railgun_level += 1
 		"scatter":
@@ -90,6 +94,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.chain_level += 1
 		"orbital":
 			GameState.orbital_level += 1
+		"piercing":
+			GameState.piercing_level += 1
 
 static func reset_all() -> void:
 	_initialized = false

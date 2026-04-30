@@ -22,9 +22,17 @@ var _vignette: ColorRect
 var _vignette_mat: ShaderMaterial
 var _vignette_pulse: float = 0.0
 var _levelup_flash: ColorRect
-var _streak_label: Label
 var _overclock_label: Label
 var _regen_label: Label
+var _pause_panel: PanelContainer
+var _streak_label: Label
+var _wave_timer_label: Label
+var _speed_lines: ColorRect
+var _speed_lines_mat: ShaderMaterial
+var _enemy_count_label: Label
+var _dps_label: Label
+var _dps_window: Array[float] = []
+var _dps_timer: float = 0.0
 
 var _current_choices: Array = []
 
@@ -40,9 +48,14 @@ func _ready() -> void:
 	_build_boss_bar()
 	_build_danger_vignette()
 	_build_levelup_flash()
-	_build_streak_label()
 	_build_overclock_indicator()
 	_build_regen_indicator()
+	_build_streak_label()
+	_build_wave_timer_label()
+	_build_speed_lines()
+	_build_enemy_count_label()
+	_build_dps_label()
+	_build_pause_menu()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -50,8 +63,9 @@ func _ready() -> void:
 	GameState.kills_changed.connect(_on_kills_changed)
 	GameState.leveled_up.connect(_on_leveled_up)
 	GameState.player_died.connect(_on_player_died)
-	GameState.kill_streak.connect(_on_kill_streak)
 	GameState.boss_defeated.connect(_on_boss_defeated)
+	GameState.kill_streak.connect(_on_kill_streak)
+	GameState.perfect_wave.connect(_on_perfect_wave)
 
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
@@ -122,7 +136,8 @@ Auto-Aim         Shoots nearest enemy automatically
 SPACE            Phase Dash (invincible + fire trail)
 Q                Ultimate Ability (area damage burst)
 Scroll Wheel     Zoom camera in/out
-ESC              Restart (game over) / Quit
+ESC              Pause / Menu
+R                Restart (game over)
 
 Survive relentless waves of enemies. Kill them for XP.
 Level up to choose powerful upgrades.
@@ -532,21 +547,6 @@ func _build_levelup_flash() -> void:
 	_levelup_flash.color = Color(0.0, 1.0, 0.9, 0.0)
 	add_child(_levelup_flash)
 
-func _build_streak_label() -> void:
-	_streak_label = Label.new()
-	_streak_label.text = ""
-	_streak_label.add_theme_font_size_override("font_size", 32)
-	_streak_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
-	_streak_label.add_theme_color_override("font_outline_color", Color(1.0, 0.3, 0.0))
-	_streak_label.add_theme_constant_override("outline_size", 3)
-	_streak_label.set_anchors_preset(Control.PRESET_CENTER)
-	_streak_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_streak_label.position = Vector2(-200, 40)
-	_streak_label.custom_minimum_size = Vector2(400, 50)
-	_streak_label.modulate.a = 0.0
-	_streak_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_streak_label)
-
 func _build_overclock_indicator() -> void:
 	_overclock_label = Label.new()
 	_overclock_label.text = "OVERCLOCK ACTIVE"
@@ -569,36 +569,173 @@ func _build_regen_indicator() -> void:
 	_regen_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_regen_label)
 
-func _on_kill_streak(count: int) -> void:
-	if not _streak_label:
+func _build_streak_label() -> void:
+	_streak_label = Label.new()
+	_streak_label.text = ""
+	_streak_label.add_theme_font_size_override("font_size", 30)
+	_streak_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0, 0.0))
+	_streak_label.add_theme_color_override("font_outline_color", Color(1.0, 0.3, 0.0))
+	_streak_label.add_theme_constant_override("outline_size", 3)
+	_streak_label.set_anchors_preset(Control.PRESET_CENTER)
+	_streak_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_streak_label.position = Vector2(-150, 60)
+	_streak_label.custom_minimum_size = Vector2(300, 40)
+	_streak_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_streak_label)
+
+func _build_wave_timer_label() -> void:
+	_wave_timer_label = Label.new()
+	_wave_timer_label.text = ""
+	_wave_timer_label.add_theme_font_size_override("font_size", 16)
+	_wave_timer_label.add_theme_color_override("font_color", Color(0.6, 0.5, 0.8, 0.7))
+	_wave_timer_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_wave_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_wave_timer_label.position = Vector2(-100, 50)
+	_wave_timer_label.custom_minimum_size = Vector2(200, 20)
+	_wave_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_wave_timer_label)
+
+func _build_speed_lines() -> void:
+	_speed_lines = ColorRect.new()
+	_speed_lines.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_speed_lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_speed_lines.color = Color(0, 0, 0, 0)
+	var shader_code := """
+shader_type canvas_item;
+uniform float intensity : hint_range(0.0, 1.0) = 0.0;
+void fragment() {
+	vec2 center = vec2(0.5);
+	vec2 dir = UV - center;
+	float dist = length(dir);
+	float angle = atan(dir.y, dir.x);
+	float lines = abs(sin(angle * 20.0));
+	float radial = smoothstep(0.15, 0.5, dist);
+	float alpha = lines * radial * intensity * 0.35;
+	COLOR = vec4(0.3, 0.85, 1.0, alpha);
+}
+"""
+	var shader := Shader.new()
+	shader.code = shader_code
+	_speed_lines_mat = ShaderMaterial.new()
+	_speed_lines_mat.shader = shader
+	_speed_lines_mat.set_shader_parameter("intensity", 0.0)
+	_speed_lines.material = _speed_lines_mat
+	add_child(_speed_lines)
+
+func _build_enemy_count_label() -> void:
+	_enemy_count_label = Label.new()
+	_enemy_count_label.text = ""
+	_enemy_count_label.add_theme_font_size_override("font_size", 13)
+	_enemy_count_label.add_theme_color_override("font_color", Color(0.8, 0.4, 0.6, 0.7))
+	_enemy_count_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_enemy_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_enemy_count_label.position = Vector2(-170, 68)
+	_enemy_count_label.custom_minimum_size = Vector2(150, 20)
+	_enemy_count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_enemy_count_label)
+
+func _build_dps_label() -> void:
+	_dps_label = Label.new()
+	_dps_label.text = ""
+	_dps_label.add_theme_font_size_override("font_size", 12)
+	_dps_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.3, 0.6))
+	_dps_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_dps_label.position = Vector2(20, 68)
+	_dps_label.custom_minimum_size = Vector2(120, 20)
+	_dps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_dps_label)
+
+func _build_pause_menu() -> void:
+	_pause_panel = PanelContainer.new()
+	_pause_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_pause_panel.custom_minimum_size = Vector2(320, 220)
+	_pause_panel.position = Vector2(-160, -110)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.02, 0.01, 0.06, 0.95)
+	style.border_color = Color(0.0, 0.8, 1.0, 0.5)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(10)
+	style.content_margin_left = 30
+	style.content_margin_right = 30
+	style.content_margin_top = 25
+	style.content_margin_bottom = 25
+	_pause_panel.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	_pause_panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "PAUSED"
+	title.add_theme_color_override("font_color", Color(0.0, 1.0, 0.9))
+	title.add_theme_font_size_override("font_size", 28)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 8
+	vbox.add_child(spacer)
+
+	var btn_style_normal := StyleBoxFlat.new()
+	btn_style_normal.bg_color = Color(0.05, 0.03, 0.12, 0.9)
+	btn_style_normal.border_color = Color(0.3, 0.2, 0.6, 0.5)
+	btn_style_normal.set_border_width_all(1)
+	btn_style_normal.set_corner_radius_all(6)
+	btn_style_normal.content_margin_top = 8
+	btn_style_normal.content_margin_bottom = 8
+
+	var btn_style_hover := StyleBoxFlat.new()
+	btn_style_hover.bg_color = Color(0.08, 0.05, 0.18, 0.95)
+	btn_style_hover.border_color = Color(0.0, 1.0, 0.9, 0.8)
+	btn_style_hover.set_border_width_all(1)
+	btn_style_hover.set_corner_radius_all(6)
+	btn_style_hover.content_margin_top = 8
+	btn_style_hover.content_margin_bottom = 8
+
+	for item in [["RESUME", "_on_pause_resume"], ["RESTART", "_on_pause_restart"], ["QUIT", "_on_pause_quit"]]:
+		var btn := Button.new()
+		btn.text = item[0]
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.add_theme_color_override("font_color", Color(0.8, 0.75, 0.95))
+		btn.add_theme_color_override("font_hover_color", Color(0.0, 1.0, 0.9))
+		btn.add_theme_stylebox_override("normal", btn_style_normal.duplicate())
+		btn.add_theme_stylebox_override("hover", btn_style_hover.duplicate())
+		btn.add_theme_stylebox_override("pressed", btn_style_hover.duplicate())
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		btn.pressed.connect(Callable(self, item[1]))
+		btn.mouse_entered.connect(func(): Audio.sfx_ui_hover())
+		vbox.add_child(btn)
+
+	_pause_panel.visible = false
+	_pause_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	_pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_pause_panel)
+
+func _on_pause_resume() -> void:
+	Audio.sfx_ui_click()
+	_pause_panel.visible = false
+	get_tree().paused = false
+
+func _on_pause_restart() -> void:
+	Audio.sfx_ui_click()
+	_pause_panel.visible = false
+	get_tree().paused = false
+	GameState.reset()
+	get_tree().reload_current_scene()
+
+func _on_pause_quit() -> void:
+	get_tree().quit()
+
+func toggle_pause() -> void:
+	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
 		return
-	var text := ""
-	var color := Color(1.0, 0.8, 0.0)
-	if count >= 20:
-		text = "UNSTOPPABLE"
-		color = Color(1.0, 0.0, 0.3)
-	elif count >= 15:
-		text = "RAMPAGE"
-		color = Color(1.0, 0.2, 0.0)
-	elif count >= 10:
-		text = "KILLING SPREE"
-		color = Color(1.0, 0.5, 0.0)
-	elif count >= 5:
-		text = "MULTI KILL"
-		color = Color(1.0, 0.7, 0.0)
-	elif count >= 3:
-		text = "TRIPLE KILL"
-		color = Color(1.0, 0.9, 0.2)
+	if _pause_panel.visible:
+		_on_pause_resume()
 	else:
-		return
-	_streak_label.text = text
-	_streak_label.add_theme_color_override("font_color", color)
-	_streak_label.modulate.a = 1.0
-	_streak_label.scale = Vector2(1.3, 1.3)
-	var tw := create_tween()
-	tw.tween_property(_streak_label, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(0.8)
-	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4)
+		Audio.sfx_ui_click()
+		_pause_panel.visible = true
+		get_tree().paused = true
 
 func _on_boss_defeated() -> void:
 	if not _levelup_flash:
@@ -607,16 +744,50 @@ func _on_boss_defeated() -> void:
 	_levelup_flash.color = Color(1.0, 0.8, 0.0, 0.5)
 	var tw := create_tween()
 	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	# Show "BOSS DEFEATED" text via streak label
-	if _streak_label:
-		_streak_label.text = "BOSS DEFEATED"
-		_streak_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
-		_streak_label.modulate.a = 1.0
-		_streak_label.scale = Vector2(1.5, 1.5)
+	# Show "BOSS DEFEATED" via wave announce label
+	if wave_announce:
+		wave_announce.text = "BOSS DEFEATED"
+		wave_announce.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
+		wave_announce.modulate.a = 1.0
+		wave_announce.scale = Vector2(1.3, 1.3)
 		var stw := create_tween()
-		stw.tween_property(_streak_label, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT)
+		stw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT)
 		stw.tween_interval(1.5)
-		stw.tween_property(_streak_label, "modulate:a", 0.0, 0.5)
+		stw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+
+func _on_kill_streak(count: int) -> void:
+	if not _streak_label:
+		return
+	var streak_names := {
+		2: "DOUBLE KILL",
+		3: "TRIPLE KILL",
+		4: "MULTI KILL",
+		5: "KILLING SPREE",
+		6: "RAMPAGE",
+	}
+	var text: String = streak_names.get(count, "UNSTOPPABLE x%d" % count) if count <= 6 else "UNSTOPPABLE x%d" % count
+	if count < 2:
+		return
+	_streak_label.text = text
+	_streak_label.modulate.a = 1.0
+	var font_size := mini(30 + (count - 2) * 4, 48)
+	_streak_label.add_theme_font_size_override("font_size", font_size)
+	var tw := create_tween()
+	tw.tween_property(_streak_label, "modulate:a", 1.0, 0.05)
+	tw.tween_interval(0.8)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4)
+
+func _on_perfect_wave(bonus_xp: float) -> void:
+	if not wave_announce:
+		return
+	wave_announce.text = "PERFECT WAVE! +%d XP" % int(bonus_xp)
+	wave_announce.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
+	wave_announce.modulate.a = 1.0
+	wave_announce.scale = Vector2(1.2, 1.2)
+	var tw := create_tween()
+	tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.5)
+	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
 
 func _trigger_levelup_flash() -> void:
 	if not _levelup_flash:
@@ -724,6 +895,18 @@ func _on_hp_changed(current: float, maximum: float) -> void:
 	if hp_bar:
 		hp_bar.max_value = maximum
 		hp_bar.value = current
+		# Shift HP bar color from cyan to red when low
+		var ratio := current / maxf(maximum, 1.0)
+		var fill_style := hp_bar.get_theme_stylebox("fill") as StyleBoxFlat
+		if fill_style:
+			if ratio < 0.3:
+				fill_style.bg_color = Color(1.0, 0.15, 0.1, 0.9)
+			elif ratio < 0.5:
+				var t := (ratio - 0.3) / 0.2
+				fill_style.bg_color = Color(1.0, 0.15, 0.1).lerp(Color(0.0, 1.0, 0.8), t)
+				fill_style.bg_color.a = 0.9
+			else:
+				fill_style.bg_color = Color(0.0, 1.0, 0.8, 0.9)
 	if hp_label:
 		hp_label.text = "HP: %d/%d" % [ceili(current), ceili(maximum)]
 
@@ -737,13 +920,25 @@ func _on_wave_changed(wave: int) -> void:
 		wave_label.text = "WAVE %d" % wave
 	if wave_announce:
 		var is_boss := wave % 5 == 0
-		wave_announce.text = "BOSS WAVE %d" % wave if is_boss else "WAVE %d" % wave
-		wave_announce.add_theme_color_override("font_color",
-			Color(1.0, 0.3, 0.0) if is_boss else Color(1.0, 0.0, 0.8))
+		if is_boss:
+			wave_announce.text = ">> BOSS WAVE %d <<" % wave
+			wave_announce.add_theme_color_override("font_color", Color(1.0, 0.3, 0.0))
+			wave_announce.add_theme_font_size_override("font_size", 46)
+		else:
+			wave_announce.text = "WAVE %d" % wave
+			wave_announce.add_theme_color_override("font_color", Color(1.0, 0.0, 0.8))
+			wave_announce.add_theme_font_size_override("font_size", 40)
+		wave_announce.scale = Vector2(1.3, 1.3) if is_boss else Vector2(1.0, 1.0)
 		var tw := create_tween()
-		tw.tween_property(wave_announce, "modulate:a", 1.0, 0.3)
-		tw.tween_interval(1.5)
-		tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+		if is_boss:
+			tw.tween_property(wave_announce, "modulate:a", 1.0, 0.15)
+			tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+			tw.tween_interval(2.0)
+			tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+		else:
+			tw.tween_property(wave_announce, "modulate:a", 1.0, 0.3)
+			tw.tween_interval(1.5)
+			tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
 
 func _on_kills_changed(kills: int) -> void:
 	if kills_label:
@@ -755,6 +950,7 @@ func _on_leveled_up(level: int) -> void:
 	_show_upgrade_choices()
 
 func _show_upgrade_choices() -> void:
+	Audio.sfx_dice_roll()
 	_current_choices = UpgradeSystem.get_random_choices(3)
 	for i in 3:
 		if i < _current_choices.size():
@@ -793,11 +989,25 @@ func _on_upgrade_chosen(index: int) -> void:
 
 func _on_player_died() -> void:
 	Audio.play_music("res://assets/audio/music/defeat.ogg", -4.0)
+	Audio.stop_ambient_hum()
 	game_over_panel.visible = true
 	var stats_label := game_over_panel.find_child("StatsLabel") as Label
 	if stats_label:
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d" % [
-			GameState.wave, GameState.kills, GameState.level]
+		var mins := int(GameState.time_survived) / 60
+		var secs := int(GameState.time_survived) % 60
+		var dmg_text := _format_damage(GameState.total_damage_dealt)
+		var kpm := GameState.kills / maxf(GameState.time_survived / 60.0, 0.01)
+		var avg_dps := GameState.total_damage_dealt / maxf(GameState.time_survived, 1.0)
+		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d\nSurvived %d:%02d  |  Damage: %s\nKills/min: %.1f  |  Avg DPS: %s" % [
+			GameState.wave, GameState.kills, GameState.level, mins, secs, dmg_text,
+			kpm, _format_damage(avg_dps)]
+
+func _format_damage(amount: float) -> String:
+	if amount >= 1000000:
+		return "%.1fM" % (amount / 1000000.0)
+	elif amount >= 1000:
+		return "%.1fK" % (amount / 1000.0)
+	return str(int(amount))
 
 # === PROCESS ===
 
@@ -807,6 +1017,11 @@ func _process(delta: float) -> void:
 	_update_danger_vignette(delta)
 	_update_overclock_indicator(delta)
 	_update_regen_indicator(delta)
+	_update_wave_timer()
+	_update_speed_lines(delta)
+	_update_enemy_count()
+	_update_dps(delta)
+	Audio.update_hum_pitch()
 
 func _update_indicators() -> void:
 	var player: Node = get_tree().get_first_node_in_group("player_node")
@@ -858,16 +1073,42 @@ func _update_regen_indicator(delta: float) -> void:
 	else:
 		_regen_tick_t = 0.0
 
+func _update_wave_timer() -> void:
+	if not _wave_timer_label:
+		return
+	var spawner := get_tree().root.find_child("EnemySpawner", true, false)
+	if spawner and spawner.get("_wave_active") != null:
+		if not spawner._wave_active and spawner._wave_timer > 0.0:
+			_wave_timer_label.text = "NEXT WAVE IN %.1f" % spawner._wave_timer
+			_wave_timer_label.visible = true
+		else:
+			_wave_timer_label.visible = false
+	else:
+		_wave_timer_label.visible = false
+
 func _unhandled_input(event: InputEvent) -> void:
 	if title_screen and title_screen.visible:
 		if event is InputEventKey and event.pressed:
 			if event.physical_keycode == KEY_SPACE or event.physical_keycode == KEY_ENTER:
 				_dismiss_title()
+		return
+	if event is InputEventKey and event.pressed:
+		if event.physical_keycode == KEY_ESCAPE:
+			if GameState.game_over:
+				GameState.reset()
+				get_tree().reload_current_scene()
+			elif not GameState.paused_for_upgrade:
+				toggle_pause()
+		elif event.physical_keycode == KEY_R:
+			if GameState.game_over:
+				GameState.reset()
+				get_tree().reload_current_scene()
 
 func _dismiss_title() -> void:
 	if not title_screen:
 		return
 	Audio.sfx_ui_click()
+	Audio.start_ambient_hum()
 	var tw := create_tween()
 	tw.tween_property(title_screen, "modulate:a", 0.0, 0.5)
 	tw.tween_callback(func():
@@ -876,3 +1117,47 @@ func _dismiss_title() -> void:
 		GameState.game_started = true
 		Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
 	)
+
+func _update_speed_lines(_delta: float) -> void:
+	if not _speed_lines_mat:
+		return
+	var player := get_tree().get_first_node_in_group("player_node")
+	var target := 0.0
+	if player and player.get("is_dashing") and player.is_dashing:
+		target = 1.0
+	var current: float = _speed_lines_mat.get_shader_parameter("intensity")
+	_speed_lines_mat.set_shader_parameter("intensity", lerpf(current, target, 12.0 * _delta))
+
+func _update_enemy_count() -> void:
+	if not _enemy_count_label:
+		return
+	if not GameState.game_started or GameState.game_over:
+		_enemy_count_label.text = ""
+		return
+	var count := get_tree().get_nodes_in_group("enemies").size()
+	if count > 0:
+		_enemy_count_label.text = "ENEMIES: %d" % count
+	else:
+		_enemy_count_label.text = ""
+
+func _update_dps(delta: float) -> void:
+	if not _dps_label:
+		return
+	if not GameState.game_started or GameState.game_over:
+		_dps_label.text = ""
+		return
+	_dps_timer += delta
+	if _dps_timer >= 0.5:
+		_dps_timer = 0.0
+		_dps_window.append(GameState.total_damage_dealt)
+		# Keep 10 snapshots (5 seconds of data)
+		if _dps_window.size() > 10:
+			_dps_window.remove_at(0)
+		if _dps_window.size() >= 2:
+			var dmg_diff: float = _dps_window[-1] - _dps_window[0]
+			var time_span: float = (_dps_window.size() - 1) * 0.5
+			var dps: float = dmg_diff / maxf(time_span, 0.01)
+			if dps >= 1000.0:
+				_dps_label.text = "DPS: %.1fK" % (dps / 1000.0)
+			else:
+				_dps_label.text = "DPS: %d" % int(dps)

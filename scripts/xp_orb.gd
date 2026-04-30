@@ -14,6 +14,10 @@ func _ready() -> void:
 	xp_value = get_meta("xp_value", 10.0)
 	_time = randf() * TAU
 	_build_visual()
+	GameState.xp_magnet_pulse.connect(_on_magnet_pulse)
+
+func _on_magnet_pulse() -> void:
+	_magnetized = true
 
 func _build_visual() -> void:
 	var mesh_inst := MeshInstance3D.new()
@@ -71,6 +75,7 @@ func _process(delta: float) -> void:
 func _collect() -> void:
 	_collected = true
 	GameState.add_xp(xp_value)
+	Audio.sfx_xp_pickup()
 	_spawn_collect_burst()
 
 	var mesh := get_node_or_null("Mesh")

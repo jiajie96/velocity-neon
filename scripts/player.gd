@@ -36,7 +36,6 @@ func _ready() -> void:
 	_build_visual()
 	_build_hurtbox()
 	_build_light()
-	GameState.dash_reset.connect(_on_dash_reset)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -115,6 +114,7 @@ func _process(delta: float) -> void:
 	_update_orbitals(delta)
 	_ultimate(delta)
 	_check_contact_damage(delta)
+	_update_weapon_glow()
 
 func _move(delta: float) -> void:
 	if is_dashing:
@@ -224,9 +224,6 @@ func _spawn_afterimage() -> void:
 	tw.tween_property(mat, "albedo_color:a", 0.0, 0.25)
 	tw.tween_callback(ghost.queue_free)
 
-func _on_dash_reset() -> void:
-	dash_cd_timer = 0.0
-
 # === PRIMARY WEAPON ===
 
 func _shoot(delta: float) -> void:
@@ -269,6 +266,7 @@ func _fire_projectile(container: Node, dir: Vector3, weapon_type: String) -> voi
 	proj.set_meta("shatter", GameState.has_shatter)
 	proj.set_meta("weapon_type", weapon_type)
 	proj.set_meta("chain_level", GameState.chain_level)
+	proj.set_meta("piercing", GameState.piercing_level)
 	container.add_child(proj)
 
 func _spawn_muzzle_flash(dir: Vector3) -> void:
@@ -520,3 +518,19 @@ func _check_contact_damage(delta: float) -> void:
 		kb_dir.y = 0.0
 		position += kb_dir * 1.5
 		GameState.request_shake(1.5, kb_dir)
+
+func _update_weapon_glow() -> void:
+	var glow := get_node_or_null("PlayerGlow") as OmniLight3D
+	if not glow:
+		return
+	# Base fire rate is 2.2 — scale glow as fire rate increases
+	var rate_ratio := GameState.fire_rate / 2.2
+	glow.light_energy = clampf(2.5 * rate_ratio, 2.5, 8.0)
+	glow.omni_range = clampf(10.0 + (rate_ratio - 1.0) * 3.0, 10.0, 18.0)
+	# Shift hue toward white/hot as fire rate increases
+	if rate_ratio > 2.0:
+		glow.light_color = Color(0.3, 0.85, 1.0)
+	elif rate_ratio > 1.5:
+		glow.light_color = Color(0.15, 0.8, 1.0)
+	else:
+		glow.light_color = Color(0.0, 0.75, 1.0)

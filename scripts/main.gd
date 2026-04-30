@@ -148,17 +148,4 @@ func _on_upgrade_selected() -> void:
 func _on_player_died() -> void:
 	pass
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_ESCAPE:
-			if GameState.game_over:
-				GameState.reset()
-				get_tree().reload_current_scene()
-			elif get_tree().paused:
-				pass
-			else:
-				get_tree().quit()
-		elif event.keycode == KEY_R:
-			if GameState.game_over:
-				GameState.reset()
-				get_tree().reload_current_scene()
+# Input handling moved to hud.gd (which has PROCESS_MODE_ALWAYS for pause support)

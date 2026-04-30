@@ -119,3 +119,47 @@ func sfx_ui_hover() -> void:
 
 func sfx_boss_defeat() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", 0.0, 0.8)
+
+func sfx_dice_roll() -> void:
+	play_sfx("res://assets/audio/sfx/dice_roll.ogg", -3.0)
+
+func sfx_xp_pickup() -> void:
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -12.0, randf_range(1.3, 1.7))
+
+func play_victory_sting() -> void:
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", 2.0, 0.6)
+
+# Ambient neon hum that shifts pitch with HP
+var _hum_player: AudioStreamPlayer
+
+func start_ambient_hum() -> void:
+	if _hum_player:
+		return
+	var stream := _load("res://assets/audio/sfx/lucifer_pulse.ogg")
+	if not stream:
+		return
+	_hum_player = AudioStreamPlayer.new()
+	_hum_player.name = "AmbientHum"
+	_hum_player.stream = stream
+	_hum_player.volume_db = -22.0
+	_hum_player.pitch_scale = 0.3
+	_hum_player.autoplay = true
+	add_child(_hum_player)
+	# Loop by reconnecting finished signal
+	_hum_player.finished.connect(func(): _hum_player.play())
+
+func update_hum_pitch() -> void:
+	if not _hum_player:
+		return
+	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	# Low HP = higher pitch + louder for tension
+	var target_pitch := lerpf(0.5, 0.25, hp_ratio)
+	var target_vol := lerpf(-16.0, -24.0, hp_ratio)
+	_hum_player.pitch_scale = lerpf(_hum_player.pitch_scale, target_pitch, 0.05)
+	_hum_player.volume_db = lerpf(_hum_player.volume_db, target_vol, 0.05)
+
+func stop_ambient_hum() -> void:
+	if _hum_player:
+		_hum_player.stop()
+		_hum_player.queue_free()
+		_hum_player = null

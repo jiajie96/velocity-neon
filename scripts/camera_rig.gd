@@ -74,6 +74,18 @@ func _process(delta: float) -> void:
 		camera.position = cam_offset + _shake_offset + _punch_offset
 		camera.rotation_degrees.x = -55.0
 
+var _pre_boss_zoom: float = -1.0
+
+func boss_zoom_out() -> void:
+	_pre_boss_zoom = _target_zoom
+	_target_zoom = minf(_target_zoom + 6.0, ZOOM_MAX)
+	# Return to player's zoom after 3 seconds
+	get_tree().create_timer(3.0).timeout.connect(func():
+		if _pre_boss_zoom > 0:
+			_target_zoom = _pre_boss_zoom
+			_pre_boss_zoom = -1.0
+	)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:

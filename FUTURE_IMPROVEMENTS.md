@@ -35,21 +35,21 @@
 - **Particle system upgrade**: Replace MeshInstance3D death VFX with GPUParticles3D for higher fidelity — sparks, embers, neon dust clouds
 - **Enemy dissolve shader**: On death, enemies dissolve in a scan-line pattern (top-to-bottom) with emissive edge glow before disappearing
 - **Ground grid reactive pulse**: Grid lines brighten/ripple outward from impact points (projectile hits, explosions, dash origin)
-- **Boss entrance cinematic**: Brief camera zoom-out + slow-mo + screen flash when boss spawns
+- ~~**Boss entrance cinematic**: Brief camera zoom-out + slow-mo + screen flash when boss spawns~~ DONE — camera zooms out temporarily on boss spawn with slow-mo
 
 ### Screen Effects
-- **Screen shake refinement**: Implement directional shake (bias toward damage source direction), not just random offset
-- **Damage vignette**: Red pulsing edges when HP < 30%
-- **Speed lines**: Radial blur/streak overlay during dash
-- **Kill streak effects**: Escalating visual intensity (more glow, faster grid pulse) during rapid kill streaks
+- ~~**Screen shake refinement**: Implement directional shake (bias toward damage source direction)~~ DONE — gentle 40% intensity directional shake
+- ~~**Damage vignette**: Red pulsing edges when HP < 30%~~ DONE
+- ~~**Speed lines**: Radial blur/streak overlay during dash~~ DONE — shader-based radial lines during Phase Dash
+- ~~**Kill streak effects**~~ Removed per rebalance — may revisit
 
 ### Audio
-- **Dynamic soundtrack**: Music layers that add/remove instruments based on intensity (enemy count, wave number, HP level)
+- ~~**Dynamic soundtrack**~~ PARTIAL — music rotates between 4 tracks as waves progress
 - **Positional audio**: 3D audio for enemy approach sounds — hear them coming from specific directions
 - **Hit confirmation sounds**: Distinct SFX for regular hit, critical hit, shatter split, kill confirm
-- **Boss music**: Dedicated intense track for boss waves (every 5th)
-- **Ambient neon hum**: Low background drone that changes pitch with player HP
-- **UI sounds**: Click, hover, upgrade selection, wave start horn, level-up chime
+- **Boss music**: ~~Dedicated intense track for boss waves (every 5th)~~ DONE — cyberpunk_battle for early bosses, epic_boss for wave 10+
+- ~~**Ambient neon hum**: Low background drone that changes pitch with player HP~~ DONE — hum shifts pitch and volume based on HP ratio
+- **UI sounds**: ~~Click, hover, upgrade selection, wave start horn, level-up chime~~ DONE — all wired up including hover SFX on upgrade cards
 
 ---
 
@@ -57,16 +57,16 @@
 
 ### Combat
 - **Weapon types**: Swap between weapon archetypes (railgun, shotgun, laser beam, homing missiles) each with different auto-aim behavior
-- **Critical hits**: Random chance for 2x damage with distinct VFX
-- **Combo system**: Rapid kills within time window increase damage multiplier
+- ~~**Critical hits**: Random chance for 2x damage with distinct VFX~~ DONE — 10% crit chance, 2x damage, orange CRIT text
+- ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ PARTIAL — kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
 - **Ricochet upgrade**: Projectiles bounce off arena boundaries
-- **Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets
+- ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
 - **Mine layer**: Drop proximity mines during dash trail
 
 ### Enemy Variety
-- **Skeleton Rogue**: Fast enemy that dodges projectiles by side-stepping
-- **Necromancer**: Summons minion skeletons, stays at range. Kill to stop spawns
+- ~~**Skeleton Rogue**: Fast enemy that dodges projectiles by side-stepping~~ DONE — rogues sidestep every ~1.8s
+- ~~**Necromancer**: Summons minion skeletons, stays at range. Kill to stop spawns~~ DONE — necromancers maintain distance and summon 2 minions every 5s with purple VFX ring
 - **Shield Bearer**: Front-facing shield blocks projectiles — must be hit from behind or with area damage
 - **Exploder**: Runs at player and detonates on death/contact for area damage
 - **Teleporter**: Blinks to new position periodically, unpredictable movement
@@ -106,12 +106,12 @@
 - **GPU particles**: Replace CPU-side VFX with GPUParticles3D
 
 ### Quality of Life
-- **Pause menu**: Full pause with resume/restart/settings/quit
+- ~~**Pause menu**: Full pause with resume/restart/settings/quit~~ DONE
 - **Settings screen**: Volume sliders, resolution, fullscreen toggle, VFX quality, camera sensitivity
 - **Save system**: Save best run stats, unlocked upgrades, settings
 - **Run statistics**: Post-run summary (DPS over time, damage taken, upgrades chosen, XP graph)
 - **Minimap**: Optional corner minimap showing enemy positions
-- **Damage numbers**: Floating damage text above enemies on hit
+- ~~**Damage numbers**: Floating damage text above enemies on hit~~ DONE
 
 ### Networking
 - **Leaderboard**: Online high score (waves survived, kills, time)
@@ -156,9 +156,9 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Boss HP bar (separate from wave UI)
 - [x] Floating damage numbers (color-coded, big hit scaling)
 - [x] Low HP danger vignette (red pulsing screen edges)
-- [ ] Kill streak counter with escalating announcements ("DOUBLE KILL", "UNSTOPPABLE")
-- [ ] After-image effect during dash (translucent copies of player)
-- [ ] Weapon glow intensity scales with fire rate
+- [x] Kill streak counter with escalating announcements ("TRIPLE KILL", "MULTI KILL", "KILLING SPREE", "RAMPAGE", "UNSTOPPABLE")
+- [x] After-image effect during dash (translucent copies of player)
+- [x] Weapon glow intensity scales with fire rate
 
 ---
 
