@@ -18,4 +18,4 @@ Thumbs.db
 *.swo
 
 # Screenshots (dev only)
-screenshots/
+# screenshots/ — needed for README demo image
