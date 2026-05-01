@@ -65,6 +65,7 @@ func _spawn_enemy() -> void:
 	pos.z = clampf(pos.z, -48.0, 48.0)
 
 	var type := _pick_type()
+	_spawn_warning(pos, type)
 	_create_enemy(type, pos)
 
 func _pick_type() -> String:
@@ -74,36 +75,42 @@ func _pick_type() -> String:
 		# Wave 1 is pure minions — ease the player in
 		return "minion"
 	elif wave < 4:
-		if roll < 0.40:
+		if roll < 0.35:
 			return "minion"
-		elif roll < 0.65:
+		elif roll < 0.55:
 			return "warrior"
-		elif roll < 0.85:
+		elif roll < 0.75:
 			return "rogue"
-		else:
+		elif roll < 0.90:
 			return "mage"
+		else:
+			return "exploder"
 	elif wave < 7:
-		if roll < 0.25:
-			return "minion"
-		elif roll < 0.45:
-			return "warrior"
-		elif roll < 0.65:
-			return "rogue"
-		elif roll < 0.85:
-			return "mage"
-		else:
-			return "necromancer"
-	else:
 		if roll < 0.20:
 			return "minion"
 		elif roll < 0.35:
 			return "warrior"
 		elif roll < 0.50:
 			return "rogue"
-		elif roll < 0.75:
+		elif roll < 0.70:
 			return "mage"
-		else:
+		elif roll < 0.85:
 			return "necromancer"
+		else:
+			return "exploder"
+	else:
+		if roll < 0.15:
+			return "minion"
+		elif roll < 0.28:
+			return "warrior"
+		elif roll < 0.42:
+			return "rogue"
+		elif roll < 0.60:
+			return "mage"
+		elif roll < 0.78:
+			return "necromancer"
+		else:
+			return "exploder"
 
 func _spawn_boss(wave: int) -> void:
 	var player := get_tree().get_first_node_in_group("player_node")
@@ -125,6 +132,42 @@ func _spawn_boss(wave: int) -> void:
 		var cam_rig := get_tree().root.find_child("CameraRig", true, false)
 		if cam_rig and cam_rig.has_method("boss_zoom_out"):
 			cam_rig.boss_zoom_out()
+
+func _spawn_warning(pos: Vector3, type: String) -> void:
+	var container := get_parent().get_node_or_null("Enemies")
+	if not container:
+		return
+	var warn_colors := {
+		"minion": Color(1.0, 0.0, 0.6),
+		"warrior": Color(0.9, 0.0, 0.3),
+		"mage": Color(0.7, 0.0, 1.0),
+		"rogue": Color(0.0, 1.0, 0.5),
+		"necromancer": Color(0.6, 0.0, 0.9),
+		"exploder": Color(1.0, 0.8, 0.0),
+	}
+	var color: Color = warn_colors.get(type, Color(1.0, 0.0, 0.6))
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.6
+	cyl.bottom_radius = 0.6
+	cyl.height = 0.02
+	ring.mesh = cyl
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = mat
+	ring.position = pos
+	ring.position.y = 0.05
+	container.add_child(ring)
+	var tw := ring.create_tween()
+	ring.scale = Vector3(0.1, 1.0, 0.1)
+	tw.tween_property(ring, "scale", Vector3(1.5, 1.0, 1.5), 0.3)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3)
+	tw.set_parallel(false)
+	tw.tween_callback(ring.queue_free)
 
 func _create_enemy(type: String, pos: Vector3) -> Node3D:
 	var container := get_parent().get_node_or_null("Enemies")

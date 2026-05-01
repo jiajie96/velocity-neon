@@ -30,12 +30,15 @@ var _orbital_angle: float = 0.0
 var _orbital_hit_timers: Dictionary = {}
 var _model_loaded: bool = false
 var _afterimage_timer: float = 0.0
+var _dash_ring: MeshInstance3D
+var _dash_ring_mat: StandardMaterial3D
 
 func _ready() -> void:
 	add_to_group("player_node")
 	_build_visual()
 	_build_hurtbox()
 	_build_light()
+	_build_dash_ring()
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -103,6 +106,44 @@ func _build_light() -> void:
 	light.position.y = 1.5
 	add_child(light)
 
+func _build_dash_ring() -> void:
+	_dash_ring = MeshInstance3D.new()
+	_dash_ring.name = "DashRing"
+	var torus := CylinderMesh.new()
+	torus.top_radius = 0.9
+	torus.bottom_radius = 0.9
+	torus.height = 0.02
+	_dash_ring.mesh = torus
+	_dash_ring_mat = StandardMaterial3D.new()
+	_dash_ring_mat.albedo_color = Color(0.4, 0.9, 1.0, 0.5)
+	_dash_ring_mat.emission_enabled = true
+	_dash_ring_mat.emission = Color(0.3, 0.85, 1.0)
+	_dash_ring_mat.emission_energy_multiplier = 3.0
+	_dash_ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_dash_ring.material_override = _dash_ring_mat
+	_dash_ring.position.y = 0.05
+	add_child(_dash_ring)
+
+func _update_dash_ring() -> void:
+	if not _dash_ring or not _dash_ring_mat:
+		return
+	var cd_ratio := dash_cd_timer / maxf(GameState.dash_cooldown, 0.01)
+	if cd_ratio > 0.01:
+		# On cooldown — show shrinking ring filling back up
+		_dash_ring.visible = true
+		var ring_scale := 1.0 - cd_ratio
+		_dash_ring.scale = Vector3(ring_scale, 1.0, ring_scale)
+		_dash_ring_mat.albedo_color = Color(0.4, 0.5, 0.6, 0.25)
+		_dash_ring_mat.emission = Color(0.3, 0.4, 0.5)
+		_dash_ring_mat.emission_energy_multiplier = 1.5
+	else:
+		# Ready — full bright ring
+		_dash_ring.visible = true
+		_dash_ring.scale = Vector3(1.0, 1.0, 1.0)
+		_dash_ring_mat.albedo_color = Color(0.4, 0.9, 1.0, 0.4)
+		_dash_ring_mat.emission = Color(0.3, 0.85, 1.0)
+		_dash_ring_mat.emission_energy_multiplier = 3.0
+
 func _process(delta: float) -> void:
 	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
 		return
@@ -115,6 +156,7 @@ func _process(delta: float) -> void:
 	_ultimate(delta)
 	_check_contact_damage(delta)
 	_update_weapon_glow()
+	_update_dash_ring()
 
 func _move(delta: float) -> void:
 	if is_dashing:
@@ -267,6 +309,7 @@ func _fire_projectile(container: Node, dir: Vector3, weapon_type: String) -> voi
 	proj.set_meta("weapon_type", weapon_type)
 	proj.set_meta("chain_level", GameState.chain_level)
 	proj.set_meta("piercing", GameState.piercing_level)
+	proj.set_meta("ricochet", GameState.ricochet_level)
 	container.add_child(proj)
 
 func _spawn_muzzle_flash(dir: Vector3) -> void:
@@ -442,7 +485,9 @@ func _update_orbitals(delta: float) -> void:
 func _ultimate(delta: float) -> void:
 	ult_cd_timer = maxf(ult_cd_timer - delta, 0.0)
 	if Input.is_action_just_pressed("ultimate") and ult_cd_timer <= 0.0:
-		ult_cd_timer = ULTIMATE_COOLDOWN
+		# Scale cooldown down slightly as player levels up (min 6s at level 20+)
+		var cd_scale := maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
+		ult_cd_timer = ULTIMATE_COOLDOWN * cd_scale
 		_do_ultimate()
 
 func _do_ultimate() -> void:

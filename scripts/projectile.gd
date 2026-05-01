@@ -10,11 +10,13 @@ var shatter: bool = false
 var weapon_type: String = "pulse"
 var chain_level: int = 0
 var piercing: int = 0
+var ricochet: int = 0
 var lifetime: float = DEFAULT_LIFETIME
 var _alive: float = 0.0
 var _hit: bool = false
 var _pierce_count: int = 0
 var _pierced_enemies: Array[int] = []
+var _bounce_count: int = 0
 
 var _colors := {
 	"pulse": Color(0.3, 0.9, 1.0),
@@ -30,6 +32,7 @@ func _ready() -> void:
 	weapon_type = get_meta("weapon_type", "pulse")
 	chain_level = get_meta("chain_level", 0)
 	piercing = get_meta("piercing", 0)
+	ricochet = get_meta("ricochet", 0)
 	lifetime = get_meta("lifetime", DEFAULT_LIFETIME)
 	_build_visual()
 	_build_hitbox()
@@ -146,6 +149,28 @@ func _process(delta: float) -> void:
 		return
 	position += direction * speed * delta
 	position.y = lerpf(position.y, 0.8, 5.0 * delta)
+	# Ricochet — bounce off arena walls
+	if ricochet > 0 and _bounce_count < ricochet:
+		var bounced := false
+		if position.x < -48.0:
+			position.x = -48.0
+			direction.x = absf(direction.x)
+			bounced = true
+		elif position.x > 48.0:
+			position.x = 48.0
+			direction.x = -absf(direction.x)
+			bounced = true
+		if position.z < -48.0:
+			position.z = -48.0
+			direction.z = absf(direction.z)
+			bounced = true
+		elif position.z > 48.0:
+			position.z = 48.0
+			direction.z = -absf(direction.z)
+			bounced = true
+		if bounced:
+			_bounce_count += 1
+			_pierced_enemies.clear()  # Can hit same enemies again after bouncing
 
 func _on_hit(area: Area3D) -> void:
 	var enemy := area.get_parent()
@@ -168,6 +193,7 @@ func _on_hit(area: Area3D) -> void:
 	if chain_level > 0 and weapon_type == "pulse":
 		_do_chain(enemy, chain_level)
 	GameState.request_hit_stop(0.025)
+	Audio.sfx_hit_impact(weapon_type)
 	_hit_vfx()
 
 	if can_pierce:

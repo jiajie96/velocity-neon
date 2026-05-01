@@ -126,8 +126,19 @@ func sfx_dice_roll() -> void:
 func sfx_xp_pickup() -> void:
 	play_sfx("res://assets/audio/sfx/ui_select.ogg", -12.0, randf_range(1.3, 1.7))
 
+func sfx_hit_impact(weapon_type: String = "pulse") -> void:
+	match weapon_type:
+		"railgun":
+			play_sfx("res://assets/audio/sfx/shoot_bone_marksman.ogg", -6.0, randf_range(1.2, 1.5))
+		"scatter":
+			play_sfx("res://assets/audio/sfx/shoot_inferno_warlock.ogg", -10.0, randf_range(1.3, 1.6))
+		"chain":
+			play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -8.0, randf_range(1.1, 1.4))
+		_:
+			play_sfx("res://assets/audio/sfx/core_hit.ogg", -10.0, randf_range(1.1, 1.4))
+
 func play_victory_sting() -> void:
-	play_sfx("res://assets/audio/sfx/hades_buff.ogg", 2.0, 0.6)
+	play_sfx("res://assets/audio/music/victory.ogg", -2.0, 1.0)
 
 # Ambient neon hum that shifts pitch with HP
 var _hum_player: AudioStreamPlayer

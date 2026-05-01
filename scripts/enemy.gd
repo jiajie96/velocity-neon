@@ -32,6 +32,18 @@ const NECRO_SUMMON_CD := 5.0
 const NECRO_SUMMON_COUNT := 2
 const NECRO_KEEP_RANGE := 10.0
 
+# Exploder behavior
+var _exploder_fuse_lit: bool = false
+const EXPLODER_DETONATE_RANGE := 1.8
+const EXPLODER_DAMAGE := 30.0
+const EXPLODER_RADIUS := 4.0
+
+# Golem slam attack
+var _golem_slam_timer: float = 4.0
+const GOLEM_SLAM_CD := 5.0
+const GOLEM_SLAM_RANGE := 5.0
+const GOLEM_SLAM_DAMAGE := 20.0
+
 func _ready() -> void:
 	add_to_group("enemies")
 	var meta_type: String = get_meta("_enemy_type", "minion")
@@ -47,6 +59,7 @@ func _build_visual() -> void:
 		"mage": "res://assets/models/Skeleton_Mage.glb",
 		"rogue": "res://assets/models/Skeleton_Rogue.glb",
 		"necromancer": "res://assets/models/Necromancer.glb",
+		"exploder": "res://assets/models/Skeleton_Minion.glb",
 		"golem": "res://assets/models/Skeleton_Golem.glb",
 	}
 	var neon_colors := {
@@ -55,6 +68,7 @@ func _build_visual() -> void:
 		"mage": Color(0.7, 0.0, 1.0),
 		"rogue": Color(0.0, 1.0, 0.5),
 		"necromancer": Color(0.6, 0.0, 0.9),
+		"exploder": Color(1.0, 0.8, 0.0),
 		"golem": Color(1.0, 0.3, 0.0),
 	}
 	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -187,6 +201,19 @@ func _process(delta: float) -> void:
 				var tw := create_tween()
 				tw.tween_property(self, "position", dodge_pos, 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 			position += dir * spd * delta
+		elif enemy_type == "exploder":
+			# Exploders rush fast and detonate when close
+			position += dir * spd * delta
+			if dist_to_player < EXPLODER_DETONATE_RANGE and not _exploder_fuse_lit:
+				_exploder_fuse_lit = true
+				_explode()
+		elif is_boss:
+			# Golem: walk toward player and periodically ground slam when close
+			position += dir * spd * delta
+			_golem_slam_timer -= delta
+			if _golem_slam_timer <= 0.0 and dist_to_player < GOLEM_SLAM_RANGE:
+				_golem_slam_timer = GOLEM_SLAM_CD
+				_golem_slam()
 		else:
 			position += dir * spd * delta
 		var model := get_node_or_null("Model")
@@ -291,6 +318,118 @@ func _necro_summon() -> void:
 		minion.set_meta("_enemy_wave", GameState.wave)
 		container.add_child(minion)
 
+func _golem_slam() -> void:
+	# Ground slam AoE attack — damages and knocks back the player
+	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+	if player:
+		var dist := global_position.distance_to(player.global_position)
+		if dist < GOLEM_SLAM_RANGE and not GameState.invincible:
+			GameState.take_damage(GOLEM_SLAM_DAMAGE)
+			var kb_dir := (player.global_position - global_position).normalized()
+			kb_dir.y = 0.0
+			player.position += kb_dir * 3.0
+	GameState.request_shake(3.5)
+	GameState.request_hit_stop(0.06)
+	Audio.sfx_ultimate()
+	# Slam VFX — shockwave ring on the ground
+	var container := get_parent()
+	if not container:
+		return
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 1.0
+	cyl.bottom_radius = 1.0
+	cyl.height = 0.05
+	ring.mesh = cyl
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(1.0, 0.3, 0.0, 0.8)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(1.0, 0.2, 0.0)
+	ring_mat.emission_energy_multiplier = 6.0
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = ring_mat
+	ring.position = global_position
+	ring.position.y = 0.15
+	container.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.set_parallel(true)
+	rtw.tween_property(ring, "scale", Vector3(GOLEM_SLAM_RANGE, 1.0, GOLEM_SLAM_RANGE), 0.3)
+	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.4)
+	rtw.set_parallel(false)
+	rtw.tween_callback(ring.queue_free)
+
+func _explode() -> void:
+	# Area damage to player if in range
+	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+	if player:
+		var dist := global_position.distance_to(player.global_position)
+		if dist < EXPLODER_RADIUS and not GameState.invincible:
+			GameState.take_damage(EXPLODER_DAMAGE)
+			GameState.request_shake(3.0)
+	# Also damage nearby enemies (chain reaction potential)
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	for e in enemies:
+		if e != self and e is Node3D and e.has_method("take_damage"):
+			var d := global_position.distance_to(e.global_position)
+			if d < EXPLODER_RADIUS * 0.6:
+				e.take_damage(EXPLODER_DAMAGE * 0.5)
+	Audio.sfx_ultimate()  # Reuse the pulse SFX for explosion
+	_spawn_explosion_vfx()
+	_dead = true
+	GameState.add_kill()
+	_spawn_xp()
+	queue_free()
+
+func _spawn_explosion_vfx() -> void:
+	var container := get_parent()
+	if not container:
+		return
+	# Large expanding ring
+	for ring_i in 2:
+		var ring := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = EXPLODER_RADIUS * (0.3 + ring_i * 0.3)
+		cyl.bottom_radius = EXPLODER_RADIUS * (0.3 + ring_i * 0.3)
+		cyl.height = 0.04
+		ring.mesh = cyl
+		var ring_mat := StandardMaterial3D.new()
+		ring_mat.albedo_color = Color(1.0, 0.6, 0.0, 0.8 - ring_i * 0.2)
+		ring_mat.emission_enabled = true
+		ring_mat.emission = Color(1.0, 0.4, 0.0)
+		ring_mat.emission_energy_multiplier = 6.0
+		ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		ring.material_override = ring_mat
+		ring.position = global_position
+		ring.position.y = 0.3 + ring_i * 0.15
+		container.add_child(ring)
+		var rtw := ring.create_tween()
+		rtw.set_parallel(true)
+		rtw.tween_property(ring, "scale", Vector3(2.5, 1.0, 2.5), 0.35 + ring_i * 0.1)
+		rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.35 + ring_i * 0.1)
+		rtw.set_parallel(false)
+		rtw.tween_callback(ring.queue_free)
+	# Bright flash sphere
+	var flash := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 1.0
+	flash.mesh = sphere
+	var flash_mat := StandardMaterial3D.new()
+	flash_mat.albedo_color = Color(1.0, 0.8, 0.0, 0.7)
+	flash_mat.emission_enabled = true
+	flash_mat.emission = Color(1.0, 0.6, 0.0)
+	flash_mat.emission_energy_multiplier = 10.0
+	flash_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash.material_override = flash_mat
+	flash.position = global_position
+	flash.position.y = 0.8
+	container.add_child(flash)
+	var ftw := flash.create_tween()
+	ftw.set_parallel(true)
+	ftw.tween_property(flash, "scale", Vector3(3.0, 3.0, 3.0), 0.25)
+	ftw.tween_property(flash_mat, "albedo_color:a", 0.0, 0.25)
+	ftw.set_parallel(false)
+	ftw.tween_callback(flash.queue_free)
+
 func take_damage(amount: float) -> void:
 	if _dead:
 		return
@@ -311,6 +450,10 @@ func take_damage(amount: float) -> void:
 		position += kb_dir * (0.6 if is_crit else 0.3)
 	_spawn_damage_number(final_amount, is_crit)
 	if hp <= 0.0:
+		if enemy_type == "exploder" and not _exploder_fuse_lit:
+			_exploder_fuse_lit = true
+			_explode()
+			return
 		_die()
 
 func _spawn_damage_number(amount: float, is_crit: bool = false) -> void:
@@ -399,6 +542,7 @@ func _death_vfx() -> void:
 		"mage": Color(0.7, 0.0, 1.0),
 		"rogue": Color(0.0, 1.0, 0.5),
 		"necromancer": Color(0.6, 0.0, 0.9),
+		"exploder": Color(1.0, 0.8, 0.0),
 		"golem": Color(1.0, 0.3, 0.0),
 	}
 	var color: Color = death_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -483,6 +627,12 @@ func setup(type: String, wave: int) -> void:
 			hp = 45.0 * wave_scale
 			speed = 2.0
 			xp_value = 25.0
+			contact_damage = 15.0
+			is_boss = false
+		"exploder":
+			hp = 12.0 * wave_scale
+			speed = 5.5
+			xp_value = 12.0
 			contact_damage = 15.0
 			is_boss = false
 		"golem":

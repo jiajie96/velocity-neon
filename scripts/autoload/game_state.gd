@@ -40,6 +40,7 @@ var scatter_level: int = 0
 var chain_level: int = 0
 var orbital_level: int = 0
 var piercing_level: int = 0
+var ricochet_level: int = 0
 
 # Progression
 var xp: float = 0.0
@@ -174,6 +175,7 @@ func reset() -> void:
 	chain_level = 0
 	orbital_level = 0
 	piercing_level = 0
+	ricochet_level = 0
 	xp = 0.0
 	level = 1
 	xp_to_next = 80.0

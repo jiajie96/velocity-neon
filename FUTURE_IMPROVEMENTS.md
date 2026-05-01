@@ -46,7 +46,7 @@
 ### Audio
 - ~~**Dynamic soundtrack**~~ PARTIAL — music rotates between 4 tracks as waves progress
 - **Positional audio**: 3D audio for enemy approach sounds — hear them coming from specific directions
-- **Hit confirmation sounds**: Distinct SFX for regular hit, critical hit, shatter split, kill confirm
+- ~~**Hit confirmation sounds**: Distinct SFX for regular hit, critical hit, shatter split, kill confirm~~ DONE — weapon-specific hit impact SFX (railgun, scatter, chain, pulse each have unique sounds)
 - **Boss music**: ~~Dedicated intense track for boss waves (every 5th)~~ DONE — cyberpunk_battle for early bosses, epic_boss for wave 10+
 - ~~**Ambient neon hum**: Low background drone that changes pitch with player HP~~ DONE — hum shifts pitch and volume based on HP ratio
 - **UI sounds**: ~~Click, hover, upgrade selection, wave start horn, level-up chime~~ DONE — all wired up including hover SFX on upgrade cards
@@ -59,7 +59,7 @@
 - **Weapon types**: Swap between weapon archetypes (railgun, shotgun, laser beam, homing missiles) each with different auto-aim behavior
 - ~~**Critical hits**: Random chance for 2x damage with distinct VFX~~ DONE — 10% crit chance, 2x damage, orange CRIT text
 - ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ PARTIAL — kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
-- **Ricochet upgrade**: Projectiles bounce off arena boundaries
+- ~~**Ricochet upgrade**: Projectiles bounce off arena boundaries~~ DONE — stackable upgrade (2 levels), bounces off arena walls and can re-hit enemies
 - ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
 - **Mine layer**: Drop proximity mines during dash trail
@@ -68,7 +68,7 @@
 - ~~**Skeleton Rogue**: Fast enemy that dodges projectiles by side-stepping~~ DONE — rogues sidestep every ~1.8s
 - ~~**Necromancer**: Summons minion skeletons, stays at range. Kill to stop spawns~~ DONE — necromancers maintain distance and summon 2 minions every 5s with purple VFX ring
 - **Shield Bearer**: Front-facing shield blocks projectiles — must be hit from behind or with area damage
-- **Exploder**: Runs at player and detonates on death/contact for area damage
+- ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
 - **Teleporter**: Blinks to new position periodically, unpredictable movement
 - **Healer**: Restores HP to nearby enemies, priority target
 - **Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)

@@ -33,6 +33,7 @@ var _enemy_count_label: Label
 var _dps_label: Label
 var _dps_window: Array[float] = []
 var _dps_timer: float = 0.0
+var _no_damage_label: Label
 
 var _current_choices: Array = []
 
@@ -55,6 +56,7 @@ func _ready() -> void:
 	_build_speed_lines()
 	_build_enemy_count_label()
 	_build_dps_label()
+	_build_no_damage_label()
 	_build_pause_menu()
 
 	GameState.hp_changed.connect(_on_hp_changed)
@@ -645,6 +647,19 @@ func _build_dps_label() -> void:
 	_dps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_dps_label)
 
+func _build_no_damage_label() -> void:
+	_no_damage_label = Label.new()
+	_no_damage_label.text = "NO DAMAGE"
+	_no_damage_label.add_theme_font_size_override("font_size", 12)
+	_no_damage_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 0.6))
+	_no_damage_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_no_damage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_no_damage_label.position = Vector2(-170, 86)
+	_no_damage_label.custom_minimum_size = Vector2(150, 20)
+	_no_damage_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_no_damage_label.visible = false
+	add_child(_no_damage_label)
+
 func _build_pause_menu() -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -1021,6 +1036,7 @@ func _process(delta: float) -> void:
 	_update_speed_lines(delta)
 	_update_enemy_count()
 	_update_dps(delta)
+	_update_no_damage_indicator()
 	Audio.update_hum_pitch()
 
 func _update_indicators() -> void:
@@ -1161,3 +1177,15 @@ func _update_dps(delta: float) -> void:
 				_dps_label.text = "DPS: %.1fK" % (dps / 1000.0)
 			else:
 				_dps_label.text = "DPS: %d" % int(dps)
+
+func _update_no_damage_indicator() -> void:
+	if not _no_damage_label:
+		return
+	if not GameState.game_started or GameState.game_over:
+		_no_damage_label.visible = false
+		return
+	# Show "NO DAMAGE" when the player hasn't taken damage this wave
+	if GameState.wave > 0 and not GameState._wave_damage_taken:
+		_no_damage_label.visible = true
+	else:
+		_no_damage_label.visible = false

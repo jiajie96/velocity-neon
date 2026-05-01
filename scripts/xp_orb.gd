@@ -22,23 +22,28 @@ func _on_magnet_pulse() -> void:
 func _build_visual() -> void:
 	var mesh_inst := MeshInstance3D.new()
 	mesh_inst.name = "Mesh"
+	# Scale orb size by value — boss drops are noticeably larger
+	var size_scale := clampf(xp_value / 10.0, 0.8, 2.5)
 	var prism := PrismMesh.new()
-	prism.size = Vector3(0.3, 0.4, 0.3)
+	prism.size = Vector3(0.3, 0.4, 0.3) * size_scale
 	mesh_inst.mesh = prism
 
+	# High-value orbs tint toward gold
+	var value_ratio := clampf((xp_value - 8.0) / 72.0, 0.0, 1.0)
+	var base_color := Color(0.2, 1.0, 0.3).lerp(Color(1.0, 0.9, 0.2), value_ratio)
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.2, 1.0, 0.3)
+	mat.albedo_color = base_color
 	mat.emission_enabled = true
-	mat.emission = Color(0.1, 1.0, 0.2)
-	mat.emission_energy_multiplier = 3.0
+	mat.emission = base_color * 0.8
+	mat.emission_energy_multiplier = 3.0 + value_ratio * 3.0
 	mesh_inst.material_override = mat
 	mesh_inst.position.y = 0.5
 	add_child(mesh_inst)
 
 	var light := OmniLight3D.new()
-	light.light_color = Color(0.2, 1.0, 0.3)
-	light.light_energy = 0.6
-	light.omni_range = 2.0
+	light.light_color = base_color
+	light.light_energy = 0.6 + value_ratio * 0.8
+	light.omni_range = 2.0 + value_ratio * 1.5
 	light.omni_attenuation = 2.0
 	light.position.y = 0.5
 	add_child(light)
