@@ -82,6 +82,7 @@ func _collect() -> void:
 	GameState.add_xp(xp_value)
 	Audio.sfx_xp_pickup()
 	_spawn_collect_burst()
+	_spawn_xp_text()
 
 	var mesh := get_node_or_null("Mesh")
 	if mesh:
@@ -141,3 +142,26 @@ func _spawn_collect_burst() -> void:
 		stw.tween_property(smat, "albedo_color:a", 0.0, 0.2)
 		stw.set_parallel(false)
 		stw.tween_callback(spark.queue_free)
+
+func _spawn_xp_text() -> void:
+	var cam := get_viewport().get_camera_3d()
+	if not cam:
+		return
+	var screen_pos := cam.unproject_position(global_position + Vector3(0, 1.2, 0))
+	var canvas := get_tree().get_first_node_in_group("hud_node") as Control
+	if not canvas:
+		return
+	var label := Label.new()
+	label.text = "+%d" % int(xp_value)
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4, 0.9))
+	label.position = screen_pos + Vector2(randf_range(-8, 8), 0)
+	label.z_index = 90
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(label)
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 30.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(label, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
+	tw.set_parallel(false)
+	tw.tween_callback(label.queue_free)

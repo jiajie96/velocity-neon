@@ -14,6 +14,8 @@ const ORBITAL_SPEED := 3.0
 const ORBITAL_DAMAGE := 8.0
 const ORBITAL_HIT_CD := 0.5
 const DASH_AFTERIMAGE_INTERVAL := 0.04
+const DASH_DAMAGE := 15.0
+const DASH_HIT_RADIUS := 1.5
 
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
@@ -32,6 +34,7 @@ var _model_loaded: bool = false
 var _afterimage_timer: float = 0.0
 var _dash_ring: MeshInstance3D
 var _dash_ring_mat: StandardMaterial3D
+var _dash_hit_enemies: Array[int] = []
 
 func _ready() -> void:
 	add_to_group("player_node")
@@ -195,6 +198,15 @@ func _dash(delta: float) -> void:
 		position.y = 0.0
 		position.x = clampf(position.x, -48.0, 48.0)
 		position.z = clampf(position.z, -48.0, 48.0)
+		# Dash damage — hit enemies we pass through
+		var enemies := get_tree().get_nodes_in_group("enemies")
+		for e in enemies:
+			if e is Node3D and e.has_method("take_damage"):
+				var eid := e.get_instance_id()
+				if eid not in _dash_hit_enemies:
+					if global_position.distance_to(e.global_position) < DASH_HIT_RADIUS:
+						e.take_damage(DASH_DAMAGE)
+						_dash_hit_enemies.append(eid)
 		if dash_timer <= 0.0:
 			is_dashing = false
 			GameState.invincible = false
@@ -216,6 +228,7 @@ func _dash(delta: float) -> void:
 		dash_timer = DASH_DURATION
 		dash_cd_timer = GameState.dash_cooldown
 		GameState.invincible = true
+		_dash_hit_enemies.clear()
 		Audio.sfx_dash()
 		_spawn_dash_trail()
 

@@ -137,6 +137,13 @@ func sfx_hit_impact(weapon_type: String = "pulse") -> void:
 		_:
 			play_sfx("res://assets/audio/sfx/core_hit.ogg", -10.0, randf_range(1.1, 1.4))
 
+func sfx_golem_slam() -> void:
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", 0.0, 0.55)
+
+func sfx_exploder_boom() -> void:
+	var paths := ["res://assets/audio/sfx/enemy_death_01.ogg", "res://assets/audio/sfx/enemy_death_02.ogg"]
+	play_sfx(paths[randi() % paths.size()], 0.0, 0.5)
+
 func play_victory_sting() -> void:
 	play_sfx("res://assets/audio/music/victory.ogg", -2.0, 1.0)
 

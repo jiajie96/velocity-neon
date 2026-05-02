@@ -109,7 +109,7 @@
 - ~~**Pause menu**: Full pause with resume/restart/settings/quit~~ DONE
 - **Settings screen**: Volume sliders, resolution, fullscreen toggle, VFX quality, camera sensitivity
 - **Save system**: Save best run stats, unlocked upgrades, settings
-- **Run statistics**: Post-run summary (DPS over time, damage taken, upgrades chosen, XP graph)
+- **Run statistics**: ~~Post-run summary (DPS over time, damage taken, upgrades chosen, XP graph)~~ PARTIAL — game over screen shows kills/min, avg DPS, total damage, time survived, and full upgrade build summary
 - **Minimap**: Optional corner minimap showing enemy positions
 - ~~**Damage numbers**: Floating damage text above enemies on hit~~ DONE
 

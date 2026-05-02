@@ -56,6 +56,9 @@ var game_started: bool = false
 var time_survived: float = 0.0
 var total_damage_dealt: float = 0.0
 
+# Acquired upgrades for game over summary
+var acquired_upgrades: Array[String] = []
+
 # Kill streak tracking
 var _streak_count: int = 0
 var _streak_timer: float = 0.0
@@ -191,3 +194,4 @@ func reset() -> void:
 	shake_amount = 0.0
 	shake_direction = Vector3.ZERO
 	_wave_damage_taken = false
+	acquired_upgrades.clear()

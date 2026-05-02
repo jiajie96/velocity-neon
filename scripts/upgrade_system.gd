@@ -47,6 +47,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("orbital", "ORBITAL GUARD", "Orbiting damage orbs", Color(0.0, 1.0, 0.6), "@@", 3),
 		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
 		Upgrade.new("ricochet", "RICOCHET", "Shots bounce off arena walls", Color(0.8, 1.0, 0.3), "<>", 2),
+		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% critical hit chance", Color(1.0, 0.5, 0.0), "!!", 4),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -63,6 +64,8 @@ static func get_random_choices(count: int = 3) -> Array[Upgrade]:
 
 static func apply_upgrade(upgrade: Upgrade) -> void:
 	upgrade.stacks += 1
+	if upgrade.title not in GameState.acquired_upgrades:
+		GameState.acquired_upgrades.append(upgrade.title)
 	match upgrade.id:
 		"rapid_fire":
 			GameState.fire_rate *= 1.25
@@ -99,6 +102,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.piercing_level += 1
 		"ricochet":
 			GameState.ricochet_level += 1
+		"crit_surge":
+			GameState.crit_chance += 0.05
 
 static func reset_all() -> void:
 	_initialized = false

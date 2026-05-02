@@ -34,8 +34,11 @@ var _dps_label: Label
 var _dps_window: Array[float] = []
 var _dps_timer: float = 0.0
 var _no_damage_label: Label
+var _hit_flash: ColorRect
+var _time_label: Label
 
 var _current_choices: Array = []
+var _prev_hp: float = -1.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -57,6 +60,8 @@ func _ready() -> void:
 	_build_enemy_count_label()
 	_build_dps_label()
 	_build_no_damage_label()
+	_build_time_label()
+	_build_hit_flash()
 	_build_pause_menu()
 
 	GameState.hp_changed.connect(_on_hp_changed)
@@ -549,6 +554,31 @@ func _build_levelup_flash() -> void:
 	_levelup_flash.color = Color(0.0, 1.0, 0.9, 0.0)
 	add_child(_levelup_flash)
 
+func _build_time_label() -> void:
+	_time_label = Label.new()
+	_time_label.text = "0:00"
+	_time_label.add_theme_font_size_override("font_size", 13)
+	_time_label.add_theme_color_override("font_color", Color(0.6, 0.55, 0.75, 0.6))
+	_time_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_time_label.position = Vector2(20, 86)
+	_time_label.custom_minimum_size = Vector2(80, 20)
+	_time_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_time_label)
+
+func _build_hit_flash() -> void:
+	_hit_flash = ColorRect.new()
+	_hit_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_hit_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hit_flash.color = Color(1.0, 0.05, 0.05, 0.0)
+	add_child(_hit_flash)
+
+func _trigger_hit_flash() -> void:
+	if not _hit_flash:
+		return
+	_hit_flash.color = Color(1.0, 0.05, 0.05, 0.3)
+	var tw := create_tween()
+	tw.tween_property(_hit_flash, "color:a", 0.0, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+
 func _build_overclock_indicator() -> void:
 	_overclock_label = Label.new()
 	_overclock_label.text = "OVERCLOCK ACTIVE"
@@ -860,8 +890,8 @@ func track_boss(boss_node: Node3D) -> void:
 func _build_game_over() -> void:
 	game_over_panel = PanelContainer.new()
 	game_over_panel.set_anchors_preset(Control.PRESET_CENTER)
-	game_over_panel.custom_minimum_size = Vector2(420, 220)
-	game_over_panel.position = Vector2(-210, -110)
+	game_over_panel.custom_minimum_size = Vector2(480, 260)
+	game_over_panel.position = Vector2(-240, -130)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.05, 0.0, 0.02, 0.95)
 	style.border_color = Color(1.0, 0.0, 0.3, 0.8)
@@ -891,6 +921,8 @@ func _build_game_over() -> void:
 	stats.add_theme_color_override("font_color", Color(0.7, 0.6, 0.8))
 	stats.add_theme_font_size_override("font_size", 16)
 	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats.custom_minimum_size.x = 420
 	vbox.add_child(stats)
 
 	var hint := Label.new()
@@ -907,6 +939,10 @@ func _build_game_over() -> void:
 # === SIGNAL HANDLERS ===
 
 func _on_hp_changed(current: float, maximum: float) -> void:
+	# Flash red on damage
+	if _prev_hp > 0.0 and current < _prev_hp:
+		_trigger_hit_flash()
+	_prev_hp = current
 	if hp_bar:
 		hp_bar.max_value = maximum
 		hp_bar.value = current
@@ -1013,9 +1049,12 @@ func _on_player_died() -> void:
 		var dmg_text := _format_damage(GameState.total_damage_dealt)
 		var kpm := GameState.kills / maxf(GameState.time_survived / 60.0, 0.01)
 		var avg_dps := GameState.total_damage_dealt / maxf(GameState.time_survived, 1.0)
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d\nSurvived %d:%02d  |  Damage: %s\nKills/min: %.1f  |  Avg DPS: %s" % [
+		var upgrades_text := ""
+		if GameState.acquired_upgrades.size() > 0:
+			upgrades_text = "\nBuild: " + ", ".join(GameState.acquired_upgrades)
+		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d\nSurvived %d:%02d  |  Damage: %s\nKills/min: %.1f  |  Avg DPS: %s%s" % [
 			GameState.wave, GameState.kills, GameState.level, mins, secs, dmg_text,
-			kpm, _format_damage(avg_dps)]
+			kpm, _format_damage(avg_dps), upgrades_text]
 
 func _format_damage(amount: float) -> String:
 	if amount >= 1000000:
@@ -1037,6 +1076,7 @@ func _process(delta: float) -> void:
 	_update_enemy_count()
 	_update_dps(delta)
 	_update_no_damage_indicator()
+	_update_time_label()
 	Audio.update_hum_pitch()
 
 func _update_indicators() -> void:
@@ -1189,3 +1229,14 @@ func _update_no_damage_indicator() -> void:
 		_no_damage_label.visible = true
 	else:
 		_no_damage_label.visible = false
+
+func _update_time_label() -> void:
+	if not _time_label:
+		return
+	if not GameState.game_started or GameState.game_over:
+		_time_label.visible = false
+		return
+	_time_label.visible = true
+	var mins := int(GameState.time_survived) / 60
+	var secs := int(GameState.time_survived) % 60
+	_time_label.text = "%d:%02d" % [mins, secs]

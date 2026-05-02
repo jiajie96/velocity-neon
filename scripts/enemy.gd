@@ -259,7 +259,7 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 	bolt.add_child(area)
 	var bolt_dir := dir
 	var bolt_spd := MAGE_PROJ_SPEED
-	var bolt_dmg := MAGE_PROJ_DAMAGE
+	var bolt_dmg := MAGE_PROJ_DAMAGE * (1.0 + GameState.wave * 0.1)
 	var bolt_alive := 0.0
 	area.area_entered.connect(func(_a: Area3D):
 		if not GameState.invincible:
@@ -330,7 +330,7 @@ func _golem_slam() -> void:
 			player.position += kb_dir * 3.0
 	GameState.request_shake(3.5)
 	GameState.request_hit_stop(0.06)
-	Audio.sfx_ultimate()
+	Audio.sfx_golem_slam()
 	# Slam VFX — shockwave ring on the ground
 	var container := get_parent()
 	if not container:
@@ -373,7 +373,7 @@ func _explode() -> void:
 			var d := global_position.distance_to(e.global_position)
 			if d < EXPLODER_RADIUS * 0.6:
 				e.take_damage(EXPLODER_DAMAGE * 0.5)
-	Audio.sfx_ultimate()  # Reuse the pulse SFX for explosion
+	Audio.sfx_exploder_boom()
 	_spawn_explosion_vfx()
 	_dead = true
 	GameState.add_kill()
@@ -609,7 +609,7 @@ func setup(type: String, wave: int) -> void:
 			is_boss = false
 		"warrior":
 			hp = 35.0 * wave_scale
-			speed = 3.0
+			speed = 3.5
 			xp_value = 15.0
 			is_boss = false
 		"mage":
