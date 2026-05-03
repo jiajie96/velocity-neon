@@ -442,6 +442,8 @@ func _shoot_scatter(delta: float) -> void:
 		proj.set_meta("shatter", false)
 		proj.set_meta("weapon_type", "scatter")
 		proj.set_meta("chain_level", 0)
+		proj.set_meta("piercing", GameState.piercing_level)
+		proj.set_meta("ricochet", GameState.ricochet_level)
 		proj.set_meta("lifetime", 1.0)
 		container.add_child(proj)
 	Audio.sfx_shoot_scatter()

@@ -926,7 +926,7 @@ func _build_game_over() -> void:
 	vbox.add_child(stats)
 
 	var hint := Label.new()
-	hint.text = "Press R to restart  |  ESC to quit"
+	hint.text = "Press SPACE or R to restart  |  ESC to quit"
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.6))
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -997,7 +997,11 @@ func _on_kills_changed(kills: int) -> void:
 
 func _on_leveled_up(level: int) -> void:
 	if level_label:
-		level_label.text = "LV %d" % level
+		var upgrades_count := GameState.acquired_upgrades.size()
+		if upgrades_count > 0:
+			level_label.text = "LV %d | %d upgrades" % [level, upgrades_count]
+		else:
+			level_label.text = "LV %d" % level
 	_show_upgrade_choices()
 
 func _show_upgrade_choices() -> void:
@@ -1033,6 +1037,10 @@ func _on_upgrade_chosen(index: int) -> void:
 	UpgradeSystem.apply_upgrade(_current_choices[index])
 	upgrade_panel.visible = false
 	_trigger_levelup_flash()
+	# Update level label to reflect new upgrade count
+	if level_label:
+		var upgrades_count := GameState.acquired_upgrades.size()
+		level_label.text = "LV %d | %d upgrades" % [GameState.level, upgrades_count]
 	# Brief invincibility so player doesn't die instantly after picking
 	GameState.invincible = true
 	get_tree().create_timer(1.5).timeout.connect(func(): GameState.invincible = false)
@@ -1094,10 +1102,12 @@ func _update_indicators() -> void:
 	if ult_indicator:
 		var cd = player.get("ult_cd_timer")
 		if cd != null and cd > 0.0:
-			ult_indicator.text = "ULT [%.0fs]" % cd
+			var max_cd := 12.0 * maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
+			var pct := int((1.0 - cd / maxf(max_cd, 0.01)) * 100.0)
+			ult_indicator.text = "ULT [%d%%]" % pct
 			ult_indicator.add_theme_color_override("font_color", Color(0.4, 0.3, 0.5, 0.5))
 		else:
-			ult_indicator.text = "ULT [Q]"
+			ult_indicator.text = "ULT [Q] READY"
 			ult_indicator.add_theme_color_override("font_color", Color(0.9, 0.4, 1.0, 0.8))
 
 var _overclock_pulse_t: float = 0.0
@@ -1155,7 +1165,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_tree().reload_current_scene()
 			elif not GameState.paused_for_upgrade:
 				toggle_pause()
-		elif event.physical_keycode == KEY_R:
+		elif event.physical_keycode == KEY_R or (event.physical_keycode == KEY_SPACE and GameState.game_over):
 			if GameState.game_over:
 				GameState.reset()
 				get_tree().reload_current_scene()

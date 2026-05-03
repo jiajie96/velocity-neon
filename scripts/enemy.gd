@@ -175,7 +175,7 @@ func _process(delta: float) -> void:
 			_mage_shoot_timer -= delta
 			if _mage_shoot_timer <= 0.0:
 				_mage_shoot_timer = MAGE_SHOOT_CD
-				_fire_mage_bolt(dir)
+				_mage_telegraph(dir)
 			# Slow approach — mages still drift closer but much slower
 			position += dir * spd * 0.3 * delta
 		elif enemy_type == "necromancer":
@@ -209,10 +209,14 @@ func _process(delta: float) -> void:
 				_explode()
 		elif is_boss:
 			# Golem: walk toward player and periodically ground slam when close
-			position += dir * spd * delta
+			# Enrage below 30% HP — faster movement and slams
+			var enraged := hp < max_hp * 0.3
+			var boss_spd := spd * (1.6 if enraged else 1.0)
+			position += dir * boss_spd * delta
 			_golem_slam_timer -= delta
+			var slam_cd := GOLEM_SLAM_CD * (0.5 if enraged else 1.0)
 			if _golem_slam_timer <= 0.0 and dist_to_player < GOLEM_SLAM_RANGE:
-				_golem_slam_timer = GOLEM_SLAM_CD
+				_golem_slam_timer = slam_cd
 				_golem_slam()
 		else:
 			position += dir * spd * delta
@@ -227,6 +231,44 @@ func _process(delta: float) -> void:
 		if _flash_timer <= 0.0 and _mat:
 			_mat.emission = _original_color
 			_mat.emission_energy_multiplier = 2.0
+
+	# Boss enrage visual — pulsing red glow below 30% HP
+	if is_boss and hp < max_hp * 0.3 and _mat:
+		var pulse := (sin(_golem_slam_timer * 8.0) + 1.0) * 0.5
+		_mat.emission = Color(1.0, 0.1, 0.0).lerp(_original_color, pulse * 0.3)
+		_mat.emission_energy_multiplier = lerpf(3.0, 5.0, pulse)
+
+func _mage_telegraph(dir: Vector3) -> void:
+	# Brief charge-up glow before firing so players can react
+	var glow := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.25
+	glow.mesh = sphere
+	var glow_mat := StandardMaterial3D.new()
+	glow_mat.albedo_color = Color(0.7, 0.0, 1.0, 0.6)
+	glow_mat.emission_enabled = true
+	glow_mat.emission = Color(0.7, 0.0, 1.0)
+	glow_mat.emission_energy_multiplier = 8.0
+	glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glow.material_override = glow_mat
+	glow.position = global_position + Vector3(0, 1.2, 0)
+	var container := get_parent()
+	if container:
+		container.add_child(glow)
+		var tw := glow.create_tween()
+		tw.tween_property(glow, "scale", Vector3(1.5, 1.5, 1.5), 0.3)
+		tw.tween_callback(glow.queue_free)
+	# Fire bolt after short delay
+	var tree := get_tree()
+	if tree and not _dead:
+		tree.create_timer(0.3).timeout.connect(func():
+			if not _dead and is_inside_tree():
+				var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+				if player:
+					var fresh_dir := (player.global_position - global_position).normalized()
+					fresh_dir.y = 0.0
+					_fire_mage_bolt(fresh_dir)
+		)
 
 func _fire_mage_bolt(dir: Vector3) -> void:
 	var container := get_parent().get_parent().get_node_or_null("Projectiles")
@@ -600,7 +642,8 @@ func _death_vfx() -> void:
 
 func setup(type: String, wave: int) -> void:
 	enemy_type = type
-	var wave_scale := 1.0 + wave * 0.1
+	# Soft cap: linear scaling up to wave 15, then diminishing returns
+	var wave_scale := 1.0 + minf(wave, 15) * 0.1 + maxf(wave - 15, 0) * 0.04
 	match type:
 		"minion":
 			hp = 15.0 * wave_scale

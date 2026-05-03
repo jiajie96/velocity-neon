@@ -49,6 +49,8 @@ func _process(delta: float) -> void:
 		if enemies.size() == 0:
 			_wave_active = false
 			_wave_timer = WAVE_INTERVAL
+			# Pull all remaining XP orbs to player on wave clear
+			GameState.xp_magnet_pulse.emit()
 
 func _spawn_enemy() -> void:
 	var player := get_tree().get_first_node_in_group("player_node")

@@ -33,6 +33,7 @@ var has_shatter: bool = false
 var gravity_well_strength: float = 0.0
 var overclock_active: bool = false
 var crit_chance: float = 0.10
+var lifesteal: float = 0.0
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -126,7 +127,9 @@ func next_wave() -> void:
 			Audio.play_music("res://assets/audio/music/cyberpunk_battle.ogg", -4.0)
 	elif wave > 1:
 		# Rotate gameplay music as waves progress for variety
-		if wave >= 20:
+		if wave >= 25:
+			Audio.play_music("res://assets/audio/music/cavern_ambient.ogg", -4.0)
+		elif wave >= 20:
 			Audio.play_music("res://assets/audio/music/synthwave_hostile_territory.ogg", -5.0)
 		elif wave >= 12:
 			Audio.play_music("res://assets/audio/music/synthwave_deadly_contracts.ogg", -5.0)
@@ -142,6 +145,8 @@ func add_kill() -> void:
 	_streak_timer = STREAK_WINDOW
 	if _streak_count >= 2:
 		kill_streak.emit(_streak_count)
+	if lifesteal > 0.0 and hp < max_hp:
+		heal(lifesteal)
 
 func add_damage_dealt(amount: float) -> void:
 	total_damage_dealt += amount
@@ -173,6 +178,7 @@ func reset() -> void:
 	gravity_well_strength = 0.0
 	overclock_active = false
 	crit_chance = 0.10
+	lifesteal = 0.0
 	railgun_level = 0
 	scatter_level = 0
 	chain_level = 0
