@@ -21,7 +21,7 @@ A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBoo
 | **Space** | Phase Dash — invincible + fire trail |
 | **Q** | Ultimate — area damage burst |
 | **Scroll Wheel** | Zoom camera in/out |
-| **R** | Restart (game over) |
+| **Space / R** | Restart (game over) |
 | **ESC** | Pause menu (Resume / Restart / Quit) |
 
 ## Features
@@ -30,7 +30,7 @@ A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBoo
 - **Auto-aim targeting** — always locks onto the nearest enemy
 - **Critical hits** — 10% base crit chance for 2x damage with distinct orange VFX
 - **Kill streaks** — rapid kills trigger escalating announcements (DOUBLE KILL through UNSTOPPABLE)
-- **5 weapon systems** — Pulse Cannon (default), Railgun (piercing beam), Scatter Shot (shotgun cone), Chain Arc (bouncing lightning), Orbital Guard (orbiting damage spheres), plus Piercing Rounds and Ricochet upgrades
+- **5 weapon systems** — Pulse Cannon (default), Railgun (piercing beam), Scatter Shot (shotgun cone, benefits from Piercing/Ricochet), Chain Arc (bouncing lightning), Orbital Guard (orbiting damage spheres), plus Piercing Rounds and Ricochet upgrades
 - **Phase Dash** — invincibility frames with after-image trail effect, fire trail, dash cooldown ring indicator, and contact damage to enemies you dash through
 - **Ultimate Ability** — area-of-effect burst with screen shake and hit-stop, cooldown scales down as you level up
 
@@ -38,18 +38,20 @@ A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBoo
 Seven enemy types, each with a unique 3D model and neon glow:
 - **Minion** — basic skeleton, low HP, moderate speed
 - **Warrior** — armored, moderate speed, high HP
-- **Mage** — ranged specialist, purple glow, fires bolts from distance that scale in damage with wave progression
+- **Mage** — ranged specialist, purple glow, fires bolts from distance with a visible charge-up telegraph, damage scales with wave progression
 - **Rogue** — fast and agile, green glow, periodically sidesteps to dodge projectiles
 - **Necromancer** — ranged summoner, stays at distance and periodically summons minion skeletons with a purple VFX ring
 - **Exploder** — fast yellow-glowing kamikaze, rushes the player and detonates on contact or death with area damage and chain-reaction potential
-- **Golem** (Boss) — massive, spawns every 5th wave with dedicated boss music and ground slam AoE attack
+- **Golem** (Boss) — massive, spawns every 5th wave with dedicated boss music, ground slam AoE, and enrage phase below 30% HP (faster movement, rapid slams, pulsing red glow)
 
 ### Progression
 - Kill enemies to drop **XP orbs**
 - Level up to choose **1 of 3 random upgrades**
-- **18 upgrades** including: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, phase shift (dash cooldown), piercing rounds, ricochet, critical surge (crit chance), and all 4 weapon unlocks
+- **19 upgrades** including: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, phase shift (dash cooldown), piercing rounds, ricochet, critical surge (crit chance), vampire (lifesteal on kill), and all 4 weapon unlocks
 - **Wave survival bonus** — complete a wave without taking damage for bonus XP with "PERFECT WAVE" announcement
 - **Level-up magnet pulse** — all XP orbs get pulled toward you when you level up
+- **Wave clear magnet** — all remaining XP orbs auto-collect when a wave is fully cleared
+- **Upgrade counter** — HUD shows number of upgrades acquired alongside level
 
 ### Visuals & Audio
 - **Neon cyberpunk aesthetic** — dark ground with animated grid shader, emissive materials, bloom/glow post-processing
@@ -73,7 +75,11 @@ Seven enemy types, each with a unique 3D model and neon glow:
 - **HP regen visual tick** — subtle "+HP" flash near health bar when regeneration heals
 - **Pause menu** — ESC to pause with Resume, Restart, and Quit options
 - **Time survived** — total survival time displayed on game over screen
-- **Evolving soundtrack** — music rotates through 4 tracks as waves progress, with boss-specific tracks and victory stings
+- **Mage charge-up telegraph** — purple glow VFX warns before mage fires, giving time to dodge
+- **Boss enrage VFX** — pulsing red glow on Golem below 30% HP signals the enrage phase
+- **Ultimate charge indicator** — ULT HUD shows percentage charged and "READY" when available
+- **Evolving soundtrack** — music rotates through 5 tracks as waves progress (including cavern ambient for deep runs), with boss-specific tracks and victory stings
+- **Enemy HP soft cap** — late-wave enemy HP scales with diminishing returns past wave 15 for better pacing
 - **Full SFX** — shooting, impacts, deaths, XP pickups, level-ups, dashes, UI clicks, upgrade dice roll, hover sounds
 - **Ambient neon hum** — low background drone that shifts pitch and volume as HP changes, adding tension at low health
 - **Dash speed lines** — radial blur overlay during Phase Dash for kinetic feel

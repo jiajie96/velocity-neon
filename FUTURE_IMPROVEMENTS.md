@@ -74,7 +74,7 @@
 - **Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)
 
 ### Boss Design
-- **Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages
+- ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow)
 - **Necromancer Lord**: Summons waves, creates projectile barriers, teleports
 - **Bone Dragon**: Flies overhead (breaks 2D constraint temporarily), strafes with beam attack
 - **Unique boss mechanics**: Each boss should introduce a mechanic the player hasn't seen (dodgeable projectile patterns, safe zones, DPS checks)
