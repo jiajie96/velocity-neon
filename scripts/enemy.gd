@@ -16,10 +16,10 @@ var _original_color: Color = Color.WHITE
 var _mat: StandardMaterial3D
 var _dead: bool = false
 var _mage_shoot_timer: float = 2.0
-const MAGE_SHOOT_CD := 2.5
+const MAGE_SHOOT_CD := 1.8
 const MAGE_RANGE := 12.0
 const MAGE_PROJ_SPEED := 10.0
-const MAGE_PROJ_DAMAGE := 8.0
+const MAGE_PROJ_DAMAGE := 14.0
 
 # Rogue dodge behavior
 var _rogue_dodge_timer: float = 1.5
@@ -32,18 +32,37 @@ const NECRO_SUMMON_CD := 5.0
 const NECRO_SUMMON_COUNT := 2
 const NECRO_KEEP_RANGE := 10.0
 var _necro_minions: Array[WeakRef] = []
+var _necro_bolt_timer: float = 2.0
+const NECRO_BOLT_CD := 2.5
+const NECRO_BOLT_DAMAGE := 12.0
 
 # Exploder behavior
 var _exploder_fuse_lit: bool = false
 const EXPLODER_DETONATE_RANGE := 1.8
-const EXPLODER_DAMAGE := 30.0
+const EXPLODER_DAMAGE := 40.0
 const EXPLODER_RADIUS := 4.0
 
 # Golem slam attack
 var _golem_slam_timer: float = 4.0
-const GOLEM_SLAM_CD := 5.0
+const GOLEM_SLAM_CD := 4.0
 const GOLEM_SLAM_RANGE := 5.0
-const GOLEM_SLAM_DAMAGE := 20.0
+const GOLEM_SLAM_DAMAGE := 35.0
+
+# Golem ranged rock throw
+var _golem_throw_timer: float = 3.0
+const GOLEM_THROW_CD := 3.5
+const GOLEM_THROW_DAMAGE := 25.0
+const GOLEM_THROW_SPEED := 16.0
+
+# Golem charge/dash
+var _golem_charge_timer: float = 8.0
+const GOLEM_CHARGE_CD := 9.0
+const GOLEM_CHARGE_SPEED := 18.0
+const GOLEM_CHARGE_DURATION := 0.6
+const GOLEM_CHARGE_DAMAGE := 30.0
+var _golem_charging: bool = false
+var _golem_charge_dir: Vector3 = Vector3.ZERO
+var _golem_charge_elapsed: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -180,11 +199,15 @@ func _process(delta: float) -> void:
 			# Slow approach — mages still drift closer but much slower
 			position += dir * spd * 0.3 * delta
 		elif enemy_type == "necromancer":
-			# Necromancers stay at range and summon minions
+			# Necromancers stay at range, summon minions, and fire bolts
 			_necro_summon_timer -= delta
 			if _necro_summon_timer <= 0.0:
 				_necro_summon_timer = NECRO_SUMMON_CD
 				_necro_summon()
+			_necro_bolt_timer -= delta
+			if _necro_bolt_timer <= 0.0:
+				_necro_bolt_timer = NECRO_BOLT_CD
+				_fire_mage_bolt(dir)
 			if dist_to_player < NECRO_KEEP_RANGE:
 				# Back away slowly to maintain distance
 				position -= dir * spd * 0.4 * delta
@@ -209,16 +232,42 @@ func _process(delta: float) -> void:
 				_exploder_fuse_lit = true
 				_explode()
 		elif is_boss:
-			# Golem: walk toward player and periodically ground slam when close
-			# Enrage below 30% HP — faster movement and slams
+			# Golem: multi-ability boss with slam, rock throw, and charge
 			var enraged := hp < max_hp * 0.3
 			var boss_spd := spd * (1.6 if enraged else 1.0)
-			position += dir * boss_spd * delta
+			# Handle charge state
+			if _golem_charging:
+				_golem_charge_elapsed += delta
+				position += _golem_charge_dir * GOLEM_CHARGE_SPEED * delta
+				position.x = clampf(position.x, -46.0, 46.0)
+				position.z = clampf(position.z, -46.0, 46.0)
+				# Damage player if we reach them during charge
+				if dist_to_player < 2.5 and not GameState.invincible:
+					GameState.take_damage(GOLEM_CHARGE_DAMAGE)
+					GameState.request_shake(4.0, dir)
+					_golem_charging = false
+				if _golem_charge_elapsed >= GOLEM_CHARGE_DURATION:
+					_golem_charging = false
+			else:
+				position += dir * boss_spd * delta
 			_golem_slam_timer -= delta
+			_golem_throw_timer -= delta
+			_golem_charge_timer -= delta
 			var slam_cd := GOLEM_SLAM_CD * (0.5 if enraged else 1.0)
+			# Slam when close
 			if _golem_slam_timer <= 0.0 and dist_to_player < GOLEM_SLAM_RANGE:
 				_golem_slam_timer = slam_cd
 				_golem_slam()
+			# Rock throw when far — ranged attack
+			var throw_cd := GOLEM_THROW_CD * (0.6 if enraged else 1.0)
+			if _golem_throw_timer <= 0.0 and dist_to_player > GOLEM_SLAM_RANGE:
+				_golem_throw_timer = throw_cd
+				_golem_throw_rock(dir)
+			# Charge/dash at player periodically
+			var charge_cd := GOLEM_CHARGE_CD * (0.6 if enraged else 1.0)
+			if _golem_charge_timer <= 0.0 and dist_to_player > 6.0 and not _golem_charging:
+				_golem_charge_timer = charge_cd
+				_golem_start_charge(dir)
 		else:
 			position += dir * spd * delta
 		var model := get_node_or_null("Model")
@@ -255,10 +304,10 @@ func _mage_telegraph(dir: Vector3) -> void:
 	sphere.radius = 0.25
 	glow.mesh = sphere
 	var glow_mat := StandardMaterial3D.new()
-	glow_mat.albedo_color = Color(0.7, 0.0, 1.0, 0.6)
+	glow_mat.albedo_color = Color(1.0, 0.3, 0.0, 0.6)
 	glow_mat.emission_enabled = true
-	glow_mat.emission = Color(0.7, 0.0, 1.0)
-	glow_mat.emission_energy_multiplier = 8.0
+	glow_mat.emission = Color(1.0, 0.2, 0.0)
+	glow_mat.emission_energy_multiplier = 6.0
 	glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	glow.material_override = glow_mat
 	glow.position = global_position + Vector3(0, 1.2, 0)
@@ -286,17 +335,25 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 		return
 	var bolt := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
-	sphere.radius = 0.15
+	sphere.radius = 0.2
 	bolt.mesh = sphere
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.7, 0.0, 1.0, 0.9)
+	# Enemy projectiles are RED/ORANGE — clearly distinct from player's cyan
+	mat.albedo_color = Color(1.0, 0.2, 0.1, 0.9)
 	mat.emission_enabled = true
-	mat.emission = Color(0.7, 0.0, 1.0)
-	mat.emission_energy_multiplier = 5.0
+	mat.emission = Color(1.0, 0.15, 0.0)
+	mat.emission_energy_multiplier = 4.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	bolt.material_override = mat
 	bolt.position = global_position + Vector3(0, 1.0, 0)
 	container.add_child(bolt)
+	# Red glow light on enemy bolt so it's visible
+	var bolt_light := OmniLight3D.new()
+	bolt_light.light_color = Color(1.0, 0.2, 0.0)
+	bolt_light.light_energy = 1.5
+	bolt_light.omni_range = 3.0
+	bolt_light.omni_attenuation = 2.0
+	bolt.add_child(bolt_light)
 	# Simple area for hitting player
 	var area := Area3D.new()
 	area.collision_layer = 2
@@ -443,6 +500,113 @@ func _golem_slam_impact() -> void:
 	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.4)
 	rtw.set_parallel(false)
 	rtw.tween_callback(ring.queue_free)
+
+func _golem_throw_rock(dir: Vector3) -> void:
+	# Ranged rock projectile — large, slow, red, clearly telegraphed
+	var container := get_parent().get_parent().get_node_or_null("Projectiles")
+	if not container:
+		container = get_parent()
+	# Telegraph — brief glow at hands
+	Audio.sfx_golem_slam()
+	var rock := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.4
+	rock.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.3, 0.0, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.2, 0.0)
+	mat.emission_energy_multiplier = 3.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	rock.material_override = mat
+	rock.position = global_position + Vector3(0, 2.0, 0) + dir * 1.0
+	container.add_child(rock)
+	# Red glow on rock
+	var rock_light := OmniLight3D.new()
+	rock_light.light_color = Color(1.0, 0.2, 0.0)
+	rock_light.light_energy = 2.0
+	rock_light.omni_range = 3.5
+	rock_light.omni_attenuation = 2.0
+	rock.add_child(rock_light)
+	# Hit area
+	var area := Area3D.new()
+	area.collision_layer = 2
+	area.collision_mask = 1
+	area.monitoring = true
+	area.monitorable = false
+	var col := CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = 0.6
+	col.shape = shape
+	area.add_child(col)
+	rock.add_child(area)
+	area.area_entered.connect(func(_a: Area3D):
+		if not GameState.invincible:
+			GameState.take_damage(GOLEM_THROW_DAMAGE)
+			GameState.request_shake(2.5, dir)
+		# Explosion VFX on impact
+		var flash := MeshInstance3D.new()
+		var fs := SphereMesh.new()
+		fs.radius = 0.8
+		flash.mesh = fs
+		var fmat := StandardMaterial3D.new()
+		fmat.albedo_color = Color(1.0, 0.4, 0.0, 0.7)
+		fmat.emission_enabled = true
+		fmat.emission = Color(1.0, 0.3, 0.0)
+		fmat.emission_energy_multiplier = 5.0
+		fmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		flash.material_override = fmat
+		flash.position = rock.position
+		container.add_child(flash)
+		var ftw := flash.create_tween()
+		ftw.set_parallel(true)
+		ftw.tween_property(flash, "scale", Vector3(2.5, 2.5, 2.5), 0.2)
+		ftw.tween_property(fmat, "albedo_color:a", 0.0, 0.2)
+		ftw.set_parallel(false)
+		ftw.tween_callback(flash.queue_free)
+		rock.queue_free()
+	)
+	# Move rock toward player
+	var end_pos := rock.position + dir * 25.0
+	var tw := rock.create_tween()
+	tw.tween_property(rock, "position", end_pos, 25.0 / GOLEM_THROW_SPEED)
+	tw.tween_callback(rock.queue_free)
+
+func _golem_start_charge(dir: Vector3) -> void:
+	# Telegraph — red flash and brief pause before charging
+	_golem_charging = false
+	_golem_charge_dir = dir
+	_golem_charge_elapsed = 0.0
+	# Warning line on ground showing charge path
+	var container := get_parent()
+	if container:
+		var line := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(1.0, 0.02, 12.0)
+		line.mesh = box
+		var lmat := StandardMaterial3D.new()
+		lmat.albedo_color = Color(1.0, 0.1, 0.0, 0.4)
+		lmat.emission_enabled = true
+		lmat.emission = Color(1.0, 0.0, 0.0)
+		lmat.emission_energy_multiplier = 3.0
+		lmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		line.material_override = lmat
+		line.position = global_position + dir * 6.0
+		line.position.y = 0.1
+		line.rotation.y = atan2(dir.x, dir.z)
+		container.add_child(line)
+		var ltw := line.create_tween()
+		ltw.tween_property(lmat, "albedo_color:a", 0.0, 0.5)
+		ltw.tween_callback(line.queue_free)
+	# Start charging after telegraph delay
+	GameState.request_shake(2.0)
+	var tree := get_tree()
+	if tree and not _dead:
+		tree.create_timer(0.5).timeout.connect(func():
+			if not _dead and is_inside_tree():
+				_golem_charging = true
+				_golem_charge_elapsed = 0.0
+		)
 
 func _explode() -> void:
 	# Area damage to player if in range
@@ -698,47 +862,47 @@ func _death_vfx() -> void:
 
 func setup(type: String, wave: int) -> void:
 	enemy_type = type
-	# Soft cap: linear scaling up to wave 15, then diminishing returns
-	var wave_scale := 1.0 + minf(wave, 15) * 0.1 + maxf(wave - 15, 0) * 0.04
+	# Aggressive scaling: enemies get noticeably tougher every wave
+	var wave_scale := 1.0 + minf(wave, 15) * 0.18 + maxf(wave - 15, 0) * 0.08
 	match type:
 		"minion":
-			hp = 15.0 * wave_scale
-			speed = 4.5
+			hp = 22.0 * wave_scale
+			speed = 5.0 + wave * 0.1
 			xp_value = 8.0
 			is_boss = false
 		"warrior":
-			hp = 35.0 * wave_scale
-			speed = 3.5
+			hp = 55.0 * wave_scale
+			speed = 3.8 + wave * 0.08
 			xp_value = 15.0
 			is_boss = false
 		"mage":
-			hp = 25.0 * wave_scale
-			speed = 2.5
+			hp = 40.0 * wave_scale
+			speed = 2.8
 			xp_value = 12.0
 			is_boss = false
 		"rogue":
-			hp = 18.0 * wave_scale
-			speed = 6.0
+			hp = 28.0 * wave_scale
+			speed = 6.5 + wave * 0.1
 			xp_value = 14.0
 			contact_damage = 12.0
 			is_boss = false
 		"necromancer":
-			hp = 45.0 * wave_scale
-			speed = 2.0
+			hp = 60.0 * wave_scale
+			speed = 2.2
 			xp_value = 25.0
 			contact_damage = 15.0
 			is_boss = false
 		"exploder":
-			hp = 12.0 * wave_scale
-			speed = 5.5
+			hp = 18.0 * wave_scale
+			speed = 6.0 + wave * 0.12
 			xp_value = 12.0
-			contact_damage = 15.0
+			contact_damage = 20.0
 			is_boss = false
 		"golem":
-			hp = 300.0 * wave_scale
-			speed = 1.8
+			hp = 500.0 * wave_scale
+			speed = 2.2
 			# Boss XP scales with wave for rewarding late-game bosses
 			xp_value = 80.0 + wave * 10.0
-			contact_damage = 25.0
+			contact_damage = 35.0
 			is_boss = true
 	max_hp = hp

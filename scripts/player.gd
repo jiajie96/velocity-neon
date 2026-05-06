@@ -53,7 +53,7 @@ func _build_visual() -> void:
 			inst.name = "Model"
 			inst.scale = Vector3(0.6, 0.6, 0.6)
 			add_child(inst)
-			_apply_neon_tint(inst, Color(0.0, 0.9, 1.0))
+			_apply_neon_tint(inst, Color(0.0, 0.5, 0.7))
 			_model_loaded = true
 			return
 	var mesh_inst := MeshInstance3D.new()
@@ -63,10 +63,10 @@ func _build_visual() -> void:
 	capsule.height = 1.3
 	mesh_inst.mesh = capsule
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.0, 0.85, 1.0)
+	mat.albedo_color = Color(0.0, 0.6, 0.8)
 	mat.emission_enabled = true
-	mat.emission = Color(0.0, 0.7, 1.0)
-	mat.emission_energy_multiplier = 2.5
+	mat.emission = Color(0.0, 0.4, 0.6)
+	mat.emission_energy_multiplier = 1.0
 	mesh_inst.material_override = mat
 	mesh_inst.position.y = 0.65
 	add_child(mesh_inst)
@@ -79,8 +79,8 @@ func _apply_neon_tint(node: Node, color: Color) -> void:
 			if base_mat and base_mat is StandardMaterial3D:
 				var new_mat: StandardMaterial3D = base_mat.duplicate()
 				new_mat.emission_enabled = true
-				new_mat.emission = color * 0.3
-				new_mat.emission_energy_multiplier = 1.5
+				new_mat.emission = color * 0.15
+				new_mat.emission_energy_multiplier = 0.8
 				mi.set_surface_override_material(i, new_mat)
 	for child in node.get_children():
 		_apply_neon_tint(child, color)
@@ -103,10 +103,10 @@ func _build_hurtbox() -> void:
 func _build_light() -> void:
 	var light := OmniLight3D.new()
 	light.name = "PlayerGlow"
-	light.light_color = Color(0.0, 0.75, 1.0)
-	light.light_energy = 2.5
-	light.omni_range = 10.0
-	light.omni_attenuation = 1.5
+	light.light_color = Color(0.0, 0.6, 0.9)
+	light.light_energy = 1.0
+	light.omni_range = 6.0
+	light.omni_attenuation = 2.0
 	light.position.y = 1.5
 	add_child(light)
 
@@ -119,10 +119,10 @@ func _build_dash_ring() -> void:
 	torus.height = 0.02
 	_dash_ring.mesh = torus
 	_dash_ring_mat = StandardMaterial3D.new()
-	_dash_ring_mat.albedo_color = Color(0.4, 0.9, 1.0, 0.5)
+	_dash_ring_mat.albedo_color = Color(0.3, 0.7, 0.9, 0.3)
 	_dash_ring_mat.emission_enabled = true
-	_dash_ring_mat.emission = Color(0.3, 0.85, 1.0)
-	_dash_ring_mat.emission_energy_multiplier = 3.0
+	_dash_ring_mat.emission = Color(0.2, 0.5, 0.7)
+	_dash_ring_mat.emission_energy_multiplier = 1.5
 	_dash_ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_dash_ring.material_override = _dash_ring_mat
 	_dash_ring.position.y = 0.05
@@ -616,14 +616,13 @@ func _update_weapon_glow() -> void:
 	var glow := get_node_or_null("PlayerGlow") as OmniLight3D
 	if not glow:
 		return
-	# Base fire rate is 2.2 — scale glow as fire rate increases
+	# Subtle glow scaling — kept low to keep player visible
 	var rate_ratio := GameState.fire_rate / 2.2
-	glow.light_energy = clampf(2.5 * rate_ratio, 2.5, 8.0)
-	glow.omni_range = clampf(10.0 + (rate_ratio - 1.0) * 3.0, 10.0, 18.0)
-	# Shift hue toward white/hot as fire rate increases
+	glow.light_energy = clampf(1.0 + (rate_ratio - 1.0) * 0.3, 1.0, 2.5)
+	glow.omni_range = clampf(6.0 + (rate_ratio - 1.0) * 1.0, 6.0, 9.0)
 	if rate_ratio > 2.0:
-		glow.light_color = Color(0.3, 0.85, 1.0)
+		glow.light_color = Color(0.2, 0.7, 0.9)
 	elif rate_ratio > 1.5:
-		glow.light_color = Color(0.15, 0.8, 1.0)
+		glow.light_color = Color(0.1, 0.6, 0.85)
 	else:
-		glow.light_color = Color(0.0, 0.75, 1.0)
+		glow.light_color = Color(0.0, 0.6, 0.9)

@@ -31,11 +31,11 @@ static func _ensure_init() -> void:
 		# Stat upgrades
 		Upgrade.new("rapid_fire", "RAPID FIRE", "+25% fire rate", Color(1.0, 0.9, 0.2), ">>"),
 		Upgrade.new("power_shot", "POWER SHOT", "+20% damage", Color(1.0, 0.3, 0.1), "!!"),
-		Upgrade.new("fortify", "FORTIFY", "+30 max HP, heal 30", Color(0.3, 1.0, 0.5), "++"),
+		Upgrade.new("fortify", "FORTIFY", "+15 max HP, heal 15", Color(0.3, 1.0, 0.5), "++"),
 		Upgrade.new("swift", "SWIFT", "+12% move speed", Color(0.3, 0.8, 1.0), "~~"),
 		Upgrade.new("multi_shot", "MULTI-SHOT", "+1 projectile", Color(0.9, 0.5, 1.0), "**", 4),
 		Upgrade.new("magnet", "MAGNET", "+50% pickup range", Color(0.5, 1.0, 0.8), "<>"),
-		Upgrade.new("regen", "REGENERATION", "+1.5 HP/sec", Color(0.2, 1.0, 0.3), "HP"),
+		Upgrade.new("regen", "REGENERATION", "+0.5 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		Upgrade.new("overclock", "OVERCLOCK", "2x fire rate, drains HP", Color(1.0, 0.0, 0.3), "OC", 1),
@@ -48,7 +48,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
 		Upgrade.new("ricochet", "RICOCHET", "Shots bounce off arena walls", Color(0.8, 1.0, 0.3), "<>", 2),
 		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% critical hit chance", Color(1.0, 0.5, 0.0), "!!", 4),
-		Upgrade.new("vampire", "VAMPIRE", "Heal 3 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
+		Upgrade.new("vampire", "VAMPIRE", "Heal 1.5 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 2),
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 	]
 
@@ -74,8 +74,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"power_shot":
 			GameState.damage *= 1.20
 		"fortify":
-			GameState.max_hp += 30.0
-			GameState.heal(30.0)
+			GameState.max_hp += 15.0
+			GameState.heal(15.0)
 		"swift":
 			GameState.speed *= 1.12
 		"multi_shot":
@@ -83,7 +83,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"magnet":
 			GameState.magnet_range *= 1.5
 		"regen":
-			GameState.hp_regen += 1.5
+			GameState.hp_regen += 0.5
 		"shatter":
 			GameState.has_shatter = true
 		"gravity_well":
@@ -107,7 +107,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"crit_surge":
 			GameState.crit_chance += 0.05
 		"vampire":
-			GameState.lifesteal += 3.0
+			GameState.lifesteal += 1.5
 		"nano_shield":
 			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.48)
 
