@@ -21,6 +21,7 @@ A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBoo
 | **Space** | Phase Dash — invincible + fire trail |
 | **Q** | Ultimate — area damage burst |
 | **Scroll Wheel** | Zoom camera in/out |
+| **1 / 2 / 3** | Select upgrade on level-up screen |
 | **Space / R** | Restart (game over) |
 | **ESC** | Pause menu (Resume / Restart / Quit) |
 
@@ -90,13 +91,21 @@ Seven enemy types, each with a unique 3D model and neon glow:
 - **XP orb size variation** — larger, golden orbs for high-value drops (boss XP vs regular)
 - **No-damage wave indicator** — HUD shows "NO DAMAGE" when you're on track for a perfect wave bonus
 - **Enemy spawn warning** — brief neon flash on the ground where enemies are about to appear
-- **Dash cooldown ring** — radial ring around player shows dash readiness at a glance
+- **Dash cooldown ring** — radial ring around player shows dash readiness at a glance, with a bright pulse VFX when dash becomes ready
 - **Boss ground slam** — Golem periodically slams the ground dealing AoE damage and knockback when close
 - **Victory music** — dedicated victory.ogg track plays on boss defeat instead of generic SFX
 - **Damage hit flash** — brief red screen overlay when the player takes damage for clear feedback
 - **XP pickup values** — floating "+X" text shows XP gained from each orb pickup
 - **Live survival timer** — elapsed time displayed in HUD during gameplay
 - **Distinct enemy SFX** — golem slam and exploder detonation have unique audio distinct from player abilities
+- **Neon arena walls** — glowing pink boundary walls with cyan corner pillars so players can see the play area edges
+- **Keyboard upgrade selection** — press 1/2/3 to pick upgrades during level-up screen (in addition to mouse)
+- **Musical XP pickup** — rapid orb collection plays an ascending pitch scale for satisfying audio feedback
+- **Necromancer death cascade** — killing a necromancer also kills all minions it summoned
+- **Exploder proximity warning** — pulsing yellow-orange glow intensifies as exploders approach detonation range
+- **Mage bolt scaling** — mage projectile speed gradually increases in later waves for more challenge
+- **Performance rating** — game over screen shows a tier rating (RECRUIT through LEGENDARY) based on wave reached
+- **Boss HP percentage** — boss health bar shows remaining HP percentage for clearer progress tracking
 
 ## Running
 

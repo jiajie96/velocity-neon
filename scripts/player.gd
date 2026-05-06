@@ -20,6 +20,7 @@ const DASH_HIT_RADIUS := 1.5
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_cd_timer: float = 0.0
+var _dash_was_on_cd: bool = false
 var is_dashing: bool = false
 var dash_dir: Vector3 = Vector3.ZERO
 var ult_cd_timer: float = 0.0
@@ -133,6 +134,7 @@ func _update_dash_ring() -> void:
 	var cd_ratio := dash_cd_timer / maxf(GameState.dash_cooldown, 0.01)
 	if cd_ratio > 0.01:
 		# On cooldown — show shrinking ring filling back up
+		_dash_was_on_cd = true
 		_dash_ring.visible = true
 		var ring_scale := 1.0 - cd_ratio
 		_dash_ring.scale = Vector3(ring_scale, 1.0, ring_scale)
@@ -146,6 +148,37 @@ func _update_dash_ring() -> void:
 		_dash_ring_mat.albedo_color = Color(0.4, 0.9, 1.0, 0.4)
 		_dash_ring_mat.emission = Color(0.3, 0.85, 1.0)
 		_dash_ring_mat.emission_energy_multiplier = 3.0
+		# Pulse flash when dash just became ready
+		if _dash_was_on_cd:
+			_dash_was_on_cd = false
+			_dash_ready_pulse()
+
+func _dash_ready_pulse() -> void:
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.9
+	cyl.bottom_radius = 0.9
+	cyl.height = 0.02
+	ring.mesh = cyl
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.4, 0.95, 1.0, 0.6)
+	mat.emission_enabled = true
+	mat.emission = Color(0.3, 0.9, 1.0)
+	mat.emission_energy_multiplier = 6.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = mat
+	ring.position = position
+	ring.position.y = 0.05
+	container.add_child(ring)
+	var tw := ring.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(ring, "scale", Vector3(2.0, 1.0, 2.0), 0.3)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3)
+	tw.set_parallel(false)
+	tw.tween_callback(ring.queue_free)
 
 func _process(delta: float) -> void:
 	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:

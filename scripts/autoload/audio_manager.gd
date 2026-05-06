@@ -9,6 +9,14 @@ var _active_music: AudioStreamPlayer
 var _sfx_pool: Array[AudioStreamPlayer] = []
 var _cache: Dictionary = {}
 var _fade_tween: Tween
+var _xp_pickup_streak: int = 0
+var _xp_pickup_decay: float = 0.0
+
+func _process(delta: float) -> void:
+	if _xp_pickup_decay > 0.0:
+		_xp_pickup_decay -= delta
+		if _xp_pickup_decay <= 0.0:
+			_xp_pickup_streak = 0
 
 func _ready() -> void:
 	_music_a = AudioStreamPlayer.new()
@@ -124,7 +132,13 @@ func sfx_dice_roll() -> void:
 	play_sfx("res://assets/audio/sfx/dice_roll.ogg", -3.0)
 
 func sfx_xp_pickup() -> void:
-	play_sfx("res://assets/audio/sfx/ui_select.ogg", -12.0, randf_range(1.3, 1.7))
+	# Musical pitch scaling — rapid pickups climb a pentatonic-ish scale
+	_xp_pickup_streak = mini(_xp_pickup_streak + 1, 8)
+	_xp_pickup_decay = 0.4
+	var base_pitch := 1.3
+	var pitch_step := 0.08
+	var pitch := base_pitch + _xp_pickup_streak * pitch_step
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -12.0, pitch)
 
 func sfx_hit_impact(weapon_type: String = "pulse") -> void:
 	match weapon_type:
