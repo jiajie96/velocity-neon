@@ -74,7 +74,9 @@ func _pick_type() -> String:
 	var wave := GameState.wave
 	var roll := randf()
 	if wave < 2:
-		# Wave 1 is pure minions — ease the player in
+		# Wave 1 is mostly minions — introduce a few warriors in the second half
+		if _spawned_this_wave > _target_this_wave / 2 and roll < 0.25:
+			return "warrior"
 		return "minion"
 	elif wave < 4:
 		if roll < 0.35:

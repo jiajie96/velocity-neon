@@ -31,6 +31,7 @@ var _necro_summon_timer: float = 4.0
 const NECRO_SUMMON_CD := 5.0
 const NECRO_SUMMON_COUNT := 2
 const NECRO_KEEP_RANGE := 10.0
+var _necro_minions: Array[WeakRef] = []
 
 # Exploder behavior
 var _exploder_fuse_lit: bool = false
@@ -232,6 +233,15 @@ func _process(delta: float) -> void:
 			_mat.emission = _original_color
 			_mat.emission_energy_multiplier = 2.0
 
+	# Exploder warning glow — intensifies as they approach detonation range
+	if enemy_type == "exploder" and not _exploder_fuse_lit and _mat and _flash_timer <= 0.0:
+		var proximity := clampf(1.0 - dist_to_player / (EXPLODER_DETONATE_RANGE * 3.0), 0.0, 1.0)
+		if proximity > 0.01:
+			var pulse := (sin(GameState.time_survived * 12.0) + 1.0) * 0.5
+			var glow_intensity := lerpf(2.0, 8.0, proximity * pulse)
+			_mat.emission = Color(1.0, 0.8, 0.0).lerp(Color(1.0, 0.3, 0.0), proximity)
+			_mat.emission_energy_multiplier = glow_intensity
+
 	# Boss enrage visual — pulsing red glow below 30% HP
 	if is_boss and hp < max_hp * 0.3 and _mat:
 		var pulse := (sin(_golem_slam_timer * 8.0) + 1.0) * 0.5
@@ -300,7 +310,7 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 	area.add_child(col)
 	bolt.add_child(area)
 	var bolt_dir := dir
-	var bolt_spd := MAGE_PROJ_SPEED
+	var bolt_spd := MAGE_PROJ_SPEED + minf(GameState.wave, 20) * 0.3
 	var bolt_dmg := MAGE_PROJ_DAMAGE * (1.0 + GameState.wave * 0.1)
 	var bolt_alive := 0.0
 	area.area_entered.connect(func(_a: Area3D):
@@ -359,6 +369,7 @@ func _necro_summon() -> void:
 		minion.set_meta("_enemy_type", "minion")
 		minion.set_meta("_enemy_wave", GameState.wave)
 		container.add_child(minion)
+		_necro_minions.append(weakref(minion))
 
 func _golem_slam() -> void:
 	# Ground slam AoE attack — damages and knocks back the player
@@ -541,6 +552,13 @@ func _die() -> void:
 	GameState.add_kill()
 	Audio.sfx_enemy_death()
 	_spawn_xp()
+	# Necromancer death kills its summoned minions
+	if enemy_type == "necromancer":
+		for ref in _necro_minions:
+			var minion: Node3D = ref.get_ref() as Node3D
+			if minion and not minion.is_queued_for_deletion() and minion.has_method("take_damage"):
+				minion.take_damage(9999.0)
+		_necro_minions.clear()
 	if is_boss:
 		GameState.request_shake(4.0)
 		GameState.request_hit_stop(0.1)

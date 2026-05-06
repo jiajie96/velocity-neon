@@ -17,6 +17,7 @@ var controls_label: Label
 var boss_bar_container: Control
 var boss_bar: ProgressBar
 var boss_name_label: Label
+var boss_pct_label: Label
 var _boss_ref: WeakRef = WeakRef.new()
 var _vignette: ColorRect
 var _vignette_mat: ShaderMaterial
@@ -433,6 +434,14 @@ func _build_upgrade_panel() -> void:
 		card_vbox.add_child(stacks_label)
 		_card_stacks.append(stacks_label)
 
+		# Key hint
+		var key_hint := Label.new()
+		key_hint.text = "[%d]" % (i + 1)
+		key_hint.add_theme_font_size_override("font_size", 12)
+		key_hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.6, 0.5))
+		key_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		card_vbox.add_child(key_hint)
+
 		# Invisible button overlay for click handling
 		var btn := Button.new()
 		btn.name = "UpgradeBtn%d" % i
@@ -520,6 +529,15 @@ func _build_boss_bar() -> void:
 	bg.set_corner_radius_all(3)
 	boss_bar.add_theme_stylebox_override("background", bg)
 	boss_bar_container.add_child(boss_bar)
+
+	boss_pct_label = Label.new()
+	boss_pct_label.text = "100%"
+	boss_pct_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.8))
+	boss_pct_label.add_theme_font_size_override("font_size", 11)
+	boss_pct_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_pct_label.position = Vector2(0, 35)
+	boss_pct_label.custom_minimum_size = Vector2(400, 15)
+	boss_bar_container.add_child(boss_pct_label)
 
 func _build_danger_vignette() -> void:
 	_vignette = ColorRect.new()
@@ -862,6 +880,9 @@ func _update_boss_bar() -> void:
 	if boss and not boss.is_queued_for_deletion() and boss.get("hp") != null:
 		boss_bar.max_value = boss.max_hp
 		boss_bar.value = boss.hp
+		if boss_pct_label:
+			var pct := int(boss.hp / maxf(boss.max_hp, 1.0) * 100.0)
+			boss_pct_label.text = "%d%%" % pct
 		if not boss_bar_container.visible:
 			boss_bar_container.visible = true
 			boss_bar_container.modulate.a = 0.0
@@ -1060,9 +1081,21 @@ func _on_player_died() -> void:
 		var upgrades_text := ""
 		if GameState.acquired_upgrades.size() > 0:
 			upgrades_text = "\nBuild: " + ", ".join(GameState.acquired_upgrades)
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d\nSurvived %d:%02d  |  Damage: %s\nKills/min: %.1f  |  Avg DPS: %s%s" % [
+		# Performance rating based on wave reached
+		var rating := "RECRUIT"
+		if GameState.wave >= 25:
+			rating = "LEGENDARY"
+		elif GameState.wave >= 20:
+			rating = "ELITE"
+		elif GameState.wave >= 15:
+			rating = "VETERAN"
+		elif GameState.wave >= 10:
+			rating = "SKILLED"
+		elif GameState.wave >= 5:
+			rating = "SURVIVOR"
+		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d\nSurvived %d:%02d  |  Damage: %s\nKills/min: %.1f  |  Avg DPS: %s\nRating: %s%s" % [
 			GameState.wave, GameState.kills, GameState.level, mins, secs, dmg_text,
-			kpm, _format_damage(avg_dps), upgrades_text]
+			kpm, _format_damage(avg_dps), rating, upgrades_text]
 
 func _format_damage(amount: float) -> String:
 	if amount >= 1000000:
@@ -1159,6 +1192,17 @@ func _unhandled_input(event: InputEvent) -> void:
 				_dismiss_title()
 		return
 	if event is InputEventKey and event.pressed:
+		# Keyboard upgrade selection (1/2/3) during level-up
+		if upgrade_panel and upgrade_panel.visible and GameState.paused_for_upgrade:
+			if event.physical_keycode == KEY_1:
+				_on_upgrade_chosen(0)
+				return
+			elif event.physical_keycode == KEY_2:
+				_on_upgrade_chosen(1)
+				return
+			elif event.physical_keycode == KEY_3:
+				_on_upgrade_chosen(2)
+				return
 		if event.physical_keycode == KEY_ESCAPE:
 			if GameState.game_over:
 				GameState.reset()

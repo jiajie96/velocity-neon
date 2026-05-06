@@ -10,6 +10,7 @@ func _ready() -> void:
 	UpgradeSystem.reset_all()
 	_build_environment()
 	_build_ground()
+	_build_arena_walls()
 	_build_lighting()
 	_build_camera()
 	_build_player()
@@ -66,6 +67,61 @@ func _build_ground() -> void:
 		mat.albedo_color = Color(0.04, 0.02, 0.08)
 		ground.material_override = mat
 	add_child(ground)
+
+func _build_arena_walls() -> void:
+	# Neon boundary walls at arena edges so players can see the play area
+	var wall_mat := StandardMaterial3D.new()
+	wall_mat.albedo_color = Color(1.0, 0.0, 0.7, 0.15)
+	wall_mat.emission_enabled = true
+	wall_mat.emission = Color(1.0, 0.0, 0.6)
+	wall_mat.emission_energy_multiplier = 2.0
+	wall_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var positions := [
+		{"pos": Vector3(0, 1.5, -48), "scale": Vector3(96, 3, 0.05)},
+		{"pos": Vector3(0, 1.5, 48), "scale": Vector3(96, 3, 0.05)},
+		{"pos": Vector3(-48, 1.5, 0), "scale": Vector3(0.05, 3, 96)},
+		{"pos": Vector3(48, 1.5, 0), "scale": Vector3(0.05, 3, 96)},
+	]
+	for p in positions:
+		var wall := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = p["scale"]
+		wall.mesh = box
+		wall.material_override = wall_mat.duplicate()
+		wall.position = p["pos"]
+		add_child(wall)
+
+	# Corner glow pillars
+	var corners := [
+		Vector3(-48, 0, -48), Vector3(48, 0, -48),
+		Vector3(-48, 0, 48), Vector3(48, 0, 48),
+	]
+	for c in corners:
+		var pillar := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.15
+		cyl.bottom_radius = 0.15
+		cyl.height = 4.0
+		pillar.mesh = cyl
+		var pmat := StandardMaterial3D.new()
+		pmat.albedo_color = Color(0.0, 0.9, 1.0, 0.7)
+		pmat.emission_enabled = true
+		pmat.emission = Color(0.0, 0.8, 1.0)
+		pmat.emission_energy_multiplier = 4.0
+		pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		pillar.material_override = pmat
+		pillar.position = c + Vector3(0, 2, 0)
+		add_child(pillar)
+		# Corner light
+		var light := OmniLight3D.new()
+		light.light_color = Color(0.0, 0.8, 1.0)
+		light.light_energy = 1.5
+		light.omni_range = 5.0
+		light.omni_attenuation = 1.5
+		light.position = c + Vector3(0, 2, 0)
+		add_child(light)
 
 func _build_lighting() -> void:
 	var sun := DirectionalLight3D.new()
