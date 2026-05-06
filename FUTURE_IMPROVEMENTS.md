@@ -159,6 +159,13 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Kill streak counter with escalating announcements ("TRIPLE KILL", "MULTI KILL", "KILLING SPREE", "RAMPAGE", "UNSTOPPABLE")
 - [x] After-image effect during dash (translucent copies of player)
 - [x] Weapon glow intensity scales with fire rate
+- [x] Wave clear announcement ("WAVE CLEAR" text between waves)
+- [x] Wave start screen pulse (purple flash on new wave)
+- [x] Vampire lifesteal VFX (green flash feedback)
+- [x] Kill milestone announcements (100, 250, 500, 1000 kills)
+- [x] Golem slam telegraph (warning ring before damage)
+- [x] Exploder chain reaction hit-stop
+- [x] Nano Shield defensive upgrade (damage reduction)
 
 ---
 

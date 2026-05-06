@@ -1,7 +1,7 @@
 extends Node
 
 const SPAWN_DISTANCE := 20.0
-const WAVE_INTERVAL := 1.2
+const WAVE_INTERVAL := 2.5
 const SPAWN_INTERVAL_BASE := 0.35
 const ENEMIES_PER_WAVE_BASE := 8
 
@@ -51,6 +51,7 @@ func _process(delta: float) -> void:
 			_wave_timer = WAVE_INTERVAL
 			# Pull all remaining XP orbs to player on wave clear
 			GameState.xp_magnet_pulse.emit()
+			GameState.wave_cleared.emit()
 
 func _spawn_enemy() -> void:
 	var player := get_tree().get_first_node_in_group("player_node")

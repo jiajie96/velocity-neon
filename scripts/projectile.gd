@@ -149,6 +149,11 @@ func _process(delta: float) -> void:
 		return
 	position += direction * speed * delta
 	position.y = lerpf(position.y, 0.8, 5.0 * delta)
+	# Despawn projectiles that leave arena bounds (no ricochet left)
+	if ricochet <= 0 or _bounce_count >= ricochet:
+		if absf(position.x) > 50.0 or absf(position.z) > 50.0:
+			queue_free()
+			return
 	# Ricochet — bounce off arena walls
 	if ricochet > 0 and _bounce_count < ricochet:
 		var bounced := false

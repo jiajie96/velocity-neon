@@ -49,6 +49,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("ricochet", "RICOCHET", "Shots bounce off arena walls", Color(0.8, 1.0, 0.3), "<>", 2),
 		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% critical hit chance", Color(1.0, 0.5, 0.0), "!!", 4),
 		Upgrade.new("vampire", "VAMPIRE", "Heal 3 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
+		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -107,6 +108,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.crit_chance += 0.05
 		"vampire":
 			GameState.lifesteal += 3.0
+		"nano_shield":
+			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.48)
 
 static func reset_all() -> void:
 	_initialized = false

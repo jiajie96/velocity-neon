@@ -74,6 +74,9 @@ func _ready() -> void:
 	GameState.boss_defeated.connect(_on_boss_defeated)
 	GameState.kill_streak.connect(_on_kill_streak)
 	GameState.perfect_wave.connect(_on_perfect_wave)
+	GameState.wave_cleared.connect(_on_wave_cleared)
+	GameState.kill_milestone.connect(_on_kill_milestone)
+	GameState.vampire_heal.connect(_on_vampire_heal)
 
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
@@ -852,6 +855,39 @@ func _on_perfect_wave(bonus_xp: float) -> void:
 	tw.tween_interval(1.5)
 	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
 
+func _on_wave_cleared() -> void:
+	if not wave_announce:
+		return
+	wave_announce.text = "WAVE CLEAR"
+	wave_announce.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
+	wave_announce.add_theme_font_size_override("font_size", 34)
+	wave_announce.modulate.a = 1.0
+	wave_announce.scale = Vector2(1.1, 1.1)
+	var tw := create_tween()
+	tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.2)
+	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.4)
+
+func _on_kill_milestone(count: int) -> void:
+	if not _streak_label:
+		return
+	_streak_label.text = "%d KILLS!" % count
+	_streak_label.add_theme_font_size_override("font_size", 36)
+	_streak_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2, 1.0))
+	_streak_label.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_property(_streak_label, "modulate:a", 1.0, 0.05)
+	tw.tween_interval(1.2)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5)
+
+func _on_vampire_heal() -> void:
+	# Brief green flash on the player glow area for lifesteal feedback
+	if not _levelup_flash:
+		return
+	_levelup_flash.color = Color(0.1, 1.0, 0.3, 0.15)
+	var tw := create_tween()
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.2).set_ease(Tween.EASE_OUT)
+
 func _trigger_levelup_flash() -> void:
 	if not _levelup_flash:
 		return
@@ -990,6 +1026,11 @@ func _on_xp_changed(current: float, needed: float) -> void:
 func _on_wave_changed(wave: int) -> void:
 	if wave_label:
 		wave_label.text = "WAVE %d" % wave
+	# Subtle purple screen pulse on wave start for atmosphere
+	if _levelup_flash and wave > 1:
+		_levelup_flash.color = Color(0.7, 0.0, 1.0, 0.2)
+		var pulse_tw := create_tween()
+		pulse_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.35).set_ease(Tween.EASE_OUT)
 	if wave_announce:
 		var is_boss := wave % 5 == 0
 		if is_boss:

@@ -372,6 +372,39 @@ func _necro_summon() -> void:
 		_necro_minions.append(weakref(minion))
 
 func _golem_slam() -> void:
+	# Telegraph — warning ring on ground before the slam lands
+	var container := get_parent()
+	if container:
+		var warn_ring := MeshInstance3D.new()
+		var warn_cyl := CylinderMesh.new()
+		warn_cyl.top_radius = GOLEM_SLAM_RANGE
+		warn_cyl.bottom_radius = GOLEM_SLAM_RANGE
+		warn_cyl.height = 0.02
+		warn_ring.mesh = warn_cyl
+		var warn_mat := StandardMaterial3D.new()
+		warn_mat.albedo_color = Color(1.0, 0.2, 0.0, 0.3)
+		warn_mat.emission_enabled = true
+		warn_mat.emission = Color(1.0, 0.15, 0.0)
+		warn_mat.emission_energy_multiplier = 3.0
+		warn_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		warn_ring.material_override = warn_mat
+		warn_ring.position = global_position
+		warn_ring.position.y = 0.08
+		warn_ring.scale = Vector3(0.2, 1.0, 0.2)
+		container.add_child(warn_ring)
+		var wtw := warn_ring.create_tween()
+		wtw.tween_property(warn_ring, "scale", Vector3(1.0, 1.0, 1.0), 0.35).set_ease(Tween.EASE_OUT)
+		wtw.tween_callback(warn_ring.queue_free)
+	# Delay actual slam damage slightly so players can react
+	var tree := get_tree()
+	if tree and not _dead:
+		tree.create_timer(0.35).timeout.connect(func():
+			if _dead or not is_inside_tree():
+				return
+			_golem_slam_impact()
+		)
+
+func _golem_slam_impact() -> void:
 	# Ground slam AoE attack — damages and knocks back the player
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:
@@ -420,12 +453,17 @@ func _explode() -> void:
 			GameState.take_damage(EXPLODER_DAMAGE)
 			GameState.request_shake(3.0)
 	# Also damage nearby enemies (chain reaction potential)
+	var chain_hit := false
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for e in enemies:
 		if e != self and e is Node3D and e.has_method("take_damage"):
 			var d := global_position.distance_to(e.global_position)
 			if d < EXPLODER_RADIUS * 0.6:
 				e.take_damage(EXPLODER_DAMAGE * 0.5)
+				chain_hit = true
+	# Extra hit-stop on chain reactions for dramatic feel
+	if chain_hit:
+		GameState.request_hit_stop(0.06)
 	Audio.sfx_exploder_boom()
 	_spawn_explosion_vfx()
 	_dead = true
@@ -699,7 +737,8 @@ func setup(type: String, wave: int) -> void:
 		"golem":
 			hp = 300.0 * wave_scale
 			speed = 1.8
-			xp_value = 80.0
+			# Boss XP scales with wave for rewarding late-game bosses
+			xp_value = 80.0 + wave * 10.0
 			contact_damage = 25.0
 			is_boss = true
 	max_hp = hp

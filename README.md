@@ -43,12 +43,12 @@ Seven enemy types, each with a unique 3D model and neon glow:
 - **Rogue** — fast and agile, green glow, periodically sidesteps to dodge projectiles
 - **Necromancer** — ranged summoner, stays at distance and periodically summons minion skeletons with a purple VFX ring
 - **Exploder** — fast yellow-glowing kamikaze, rushes the player and detonates on contact or death with area damage and chain-reaction potential
-- **Golem** (Boss) — massive, spawns every 5th wave with dedicated boss music, ground slam AoE, and enrage phase below 30% HP (faster movement, rapid slams, pulsing red glow)
+- **Golem** (Boss) — massive, spawns every 5th wave with dedicated boss music, telegraphed ground slam AoE with warning ring, and enrage phase below 30% HP (faster movement, rapid slams, pulsing red glow)
 
 ### Progression
 - Kill enemies to drop **XP orbs**
 - Level up to choose **1 of 3 random upgrades**
-- **19 upgrades** including: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, phase shift (dash cooldown), piercing rounds, ricochet, critical surge (crit chance), vampire (lifesteal on kill), and all 4 weapon unlocks
+- **20 upgrades** including: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, phase shift (dash cooldown), piercing rounds, ricochet, critical surge (crit chance), vampire (lifesteal on kill), nano shield (damage reduction), and all 4 weapon unlocks
 - **Wave survival bonus** — complete a wave without taking damage for bonus XP with "PERFECT WAVE" announcement
 - **Level-up magnet pulse** — all XP orbs get pulled toward you when you level up
 - **Wave clear magnet** — all remaining XP orbs auto-collect when a wave is fully cleared
@@ -106,6 +106,16 @@ Seven enemy types, each with a unique 3D model and neon glow:
 - **Mage bolt scaling** — mage projectile speed gradually increases in later waves for more challenge
 - **Performance rating** — game over screen shows a tier rating (RECRUIT through LEGENDARY) based on wave reached
 - **Boss HP percentage** — boss health bar shows remaining HP percentage for clearer progress tracking
+- **Wave clear announcement** — "WAVE CLEAR" text appears when all enemies in a wave are eliminated
+- **Wave start pulse** — subtle purple screen flash on each new wave for atmosphere
+- **Vampire heal VFX** — brief green screen flash when lifesteal heals the player on kill
+- **Kill milestones** — announcements at 100, 250, 500, 1000, and 2000 kills for a sense of progression
+- **Golem slam telegraph** — warning ring expands on the ground before the slam damage lands, giving time to dodge
+- **Exploder chain hit-stop** — brief time freeze when exploder chain reactions trigger nearby enemies
+- **Nano Shield upgrade** — new defensive upgrade that reduces incoming damage by 12% per stack (max 4)
+- **Boss XP scaling** — boss XP drops increase with wave number, rewarding deeper runs
+- **Between-wave breathing room** — longer pause between waves for collecting XP and regrouping
+- **Projectile cleanup** — bullets that leave the arena auto-despawn for cleaner performance
 
 ## Running
 

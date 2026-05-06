@@ -13,6 +13,9 @@ signal boss_defeated
 signal kill_streak(count: int)
 signal xp_magnet_pulse
 signal perfect_wave(bonus_xp: float)
+signal wave_cleared
+signal kill_milestone(count: int)
+signal vampire_heal
 
 # Player stats
 var hp: float = 80.0
@@ -34,6 +37,7 @@ var gravity_well_strength: float = 0.0
 var overclock_active: bool = false
 var crit_chance: float = 0.10
 var lifesteal: float = 0.0
+var damage_reduction: float = 0.0
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -83,8 +87,10 @@ var _wave_damage_taken: bool = false
 func take_damage(amount: float) -> void:
 	if invincible or game_over:
 		return
-	hp = clampf(hp - amount, 0.0, max_hp)
-	shake_amount = 2.0 * log(amount + 1.0) / log(10.0)
+	# Apply damage reduction from Nano Shield
+	var reduced := amount * maxf(0.0, 1.0 - damage_reduction)
+	hp = clampf(hp - reduced, 0.0, max_hp)
+	shake_amount = 2.0 * log(reduced + 1.0) / log(10.0)
 	_wave_damage_taken = true
 	hp_changed.emit(hp, max_hp)
 	if amount >= 5.0:
@@ -147,6 +153,10 @@ func add_kill() -> void:
 		kill_streak.emit(_streak_count)
 	if lifesteal > 0.0 and hp < max_hp:
 		heal(lifesteal)
+		vampire_heal.emit()
+	# Kill milestone announcements
+	if kills in [100, 250, 500, 1000, 2000]:
+		kill_milestone.emit(kills)
 
 func add_damage_dealt(amount: float) -> void:
 	total_damage_dealt += amount
@@ -179,6 +189,7 @@ func reset() -> void:
 	overclock_active = false
 	crit_chance = 0.10
 	lifesteal = 0.0
+	damage_reduction = 0.0
 	railgun_level = 0
 	scatter_level = 0
 	chain_level = 0
