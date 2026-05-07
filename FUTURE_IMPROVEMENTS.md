@@ -69,7 +69,7 @@
 - ~~**Necromancer**: Summons minion skeletons, stays at range. Kill to stop spawns~~ DONE — necromancers maintain distance and summon 2 minions every 5s with purple VFX ring
 - **Shield Bearer**: Front-facing shield blocks projectiles — must be hit from behind or with area damage
 - ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
-- **Teleporter**: Blinks to new position periodically, unpredictable movement
+- ~~**Teleporter**: Blinks to new position periodically, unpredictable movement~~ DONE — teleporters blink every ~2.5s to random positions near the player
 - **Healer**: Restores HP to nearby enemies, priority target
 - **Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)
 
@@ -143,7 +143,7 @@ Current: `S = α · log₁₀(D + 1)`
 Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where combo_multiplier rises with kill streak
 
 ### Camera Improvements
-- **Dynamic zoom**: Camera auto-zooms based on nearest enemy distance — zooms in for close combat, out when enemies approach from distance
+- ~~**Dynamic zoom**: Camera auto-zooms based on nearest enemy distance — zooms in for close combat, out when enemies approach from distance~~ DONE — gentle dynamic zoom nudges based on nearest enemy
 - **Trauma system**: Replace simple shake with trauma-based system (trauma value decays, drives both shake magnitude and rotation)
 - **Slow-motion**: Brief 0.1s slow-mo on kill streaks (every 10th kill) or big explosions
 

@@ -77,6 +77,7 @@ func _ready() -> void:
 	GameState.wave_cleared.connect(_on_wave_cleared)
 	GameState.kill_milestone.connect(_on_kill_milestone)
 	GameState.vampire_heal.connect(_on_vampire_heal)
+	GameState.crit_landed.connect(_on_crit_landed)
 
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
@@ -888,6 +889,14 @@ func _on_vampire_heal() -> void:
 	var tw := create_tween()
 	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.2).set_ease(Tween.EASE_OUT)
 
+func _on_crit_landed() -> void:
+	# Brief orange screen flash for crit feedback
+	if not _levelup_flash:
+		return
+	_levelup_flash.color = Color(1.0, 0.6, 0.0, 0.18)
+	var tw := create_tween()
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.15).set_ease(Tween.EASE_OUT)
+
 func _trigger_levelup_flash() -> void:
 	if not _levelup_flash:
 		return
@@ -916,9 +925,24 @@ func _update_boss_bar() -> void:
 	if boss and not boss.is_queued_for_deletion() and boss.get("hp") != null:
 		boss_bar.max_value = boss.max_hp
 		boss_bar.value = boss.hp
+		var hp_ratio := boss.hp / maxf(boss.max_hp, 1.0)
+		var is_enraged := hp_ratio < 0.3
 		if boss_pct_label:
-			var pct := int(boss.hp / maxf(boss.max_hp, 1.0) * 100.0)
-			boss_pct_label.text = "%d%%" % pct
+			var pct := int(hp_ratio * 100.0)
+			if is_enraged:
+				boss_pct_label.text = "%d%% — ENRAGED" % pct
+				boss_pct_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.1, 0.9))
+			else:
+				boss_pct_label.text = "%d%%" % pct
+				boss_pct_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.8))
+		# Change bar color when enraged
+		var fill := boss_bar.get_theme_stylebox("fill") as StyleBoxFlat
+		if fill:
+			if is_enraged:
+				var pulse := (sin(GameState.time_survived * 6.0) + 1.0) * 0.5
+				fill.bg_color = Color(1.0, 0.1, 0.0, 0.9).lerp(Color(1.0, 0.4, 0.0, 0.9), pulse)
+			else:
+				fill.bg_color = Color(1.0, 0.3, 0.0, 0.9)
 		if not boss_bar_container.visible:
 			boss_bar_container.visible = true
 			boss_bar_container.modulate.a = 0.0
@@ -988,6 +1012,47 @@ func _build_game_over() -> void:
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(hint)
+
+	# Clickable restart button for mouse users
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	vbox.add_child(btn_row)
+	var restart_btn := Button.new()
+	restart_btn.text = "RESTART"
+	restart_btn.add_theme_font_size_override("font_size", 16)
+	restart_btn.add_theme_color_override("font_color", Color(0.8, 0.75, 0.95))
+	restart_btn.add_theme_color_override("font_hover_color", Color(0.0, 1.0, 0.9))
+	var rbtn_normal := StyleBoxFlat.new()
+	rbtn_normal.bg_color = Color(0.05, 0.03, 0.12, 0.9)
+	rbtn_normal.border_color = Color(0.3, 0.2, 0.6, 0.5)
+	rbtn_normal.set_border_width_all(1)
+	rbtn_normal.set_corner_radius_all(6)
+	rbtn_normal.content_margin_top = 8
+	rbtn_normal.content_margin_bottom = 8
+	rbtn_normal.content_margin_left = 24
+	rbtn_normal.content_margin_right = 24
+	restart_btn.add_theme_stylebox_override("normal", rbtn_normal)
+	var rbtn_hover := StyleBoxFlat.new()
+	rbtn_hover.bg_color = Color(0.08, 0.05, 0.18, 0.95)
+	rbtn_hover.border_color = Color(0.0, 1.0, 0.9, 0.8)
+	rbtn_hover.set_border_width_all(1)
+	rbtn_hover.set_corner_radius_all(6)
+	rbtn_hover.content_margin_top = 8
+	rbtn_hover.content_margin_bottom = 8
+	rbtn_hover.content_margin_left = 24
+	rbtn_hover.content_margin_right = 24
+	restart_btn.add_theme_stylebox_override("hover", rbtn_hover)
+	restart_btn.add_theme_stylebox_override("pressed", rbtn_hover.duplicate())
+	restart_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	restart_btn.pressed.connect(func():
+		Audio.sfx_ui_click()
+		GameState.reset()
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+	)
+	restart_btn.mouse_entered.connect(func(): Audio.sfx_ui_hover())
+	btn_row.add_child(restart_btn)
 
 	game_over_panel.visible = false
 	game_over_panel.process_mode = Node.PROCESS_MODE_ALWAYS

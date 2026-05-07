@@ -9,6 +9,7 @@ const HIT_STOP_SCALE := 0.04
 
 var _target_zoom: float = 20.0
 var _current_zoom: float = 20.0
+var _player_zoom: float = 20.0  # Player's preferred zoom (scroll wheel)
 var _shake_offset := Vector3.ZERO
 var _punch_offset := Vector3.ZERO
 var _initialized := false
@@ -65,6 +66,23 @@ func _process(delta: float) -> void:
 	# Punch decay (fast snap-back)
 	_punch_offset = _punch_offset.lerp(Vector3.ZERO, 15.0 * delta)
 
+	# Dynamic zoom — pull out slightly when enemies are far, push in when close
+	if _pre_boss_zoom < 0:  # Don't override boss zoom
+		var enemies := get_tree().get_nodes_in_group("enemies")
+		var nearest_dist := 50.0
+		for e in enemies:
+			if e is Node3D:
+				var d := player.global_position.distance_to(e.global_position)
+				if d < nearest_dist:
+					nearest_dist = d
+		# Gently nudge zoom based on combat distance
+		var dynamic_offset := 0.0
+		if nearest_dist < 6.0:
+			dynamic_offset = -1.5  # Zoom in for close combat
+		elif nearest_dist > 15.0 and enemies.size() > 0:
+			dynamic_offset = 2.0  # Zoom out when enemies approach from afar
+		_target_zoom = lerpf(_target_zoom, _player_zoom + dynamic_offset, 2.0 * delta)
+
 	# Zoom
 	_current_zoom = lerpf(_current_zoom, _target_zoom, ZOOM_SPEED * delta)
 
@@ -89,6 +107,8 @@ func boss_zoom_out() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_target_zoom = maxf(_target_zoom - 1.5, ZOOM_MIN)
+			_player_zoom = maxf(_player_zoom - 1.5, ZOOM_MIN)
+			_target_zoom = _player_zoom
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_target_zoom = minf(_target_zoom + 1.5, ZOOM_MAX)
+			_player_zoom = minf(_player_zoom + 1.5, ZOOM_MAX)
+			_target_zoom = _player_zoom
