@@ -4,6 +4,8 @@ const COLLECT_DISTANCE := 0.8
 const MAGNET_SPEED := 12.0
 const BOB_SPEED := 3.0
 const BOB_HEIGHT := 0.2
+const LIFETIME := 15.0
+const FADE_TIME := 3.0
 
 var xp_value: float = 10.0
 var _magnetized: bool = false
@@ -56,10 +58,22 @@ func _process(delta: float) -> void:
 
 	_time += delta
 
+	# Despawn old orbs to prevent buildup in late waves
+	if _time > LIFETIME + FADE_TIME:
+		queue_free()
+		return
+
 	var mesh := get_node_or_null("Mesh")
 	if mesh:
 		mesh.position.y = 0.5 + sin(_time * BOB_SPEED) * BOB_HEIGHT
 		mesh.rotation.y += delta * 2.0
+		# Fade out near end of lifetime
+		if _time > LIFETIME:
+			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME
+			var mat := mesh.material_override as StandardMaterial3D
+			if mat:
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				mat.albedo_color.a = fade_ratio
 
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if not player:

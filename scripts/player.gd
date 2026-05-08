@@ -36,6 +36,7 @@ var _afterimage_timer: float = 0.0
 var _dash_ring: MeshInstance3D
 var _dash_ring_mat: StandardMaterial3D
 var _dash_hit_enemies: Array[int] = []
+var _regen_vfx_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player_node")
@@ -148,10 +149,11 @@ func _update_dash_ring() -> void:
 		_dash_ring_mat.albedo_color = Color(0.4, 0.9, 1.0, 0.4)
 		_dash_ring_mat.emission = Color(0.3, 0.85, 1.0)
 		_dash_ring_mat.emission_energy_multiplier = 3.0
-		# Pulse flash when dash just became ready
+		# Pulse flash and audio cue when dash just became ready
 		if _dash_was_on_cd:
 			_dash_was_on_cd = false
 			_dash_ready_pulse()
+			Audio.sfx_dash_ready()
 
 func _dash_ready_pulse() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
@@ -193,6 +195,7 @@ func _process(delta: float) -> void:
 	_check_contact_damage(delta)
 	_update_weapon_glow()
 	_update_dash_ring()
+	_update_regen_vfx(delta)
 
 func _move(delta: float) -> void:
 	if is_dashing:
@@ -626,3 +629,36 @@ func _update_weapon_glow() -> void:
 		glow.light_color = Color(0.1, 0.6, 0.85)
 	else:
 		glow.light_color = Color(0.0, 0.6, 0.9)
+
+func _update_regen_vfx(delta: float) -> void:
+	if GameState.hp_regen <= 0.0 or GameState.hp >= GameState.max_hp:
+		return
+	_regen_vfx_timer -= delta
+	if _regen_vfx_timer > 0.0:
+		return
+	_regen_vfx_timer = 1.0
+	# Spawn subtle green heal particles around the player
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	for i in 3:
+		var p := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.06
+		p.mesh = sphere
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.2, 1.0, 0.4, 0.7)
+		mat.emission_enabled = true
+		mat.emission = Color(0.1, 1.0, 0.3)
+		mat.emission_energy_multiplier = 3.0
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		p.material_override = mat
+		var offset := Vector3(randf_range(-0.5, 0.5), 0.3, randf_range(-0.5, 0.5))
+		p.position = global_position + offset
+		container.add_child(p)
+		var tw := p.create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(p, "position:y", p.position.y + 1.5, 0.8).set_ease(Tween.EASE_OUT)
+		tw.tween_property(mat, "albedo_color:a", 0.0, 0.8)
+		tw.set_parallel(false)
+		tw.tween_callback(p.queue_free)

@@ -54,6 +54,11 @@ const GOLEM_THROW_CD := 3.5
 const GOLEM_THROW_DAMAGE := 25.0
 const GOLEM_THROW_SPEED := 16.0
 
+# Teleporter blink behavior
+var _teleport_timer: float = 2.0
+const TELEPORT_CD := 2.5
+const TELEPORT_RANGE := 8.0
+
 # Golem charge/dash
 var _golem_charge_timer: float = 8.0
 const GOLEM_CHARGE_CD := 9.0
@@ -80,6 +85,7 @@ func _build_visual() -> void:
 		"rogue": "res://assets/models/Skeleton_Rogue.glb",
 		"necromancer": "res://assets/models/Necromancer.glb",
 		"exploder": "res://assets/models/Skeleton_Minion.glb",
+		"teleporter": "res://assets/models/Skeleton_Rogue.glb",
 		"golem": "res://assets/models/Skeleton_Golem.glb",
 	}
 	var neon_colors := {
@@ -89,6 +95,7 @@ func _build_visual() -> void:
 		"rogue": Color(0.0, 1.0, 0.5),
 		"necromancer": Color(0.6, 0.0, 0.9),
 		"exploder": Color(1.0, 0.8, 0.0),
+		"teleporter": Color(0.0, 0.8, 1.0),
 		"golem": Color(1.0, 0.3, 0.0),
 	}
 	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -207,7 +214,7 @@ func _process(delta: float) -> void:
 			_necro_bolt_timer -= delta
 			if _necro_bolt_timer <= 0.0:
 				_necro_bolt_timer = NECRO_BOLT_CD
-				_fire_mage_bolt(dir)
+				_necro_bolt_telegraph(dir)
 			if dist_to_player < NECRO_KEEP_RANGE:
 				# Back away slowly to maintain distance
 				position -= dir * spd * 0.4 * delta
@@ -231,6 +238,14 @@ func _process(delta: float) -> void:
 			if dist_to_player < EXPLODER_DETONATE_RANGE and not _exploder_fuse_lit:
 				_exploder_fuse_lit = true
 				_explode()
+		elif enemy_type == "teleporter":
+			# Teleporters blink to random positions near the player
+			_teleport_timer -= delta
+			if _teleport_timer <= 0.0:
+				_teleport_timer = TELEPORT_CD + randf_range(-0.4, 0.4)
+				_teleport_blink(player)
+			else:
+				position += dir * spd * delta
 		elif is_boss:
 			# Golem: multi-ability boss with slam, rock throw, and charge
 			var enraged := hp < max_hp * 0.3
@@ -328,6 +343,98 @@ func _mage_telegraph(dir: Vector3) -> void:
 					fresh_dir.y = 0.0
 					_fire_mage_bolt(fresh_dir)
 		)
+
+func _necro_bolt_telegraph(dir: Vector3) -> void:
+	# Purple charge-up glow before necromancer fires a bolt
+	var glow := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.2
+	glow.mesh = sphere
+	var glow_mat := StandardMaterial3D.new()
+	glow_mat.albedo_color = Color(0.6, 0.0, 0.9, 0.7)
+	glow_mat.emission_enabled = true
+	glow_mat.emission = Color(0.6, 0.0, 0.9)
+	glow_mat.emission_energy_multiplier = 5.0
+	glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glow.material_override = glow_mat
+	glow.position = global_position + Vector3(0, 1.2, 0)
+	var container := get_parent()
+	if container:
+		container.add_child(glow)
+		var tw := glow.create_tween()
+		tw.tween_property(glow, "scale", Vector3(1.8, 1.8, 1.8), 0.25)
+		tw.tween_callback(glow.queue_free)
+	var tree := get_tree()
+	if tree and not _dead:
+		tree.create_timer(0.25).timeout.connect(func():
+			if not _dead and is_inside_tree():
+				var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+				if player:
+					var fresh_dir := (player.global_position - global_position).normalized()
+					fresh_dir.y = 0.0
+					_fire_mage_bolt(fresh_dir)
+		)
+
+func _teleport_blink(player: Node3D) -> void:
+	# Disappear VFX at current position
+	var container := get_parent()
+	if container:
+		var vanish := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.8
+		cyl.bottom_radius = 0.8
+		cyl.height = 0.03
+		vanish.mesh = cyl
+		var vmat := StandardMaterial3D.new()
+		vmat.albedo_color = Color(0.0, 0.8, 1.0, 0.7)
+		vmat.emission_enabled = true
+		vmat.emission = Color(0.0, 0.7, 1.0)
+		vmat.emission_energy_multiplier = 6.0
+		vmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		vanish.material_override = vmat
+		vanish.position = global_position
+		vanish.position.y = 0.1
+		container.add_child(vanish)
+		var vtw := vanish.create_tween()
+		vtw.set_parallel(true)
+		vtw.tween_property(vanish, "scale", Vector3(2.0, 1.0, 2.0), 0.25)
+		vtw.tween_property(vmat, "albedo_color:a", 0.0, 0.25)
+		vtw.set_parallel(false)
+		vtw.tween_callback(vanish.queue_free)
+	# Pick a random position near the player
+	var angle := randf() * TAU
+	var dist := randf_range(3.0, TELEPORT_RANGE)
+	var new_pos := player.global_position + Vector3(cos(angle), 0, sin(angle)) * dist
+	new_pos.x = clampf(new_pos.x, -46.0, 46.0)
+	new_pos.z = clampf(new_pos.z, -46.0, 46.0)
+	new_pos.y = 0.0
+	position = new_pos
+	# Appear VFX at new position
+	if container:
+		var appear := MeshInstance3D.new()
+		var acyl := CylinderMesh.new()
+		acyl.top_radius = 0.5
+		acyl.bottom_radius = 0.5
+		acyl.height = 0.03
+		appear.mesh = acyl
+		var amat := StandardMaterial3D.new()
+		amat.albedo_color = Color(0.0, 0.8, 1.0, 0.0)
+		amat.emission_enabled = true
+		amat.emission = Color(0.0, 0.7, 1.0)
+		amat.emission_energy_multiplier = 5.0
+		amat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		appear.material_override = amat
+		appear.position = new_pos
+		appear.position.y = 0.1
+		appear.scale = Vector3(2.0, 1.0, 2.0)
+		container.add_child(appear)
+		var atw := appear.create_tween()
+		atw.set_parallel(true)
+		atw.tween_property(appear, "scale", Vector3(0.5, 1.0, 0.5), 0.2)
+		atw.tween_property(amat, "albedo_color:a", 0.7, 0.1)
+		atw.chain().tween_property(amat, "albedo_color:a", 0.0, 0.15)
+		atw.set_parallel(false)
+		atw.tween_callback(appear.queue_free)
 
 func _fire_mage_bolt(dir: Vector3) -> void:
 	var container := get_parent().get_parent().get_node_or_null("Projectiles")
@@ -693,6 +800,8 @@ func take_damage(amount: float) -> void:
 	var final_amount := amount * (2.0 if is_crit else 1.0)
 	hp -= final_amount
 	GameState.add_damage_dealt(final_amount)
+	if is_crit:
+		GameState.crit_landed.emit()
 	_flash_timer = FLASH_DURATION
 	if _mat:
 		_mat.emission = Color(1.0, 0.6, 0.0) if is_crit else Color.WHITE
@@ -766,6 +875,10 @@ func _die() -> void:
 		GameState.request_hit_stop(0.1)
 		Audio.sfx_boss_defeat()
 		Audio.play_victory_sting()
+		# Award bonus XP for defeating the boss
+		var boss_bonus := 50.0 + GameState.wave * 15.0
+		GameState.add_xp(boss_bonus)
+		GameState.boss_bonus_xp.emit(boss_bonus)
 		GameState.boss_defeated.emit()
 		# Brief victory moment before resuming normal music
 		var tree := get_tree()
@@ -805,6 +918,7 @@ func _death_vfx() -> void:
 		"rogue": Color(0.0, 1.0, 0.5),
 		"necromancer": Color(0.6, 0.0, 0.9),
 		"exploder": Color(1.0, 0.8, 0.0),
+		"teleporter": Color(0.0, 0.8, 1.0),
 		"golem": Color(1.0, 0.3, 0.0),
 	}
 	var color: Color = death_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -877,7 +991,7 @@ func setup(type: String, wave: int) -> void:
 			is_boss = false
 		"mage":
 			hp = 40.0 * wave_scale
-			speed = 2.8
+			speed = 2.8 + wave * 0.12
 			xp_value = 12.0
 			is_boss = false
 		"rogue":
@@ -888,7 +1002,7 @@ func setup(type: String, wave: int) -> void:
 			is_boss = false
 		"necromancer":
 			hp = 60.0 * wave_scale
-			speed = 2.2
+			speed = 2.2 + wave * 0.08
 			xp_value = 25.0
 			contact_damage = 15.0
 			is_boss = false
@@ -897,6 +1011,12 @@ func setup(type: String, wave: int) -> void:
 			speed = 6.0 + wave * 0.12
 			xp_value = 12.0
 			contact_damage = 20.0
+			is_boss = false
+		"teleporter":
+			hp = 25.0 * wave_scale
+			speed = 4.5 + wave * 0.08
+			xp_value = 16.0
+			contact_damage = 14.0
 			is_boss = false
 		"golem":
 			hp = 500.0 * wave_scale

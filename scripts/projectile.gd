@@ -86,7 +86,8 @@ func _build_visual() -> void:
 func _spawn_trail_timer(color: Color) -> void:
 	if weapon_type == "scatter":
 		return
-	var interval := 0.04
+	# Faster projectiles leave denser trails for a more impactful feel
+	var interval := maxf(0.02, 0.04 - (speed - 38.0) * 0.001)
 	var timer := Timer.new()
 	timer.wait_time = interval
 	timer.autostart = true
@@ -123,8 +124,10 @@ func _spawn_trail_particle(color: Color) -> void:
 	var container := get_parent()
 	if container:
 		container.add_child(p)
+		# Faster projectiles have longer-lasting trails
+		var trail_duration := clampf(0.08 + (speed - 38.0) * 0.003, 0.08, 0.2)
 		var tw := p.create_tween()
-		tw.tween_property(mat, "albedo_color:a", 0.0, 0.1)
+		tw.tween_property(mat, "albedo_color:a", 0.0, trail_duration)
 		tw.tween_callback(p.queue_free)
 
 func _build_hitbox() -> void:

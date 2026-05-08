@@ -1,171 +1,119 @@
-# VELOCITY NEON: HAPTIC HAVOC
+# Velocity Neon: Haptic Havoc
 
-A neon cyberpunk survivor game built with **Godot 4.6** — optimized for MacBook trackpad.
+A top-down 3D action roguelike built in Godot 4.6 with a neon cyberpunk aesthetic.
 
-![Godot 4.6](https://img.shields.io/badge/Godot-4.6-blue?logo=godotengine)
-![GDScript](https://img.shields.io/badge/Language-GDScript-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+Survive relentless waves of skeleton enemies, level up to choose powerful upgrades, and push deeper into the neon grid.
 
-![Gameplay Demo](screenshots/demo.jpg)
+## How to Play
 
-## About
-
-3D world with 2D degrees of freedom — characters move on the XZ plane while the camera looks down at a ~55° angle. Survive endless waves of skeleton enemies, collect XP, level up, and choose upgrades to build an overpowered loadout.
-
-## Controls
-
-| Input | Action |
-|-------|--------|
-| **WASD / Arrows** | Move on the neon grid |
-| **Auto-Aim** | Always targets nearest enemy |
-| **Space** | Phase Dash — invincible + fire trail |
-| **Q** | Ultimate — area damage burst |
-| **Scroll Wheel** | Zoom camera in/out |
-| **1 / 2 / 3** | Select upgrade on level-up screen |
-| **Space / R** | Restart (game over) |
-| **ESC** | Pause menu (Resume / Restart / Quit) |
+- **WASD / Arrows** — Move
+- **Auto-Aim** — Shoots nearest enemy automatically
+- **SPACE** — Phase Dash (invincible + damage trail)
+- **Q** — Ultimate Ability (area damage burst)
+- **Scroll Wheel** — Zoom camera in/out
+- **ESC** — Pause menu
+- **R** — Restart (game over)
+- **1/2/3** — Quick-select upgrades on level-up
 
 ## Features
 
 ### Combat
-- **Auto-aim targeting** — always locks onto the nearest enemy
-- **Critical hits** — 10% base crit chance for 2x damage with distinct orange VFX
-- **Kill streaks** — rapid kills trigger escalating announcements (DOUBLE KILL through UNSTOPPABLE)
-- **5 weapon systems** — Pulse Cannon (default), Railgun (piercing beam), Scatter Shot (shotgun cone, benefits from Piercing/Ricochet), Chain Arc (bouncing lightning), Orbital Guard (orbiting damage spheres), plus Piercing Rounds and Ricochet upgrades
-- **Phase Dash** — invincibility frames with after-image trail effect, fire trail, dash cooldown ring indicator, and contact damage to enemies you dash through
-- **Ultimate Ability** — area-of-effect burst with screen shake and hit-stop, cooldown scales down as you level up
+- Auto-aim primary weapon with laser bolt visuals and trail effects
+- Critical hits (10% base chance, orange CRIT text, screen flash)
+- Kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
+- Phase Dash with afterimage trail, invincibility, contact damage, and audio-visual ready cue
+- Ultimate ability with screen-clearing AoE and multi-ring VFX
 
-### Enemies
-Seven enemy types, each with a unique 3D model and neon glow:
-- **Minion** — basic skeleton, low HP, moderate speed
-- **Warrior** — armored, moderate speed, high HP
-- **Mage** — ranged specialist, purple glow, fires bolts from distance with a visible charge-up telegraph, damage scales with wave progression
-- **Rogue** — fast and agile, green glow, periodically sidesteps to dodge projectiles
-- **Necromancer** — ranged summoner, stays at distance and periodically summons minion skeletons with a purple VFX ring
-- **Exploder** — fast yellow-glowing kamikaze, rushes the player and detonates on contact or death with area damage and chain-reaction potential
-- **Golem** (Boss) — massive, spawns every 5th wave with dedicated boss music, telegraphed ground slam AoE with warning ring, and enrage phase below 30% HP (faster movement, rapid slams, pulsing red glow)
+### Weapons & Upgrades (21 upgrades)
+- **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
+- **Weapons**: Railgun (piercing beam), Scatter Shot (pellet burst), Chain Arc, Orbital Guard
+- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds
+- **Defense**: Nano Shield, Regeneration (with heal particle VFX), Vampire (lifesteal)
+- **Utility**: Phase Shift (dash cooldown), Gravity Well, Overclock (with HP drain warning)
 
-### Progression
-- Kill enemies to drop **XP orbs**
-- Level up to choose **1 of 3 random upgrades**
-- **20 upgrades** including: fire rate, damage, max HP, move speed, projectile count, magnet range, HP regen, shatter-point, gravity well, overclock, phase shift (dash cooldown), piercing rounds, ricochet, critical surge (crit chance), vampire (lifesteal on kill), nano shield (damage reduction), and all 4 weapon unlocks
-- **Wave survival bonus** — complete a wave without taking damage for bonus XP with "PERFECT WAVE" announcement
-- **Level-up magnet pulse** — all XP orbs get pulled toward you when you level up
-- **Wave clear magnet** — all remaining XP orbs auto-collect when a wave is fully cleared
-- **Upgrade counter** — HUD shows number of upgrades acquired alongside level
+### Enemies (8 types)
+- **Skeleton Minion** — basic melee rusher
+- **Skeleton Warrior** — tougher, slower
+- **Skeleton Mage** — ranged caster with telegraphed fire bolts, speed scales with wave
+- **Skeleton Rogue** — fast with periodic sidestep dodge
+- **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave
+- **Exploder** — rushes player, detonates on proximity with chain reaction potential
+- **Teleporter** — blinks to random positions near the player, unpredictable
+- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw, charge, and enrage below 30% HP. Defeating a boss awards bonus XP
 
-### Visuals & Audio
-- **Neon cyberpunk aesthetic** — dark ground with animated grid shader, emissive materials, bloom/glow post-processing
-- **Subtle screen shake** — gentle directional shake with logarithmic scaling
-- **Hit-stop** — brief time freeze on heavy hits for impact feel
-- **Boss HP bar** — dedicated top-center health bar during boss waves with fade-in/out
-- **Floating damage numbers** — color-coded damage text on enemy hits, with big-hit scaling
-- **Low HP danger vignette** — red pulsing screen edges when HP drops below 30%
-- **HP bar color shift** — bar transitions from cyan to red at low health
-- **Level-up flash + invincibility** — cyan screen flash and 1.5s invincibility after picking an upgrade
-- **XP orb collect burst** — green ring flash + spark particles on orb pickup
-- **Dash after-images** — translucent player copies trail behind during Phase Dash
-- **Boss defeat celebration** — golden screen flash, victory sting, and "BOSS DEFEATED" announcement
-- **Kill streak announcements** — DOUBLE KILL, TRIPLE KILL, MULTI KILL, KILLING SPREE, RAMPAGE, UNSTOPPABLE
-- **Critical hit VFX** — orange CRIT text with larger font, extra knockback, and orange flash
-- **Weapon glow scaling** — player light intensity and color shift as fire rate increases
-- **Wave countdown timer** — shows time until next wave between rounds
-- **Boss wave entrance** — dramatic scaled-up text with bounce animation for boss waves
-- **Game over stats** — shows total damage dealt, kills/min, avg DPS alongside wave, kills, level, time survived, and full build summary of acquired upgrades
-- **Overclock HUD warning** — pulsing red indicator when overclock is active and draining HP
-- **HP regen visual tick** — subtle "+HP" flash near health bar when regeneration heals
-- **Pause menu** — ESC to pause with Resume, Restart, and Quit options
-- **Time survived** — total survival time displayed on game over screen
-- **Mage charge-up telegraph** — purple glow VFX warns before mage fires, giving time to dodge
-- **Boss enrage VFX** — pulsing red glow on Golem below 30% HP signals the enrage phase
-- **Ultimate charge indicator** — ULT HUD shows percentage charged and "READY" when available
-- **Evolving soundtrack** — music rotates through 5 tracks as waves progress (including cavern ambient for deep runs), with boss-specific tracks and victory stings
-- **Enemy HP soft cap** — late-wave enemy HP scales with diminishing returns past wave 15 for better pacing
-- **Full SFX** — shooting, impacts, deaths, XP pickups, level-ups, dashes, UI clicks, upgrade dice roll, hover sounds
-- **Ambient neon hum** — low background drone that shifts pitch and volume as HP changes, adding tension at low health
-- **Dash speed lines** — radial blur overlay during Phase Dash for kinetic feel
-- **Enemy count HUD** — live enemy count display during waves
-- **DPS counter** — real-time damage-per-second readout
-- **Boss entrance zoom** — camera pulls out temporarily when a boss spawns for dramatic flair
-- **Weapon-specific hit SFX** — distinct impact sounds for railgun, scatter, chain, and pulse weapons
-- **XP orb size variation** — larger, golden orbs for high-value drops (boss XP vs regular)
-- **No-damage wave indicator** — HUD shows "NO DAMAGE" when you're on track for a perfect wave bonus
-- **Enemy spawn warning** — brief neon flash on the ground where enemies are about to appear
-- **Dash cooldown ring** — radial ring around player shows dash readiness at a glance, with a bright pulse VFX when dash becomes ready
-- **Boss ground slam** — Golem periodically slams the ground dealing AoE damage and knockback when close
-- **Victory music** — dedicated victory.ogg track plays on boss defeat instead of generic SFX
-- **Damage hit flash** — brief red screen overlay when the player takes damage for clear feedback
-- **XP pickup values** — floating "+X" text shows XP gained from each orb pickup
-- **Live survival timer** — elapsed time displayed in HUD during gameplay
-- **Distinct enemy SFX** — golem slam and exploder detonation have unique audio distinct from player abilities
-- **Neon arena walls** — glowing pink boundary walls with cyan corner pillars so players can see the play area edges
-- **Keyboard upgrade selection** — press 1/2/3 to pick upgrades during level-up screen (in addition to mouse)
-- **Musical XP pickup** — rapid orb collection plays an ascending pitch scale for satisfying audio feedback
-- **Necromancer death cascade** — killing a necromancer also kills all minions it summoned
-- **Exploder proximity warning** — pulsing yellow-orange glow intensifies as exploders approach detonation range
-- **Mage bolt scaling** — mage projectile speed gradually increases in later waves for more challenge
-- **Performance rating** — game over screen shows a tier rating (RECRUIT through LEGENDARY) based on wave reached
-- **Boss HP percentage** — boss health bar shows remaining HP percentage for clearer progress tracking
-- **Wave clear announcement** — "WAVE CLEAR" text appears when all enemies in a wave are eliminated
-- **Wave start pulse** — subtle purple screen flash on each new wave for atmosphere
-- **Vampire heal VFX** — brief green screen flash when lifesteal heals the player on kill
-- **Kill milestones** — announcements at 100, 250, 500, 1000, and 2000 kills for a sense of progression
-- **Golem slam telegraph** — warning ring expands on the ground before the slam damage lands, giving time to dodge
-- **Exploder chain hit-stop** — brief time freeze when exploder chain reactions trigger nearby enemies
-- **Nano Shield upgrade** — new defensive upgrade that reduces incoming damage by 12% per stack (max 4)
-- **Boss XP scaling** — boss XP drops increase with wave number, rewarding deeper runs
-- **Between-wave breathing room** — longer pause between waves for collecting XP and regrouping
-- **Projectile cleanup** — bullets that leave the arena auto-despawn for cleaner performance
+### Audio
+- Dynamic soundtrack that rotates across 8+ tracks as waves progress
+- Boss-specific music (cyberpunk_battle for early bosses, epic_boss for wave 10+)
+- Weapon-specific hit impact SFX (railgun, scatter, chain, pulse)
+- Ambient neon hum that shifts pitch based on HP
+- Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
+- XP pickup pitch scaling (pentatonic climb on rapid collection)
+- Dash ready audio cue when cooldown completes
 
-## Running
+### Visual Polish
+- Neon cyberpunk aesthetic with bloom, glow, and emissive materials
+- Damage vignette (red pulse at low HP), hit flash on damage taken
+- Screen flash on critical hits (orange tint)
+- Speed lines during Phase Dash (radial shader)
+- Directional screen shake with hit-stop on heavy impacts
+- Boss entrance slow-mo with temporary camera zoom-out
+- Dynamic camera zoom (pulls in for close combat, out for distant threats)
+- Floating damage numbers (color-coded, scaled for big hits)
+- Enemy death VFX (expanding rings + spark bursts, type-colored)
+- Dash afterimages and ready-pulse ring indicator
+- Regeneration heal particles (green sparkles rising from player)
+- Enhanced projectile trails at high speed (denser, longer-lasting)
+- Overclock HP drain warning (pulsing red HP bar border + red HP text)
+- Necromancer bolt telegraph (purple charge glow before firing)
 
-1. Install [Godot 4.6+](https://godotengine.org/download) (standard edition)
-2. Clone this repo
-3. Open `project.godot` in Godot
-4. Press **F5** to run
+### HUD & UI
+- HP bar with color shift (cyan → red at low HP), overclock drain indicator
+- XP bar with level counter and upgrade count
+- Boss HP bar with percentage and enrage warning ("ENRAGED" + pulsing red)
+- Boss defeat bonus XP announcement
+- Live DPS meter, enemy count, survival timer
+- Wave announcements with boss wave callouts
+- Kill streak and milestone announcements
+- No-damage wave indicator
+- Pause menu (resume/restart/quit)
+- Game over screen with stats, performance rating, build summary, and restart button
+- Title screen with controls reference
 
-```bash
-git clone https://github.com/jiajie96/velocity-neon.git
-```
+### Game Systems
+- Wave-based progression with aggressive scaling
+- Perfect wave bonus XP (no damage taken)
+- Wave clear heal bonus (small HP recovery between waves)
+- XP magnet pulse on level-up, wave clear, and kill streaks (3+)
+- XP orbs fade out after 15 seconds to prevent late-game buildup
+- Enemy spawn throttle (caps at 100 alive enemies to maintain performance)
+- Post-game performance rating (RECRUIT → LEGENDARY based on waves survived)
+- Arena boundary walls with neon glow pillars
+
+## Running the Game
+
+1. Open the project in Godot 4.6
+2. Run the main scene (`main.tscn`)
+3. Press SPACE on the title screen to start
 
 ## Project Structure
 
 ```
-velocity_neon/
-├── assets/
-│   ├── audio/          # Music (OGG/MP3) + SFX (OGG)
-│   ├── models/         # KayKit GLB models + textures
-│   └── vfx/particles/  # Particle texture PNGs
-├── scenes/
-│   └── main.tscn       # Minimal root scene
-├── scripts/
-│   ├── autoload/
-│   │   ├── audio_manager.gd   # SFX pool + music player
-│   │   └── game_state.gd      # Global state singleton
-│   ├── camera_rig.gd          # Camera follow + shake + hit-stop
-│   ├── enemy.gd               # Enemy AI + death VFX
-│   ├── enemy_spawner.gd       # Wave system
-│   ├── hud.gd                 # UI + title screen + upgrades
-│   ├── main.gd                # World builder
-│   ├── player.gd              # Player + weapons
-│   ├── projectile.gd          # Projectile + chain + VFX
-│   ├── upgrade_system.gd      # Upgrade definitions
-│   └── xp_orb.gd              # XP pickup
-├── shaders/
-│   └── grid_ground.gdshader   # Animated neon grid
-├── ATTRIBUTION.md
-├── FUTURE_IMPROVEMENTS.md
-└── project.godot
+scripts/
+  player.gd          — Player movement, dash, weapons
+  enemy.gd           — Enemy AI (8 types + boss)
+  enemy_spawner.gd   — Wave logic and spawn system
+  main.gd            — Scene setup
+  hud.gd             — All UI rendering
+  upgrade_system.gd  — 21 upgrade definitions
+  projectile.gd      — Bullet physics and VFX
+  xp_orb.gd          — XP pickup mechanics
+  camera_rig.gd      — Camera follow, shake, zoom
+  autoload/
+    game_state.gd    — Global state and signals
+    audio_manager.gd — SFX pool + music system
+assets/
+  audio/sfx/         — Sound effects (OGG)
+  audio/music/       — Background music tracks
+  models/            — 3D character models (GLB)
+  shaders/           — Grid ground shader
 ```
-
-## Credits
-
-### 3D Models
-- [KayKit Adventurers & Skeletons](https://kaylousberg.itch.io/) by Kay Lousberg
-
-### Music (CC-BY 4.0)
-- "Neon Runner" by Eric Matyas
-- "Retro Synthwave Loops" by Tomasz Kucza (Magnesus)
-- "Cyberpunk Battle" by Alexandr Zhelanov
-
-See [ATTRIBUTION.md](ATTRIBUTION.md) for full details.

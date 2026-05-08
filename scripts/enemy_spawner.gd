@@ -40,9 +40,14 @@ func _process(delta: float) -> void:
 
 	_spawn_timer -= delta
 	if _spawn_timer <= 0.0 and _spawned_this_wave < _target_this_wave:
-		_spawn_timer = _spawn_interval
-		_spawn_enemy()
-		_spawned_this_wave += 1
+		# Throttle spawning when too many enemies are alive to prevent lag
+		var alive_count := get_tree().get_nodes_in_group("enemies").size()
+		if alive_count < 100:
+			_spawn_timer = _spawn_interval
+			_spawn_enemy()
+			_spawned_this_wave += 1
+		else:
+			_spawn_timer = 0.5  # Wait before checking again
 
 	if _spawned_this_wave >= _target_this_wave:
 		var enemies := get_tree().get_nodes_in_group("enemies")
@@ -51,6 +56,10 @@ func _process(delta: float) -> void:
 			_wave_timer = WAVE_INTERVAL
 			# Pull all remaining XP orbs to player on wave clear
 			GameState.xp_magnet_pulse.emit()
+			# Small heal on wave clear to reward survival
+			var wave_heal := minf(5.0 + GameState.wave * 0.5, 15.0)
+			if GameState.hp < GameState.max_hp:
+				GameState.heal(wave_heal)
 			GameState.wave_cleared.emit()
 
 func _spawn_enemy() -> void:
@@ -91,31 +100,51 @@ func _pick_type() -> String:
 		else:
 			return "exploder"
 	elif wave < 7:
-		if roll < 0.20:
+		if roll < 0.18:
 			return "minion"
-		elif roll < 0.35:
+		elif roll < 0.32:
 			return "warrior"
-		elif roll < 0.50:
+		elif roll < 0.46:
 			return "rogue"
-		elif roll < 0.70:
+		elif roll < 0.62:
 			return "mage"
-		elif roll < 0.85:
+		elif roll < 0.75:
 			return "necromancer"
-		else:
+		elif roll < 0.88:
 			return "exploder"
+		else:
+			return "teleporter"
+	elif wave < 12:
+		if roll < 0.12:
+			return "minion"
+		elif roll < 0.24:
+			return "warrior"
+		elif roll < 0.38:
+			return "rogue"
+		elif roll < 0.52:
+			return "mage"
+		elif roll < 0.68:
+			return "necromancer"
+		elif roll < 0.82:
+			return "exploder"
+		else:
+			return "teleporter"
 	else:
-		if roll < 0.15:
+		# Wave 12+ — heavy chaos with more necromancers, exploders, teleporters
+		if roll < 0.08:
 			return "minion"
-		elif roll < 0.28:
+		elif roll < 0.18:
 			return "warrior"
-		elif roll < 0.42:
+		elif roll < 0.30:
 			return "rogue"
-		elif roll < 0.60:
+		elif roll < 0.42:
 			return "mage"
-		elif roll < 0.78:
+		elif roll < 0.58:
 			return "necromancer"
-		else:
+		elif roll < 0.75:
 			return "exploder"
+		else:
+			return "teleporter"
 
 func _spawn_boss(wave: int) -> void:
 	var player := get_tree().get_first_node_in_group("player_node")
@@ -149,6 +178,7 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 		"rogue": Color(0.0, 1.0, 0.5),
 		"necromancer": Color(0.6, 0.0, 0.9),
 		"exploder": Color(1.0, 0.8, 0.0),
+		"teleporter": Color(0.0, 0.8, 1.0),
 	}
 	var color: Color = warn_colors.get(type, Color(1.0, 0.0, 0.6))
 	var ring := MeshInstance3D.new()

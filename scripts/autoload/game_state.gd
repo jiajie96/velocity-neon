@@ -16,6 +16,8 @@ signal perfect_wave(bonus_xp: float)
 signal wave_cleared
 signal kill_milestone(count: int)
 signal vampire_heal
+signal crit_landed
+signal boss_bonus_xp(amount: float)
 
 # Player stats
 var hp: float = 80.0
@@ -151,6 +153,9 @@ func add_kill() -> void:
 	_streak_timer = STREAK_WINDOW
 	if _streak_count >= 2:
 		kill_streak.emit(_streak_count)
+	# XP magnet pulse on 3+ kill streaks for satisfying orb collection
+	if _streak_count == 3:
+		xp_magnet_pulse.emit()
 	if lifesteal > 0.0 and hp < max_hp:
 		heal(lifesteal)
 		vampire_heal.emit()
