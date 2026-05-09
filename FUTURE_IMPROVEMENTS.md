@@ -46,6 +46,9 @@
 ### Audio
 - ~~**Dynamic soundtrack**~~ PARTIAL — music rotates between 4 tracks as waves progress
 - ~~**Dash ready audio cue**: Subtle sound when dash cooldown completes~~ DONE — pitch-shifted ready ping on cooldown complete
+- ~~**Ultimate ready audio cue**: Sound when ultimate cooldown completes~~ DONE — pitch-shifted ready ping
+- ~~**Necromancer summon SFX**: Audio when necromancer spawns minions~~ DONE — eerie pulse sound
+- ~~**Golem charge SFX**: Audio telegraph for boss charge~~ DONE — low rumble before charge
 - **Positional audio**: 3D audio for enemy approach sounds — hear them coming from specific directions
 - ~~**Hit confirmation sounds**: Distinct SFX for regular hit, critical hit, shatter split, kill confirm~~ DONE — weapon-specific hit impact SFX (railgun, scatter, chain, pulse each have unique sounds)
 - **Boss music**: ~~Dedicated intense track for boss waves (every 5th)~~ DONE — cyberpunk_battle for early bosses, epic_boss for wave 10+
@@ -175,6 +178,15 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Enemy spawn cap (throttle at 100 alive)
 - [x] Enhanced projectile trails at high speed
 - [x] Mage and necromancer speed scaling with wave
+- [x] Ultimate ready audio cue
+- [x] Necromancer summon SFX
+- [x] Golem charge telegraph SFX
+- [x] Teleporter blink-scatter death VFX
+- [x] XP magnet pulse on boss defeat
+- [x] Ultimate damage scales with player upgrades
+- [x] Enemy contact damage scales with wave
+- [x] Overclock self-damage doesn't break perfect wave bonus
+- [x] Game over screen shows damage taken and upgrade count
 
 ---
 

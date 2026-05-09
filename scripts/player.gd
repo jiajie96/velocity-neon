@@ -37,6 +37,7 @@ var _dash_ring: MeshInstance3D
 var _dash_ring_mat: StandardMaterial3D
 var _dash_hit_enemies: Array[int] = []
 var _regen_vfx_timer: float = 0.0
+var _ult_was_on_cd: bool = false
 
 func _ready() -> void:
 	add_to_group("player_node")
@@ -535,6 +536,11 @@ func _update_orbitals(delta: float) -> void:
 
 func _ultimate(delta: float) -> void:
 	ult_cd_timer = maxf(ult_cd_timer - delta, 0.0)
+	if ult_cd_timer > 0.01:
+		_ult_was_on_cd = true
+	elif _ult_was_on_cd:
+		_ult_was_on_cd = false
+		Audio.sfx_ult_ready()
 	if Input.is_action_just_pressed("ultimate") and ult_cd_timer <= 0.0:
 		# Scale cooldown down slightly as player levels up (min 6s at level 20+)
 		var cd_scale := maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
@@ -545,13 +551,15 @@ func _do_ultimate() -> void:
 	Audio.sfx_ultimate()
 	GameState.request_shake(6.0)
 	GameState.request_hit_stop(0.08)
+	# Ultimate scales with player damage so it stays relevant in later waves
+	var ult_dmg := ULTIMATE_DAMAGE + GameState.damage * 3.0
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if enemy is Node3D:
 			var dist := global_position.distance_to(enemy.global_position)
 			if dist < ULTIMATE_RADIUS:
 				if enemy.has_method("take_damage"):
-					enemy.take_damage(ULTIMATE_DAMAGE)
+					enemy.take_damage(ult_dmg)
 	_spawn_ult_vfx()
 
 func _spawn_ult_vfx() -> void:

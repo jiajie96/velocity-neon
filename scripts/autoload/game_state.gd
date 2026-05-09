@@ -62,6 +62,7 @@ var paused_for_upgrade: bool = false
 var game_started: bool = false
 var time_survived: float = 0.0
 var total_damage_dealt: float = 0.0
+var total_damage_taken: float = 0.0
 
 # Acquired upgrades for game over summary
 var acquired_upgrades: Array[String] = []
@@ -86,14 +87,16 @@ func _process(delta: float) -> void:
 # Wave damage tracking (for no-damage bonus)
 var _wave_damage_taken: bool = false
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	if invincible or game_over:
 		return
-	# Apply damage reduction from Nano Shield
-	var reduced := amount * maxf(0.0, 1.0 - damage_reduction)
+	# Apply damage reduction from Nano Shield (not for self-inflicted damage like overclock)
+	var reduced := amount * maxf(0.0, 1.0 - (0.0 if is_self_damage else damage_reduction))
 	hp = clampf(hp - reduced, 0.0, max_hp)
+	total_damage_taken += reduced
 	shake_amount = 2.0 * log(reduced + 1.0) / log(10.0)
-	_wave_damage_taken = true
+	if not is_self_damage:
+		_wave_damage_taken = true
 	hp_changed.emit(hp, max_hp)
 	if amount >= 5.0:
 		Audio.sfx_player_hit()
@@ -211,6 +214,7 @@ func reset() -> void:
 	game_started = false
 	time_survived = 0.0
 	total_damage_dealt = 0.0
+	total_damage_taken = 0.0
 	_streak_count = 0
 	_streak_timer = 0.0
 	shake_amount = 0.0

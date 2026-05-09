@@ -191,7 +191,7 @@ func _process(delta: float) -> void:
 	if GameState.hp_regen > 0.0 and GameState.hp < GameState.max_hp:
 		GameState.heal(GameState.hp_regen * delta)
 	if GameState.overclock_active:
-		GameState.take_damage(2.0 * delta)
+		GameState.take_damage(2.0 * delta, true)
 
 func _on_leveled_up(_level: int) -> void:
 	get_tree().paused = true

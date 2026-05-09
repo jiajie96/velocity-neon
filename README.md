@@ -22,7 +22,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Critical hits (10% base chance, orange CRIT text, screen flash)
 - Kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
 - Phase Dash with afterimage trail, invincibility, contact damage, and audio-visual ready cue
-- Ultimate ability with screen-clearing AoE and multi-ring VFX
+- Ultimate ability with screen-clearing AoE, multi-ring VFX, and damage scaling with upgrades
 
 ### Weapons & Upgrades (21 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
@@ -49,6 +49,9 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
 - XP pickup pitch scaling (pentatonic climb on rapid collection)
 - Dash ready audio cue when cooldown completes
+- Ultimate ready audio cue when cooldown finishes
+- Necromancer summon SFX (eerie pulse when minions spawn)
+- Golem charge telegraph SFX (low rumble before charge)
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
@@ -65,6 +68,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Enhanced projectile trails at high speed (denser, longer-lasting)
 - Overclock HP drain warning (pulsing red HP bar border + red HP text)
 - Necromancer bolt telegraph (purple charge glow before firing)
+- Teleporter blink-scatter death effect (ghost copies flash outward)
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
@@ -76,14 +80,15 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Kill streak and milestone announcements
 - No-damage wave indicator
 - Pause menu (resume/restart/quit)
-- Game over screen with stats, performance rating, build summary, and restart button
+- Game over screen with stats (damage dealt/taken, kills/min, DPS), performance rating, build summary, and restart button
 - Title screen with controls reference
 
 ### Game Systems
-- Wave-based progression with aggressive scaling
+- Wave-based progression with aggressive scaling (enemy contact damage scales with wave)
+- Overclock HP drain no longer ruins perfect wave bonus
 - Perfect wave bonus XP (no damage taken)
 - Wave clear heal bonus (small HP recovery between waves)
-- XP magnet pulse on level-up, wave clear, and kill streaks (3+)
+- XP magnet pulse on level-up, wave clear, kill streaks (3+), and boss defeat
 - XP orbs fade out after 15 seconds to prevent late-game buildup
 - Enemy spawn throttle (caps at 100 alive enemies to maintain performance)
 - Post-game performance rating (RECRUIT → LEGENDARY based on waves survived)

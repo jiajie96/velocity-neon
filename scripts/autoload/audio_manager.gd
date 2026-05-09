@@ -157,6 +157,15 @@ func sfx_hit_impact(weapon_type: String = "pulse") -> void:
 func sfx_golem_slam() -> void:
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", 0.0, 0.55)
 
+func sfx_necro_summon() -> void:
+	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -8.0, 1.8)
+
+func sfx_golem_charge() -> void:
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -2.0, 0.4)
+
+func sfx_ult_ready() -> void:
+	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -10.0, 1.3)
+
 func sfx_exploder_boom() -> void:
 	var paths := ["res://assets/audio/sfx/enemy_death_01.ogg", "res://assets/audio/sfx/enemy_death_02.ogg"]
 	play_sfx(paths[randi() % paths.size()], 0.0, 0.5)

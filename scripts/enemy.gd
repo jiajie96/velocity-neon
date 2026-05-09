@@ -496,6 +496,7 @@ func _necro_summon() -> void:
 	var current_enemies := get_tree().get_nodes_in_group("enemies").size()
 	if current_enemies > 80:
 		return
+	Audio.sfx_necro_summon()
 	# Summon VFX — purple flash ring at feet
 	var ring := MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
@@ -681,6 +682,7 @@ func _golem_throw_rock(dir: Vector3) -> void:
 
 func _golem_start_charge(dir: Vector3) -> void:
 	# Telegraph — red flash and brief pause before charging
+	Audio.sfx_golem_charge()
 	_golem_charging = false
 	_golem_charge_dir = dir
 	_golem_charge_elapsed = 0.0
@@ -858,6 +860,36 @@ func _spawn_damage_number(amount: float, is_crit: bool = false) -> void:
 	tw.set_parallel(false)
 	tw.tween_callback(label.queue_free)
 
+func _teleporter_death_vfx() -> void:
+	# Rapid blink-scatter before standard death — multiple ghost copies flash outward
+	var container := get_parent()
+	if not container:
+		return
+	for i in 4:
+		var ghost := MeshInstance3D.new()
+		var capsule := CapsuleMesh.new()
+		capsule.radius = 0.25
+		capsule.height = 0.8
+		ghost.mesh = capsule
+		var gmat := StandardMaterial3D.new()
+		gmat.albedo_color = Color(0.0, 0.8, 1.0, 0.6)
+		gmat.emission_enabled = true
+		gmat.emission = Color(0.0, 0.7, 1.0)
+		gmat.emission_energy_multiplier = 5.0
+		gmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		ghost.material_override = gmat
+		ghost.position = global_position
+		ghost.position.y = 0.5
+		container.add_child(ghost)
+		var angle := TAU / 4.0 * float(i) + randf() * 0.3
+		var scatter_dir := Vector3(cos(angle), 0, sin(angle)) * 2.5
+		var gtw := ghost.create_tween()
+		gtw.set_parallel(true)
+		gtw.tween_property(ghost, "position", ghost.position + scatter_dir, 0.2)
+		gtw.tween_property(gmat, "albedo_color:a", 0.0, 0.2)
+		gtw.set_parallel(false)
+		gtw.tween_callback(ghost.queue_free)
+
 func _die() -> void:
 	_dead = true
 	GameState.add_kill()
@@ -880,6 +912,8 @@ func _die() -> void:
 		GameState.add_xp(boss_bonus)
 		GameState.boss_bonus_xp.emit(boss_bonus)
 		GameState.boss_defeated.emit()
+		# Pull all XP orbs to player after boss kill for satisfying collection
+		GameState.xp_magnet_pulse.emit()
 		# Brief victory moment before resuming normal music
 		var tree := get_tree()
 		if tree:
@@ -889,6 +923,8 @@ func _die() -> void:
 			)
 	else:
 		GameState.request_shake(1.0)
+	if enemy_type == "teleporter":
+		_teleporter_death_vfx()
 	_death_vfx()
 
 func _spawn_xp() -> void:
@@ -1025,4 +1061,7 @@ func setup(type: String, wave: int) -> void:
 			xp_value = 80.0 + wave * 10.0
 			contact_damage = 35.0
 			is_boss = true
+	# Scale contact damage slightly with wave progression
+	if not is_boss:
+		contact_damage *= (1.0 + minf(wave, 20) * 0.04)
 	max_hp = hp

@@ -1221,8 +1221,11 @@ func _on_player_died() -> void:
 			rating = "SKILLED"
 		elif GameState.wave >= 5:
 			rating = "SURVIVOR"
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d\nSurvived %d:%02d  |  Damage: %s\nKills/min: %.1f  |  Avg DPS: %s\nRating: %s%s" % [
-			GameState.wave, GameState.kills, GameState.level, mins, secs, dmg_text,
+		var dmg_taken_text := _format_damage(GameState.total_damage_taken)
+		var upgrade_count := GameState.acquired_upgrades.size()
+		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d  |  %d upgrades\nSurvived %d:%02d  |  Dealt: %s  |  Taken: %s\nKills/min: %.1f  |  Avg DPS: %s\nRating: %s%s" % [
+			GameState.wave, GameState.kills, GameState.level, upgrade_count,
+			mins, secs, dmg_text, dmg_taken_text,
 			kpm, _format_damage(avg_dps), rating, upgrades_text]
 
 func _format_damage(amount: float) -> String:
