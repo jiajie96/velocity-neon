@@ -38,6 +38,10 @@ var _dash_ring_mat: StandardMaterial3D
 var _dash_hit_enemies: Array[int] = []
 var _regen_vfx_timer: float = 0.0
 var _ult_was_on_cd: bool = false
+var _overclock_pulse_t: float = 0.0
+var _gravity_ring: MeshInstance3D
+var _gravity_ring_mat: StandardMaterial3D
+var _heartbeat_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player_node")
@@ -45,6 +49,7 @@ func _ready() -> void:
 	_build_hurtbox()
 	_build_light()
 	_build_dash_ring()
+	_build_gravity_ring()
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -130,6 +135,64 @@ func _build_dash_ring() -> void:
 	_dash_ring.position.y = 0.05
 	add_child(_dash_ring)
 
+func _build_gravity_ring() -> void:
+	_gravity_ring = MeshInstance3D.new()
+	_gravity_ring.name = "GravityRing"
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 6.0
+	cyl.bottom_radius = 6.0
+	cyl.height = 0.01
+	_gravity_ring.mesh = cyl
+	_gravity_ring_mat = StandardMaterial3D.new()
+	_gravity_ring_mat.albedo_color = Color(0.5, 0.2, 1.0, 0.12)
+	_gravity_ring_mat.emission_enabled = true
+	_gravity_ring_mat.emission = Color(0.5, 0.2, 1.0)
+	_gravity_ring_mat.emission_energy_multiplier = 1.5
+	_gravity_ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_gravity_ring_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_gravity_ring.material_override = _gravity_ring_mat
+	_gravity_ring.position.y = 0.03
+	_gravity_ring.visible = false
+	add_child(_gravity_ring)
+
+func _update_gravity_ring() -> void:
+	if not _gravity_ring or not _gravity_ring_mat:
+		return
+	if GameState.gravity_well_strength > 0.0:
+		_gravity_ring.visible = true
+		# Gentle pulse animation
+		var pulse := (sin(GameState.time_survived * 2.0) + 1.0) * 0.5
+		var alpha := lerpf(0.08, 0.18, pulse) * minf(GameState.gravity_well_strength / 0.7, 1.0)
+		_gravity_ring_mat.albedo_color.a = alpha
+		_gravity_ring_mat.emission_energy_multiplier = lerpf(1.0, 2.5, pulse)
+	else:
+		_gravity_ring.visible = false
+
+func _update_overclock_visual(delta: float) -> void:
+	if not GameState.overclock_active:
+		_overclock_pulse_t = 0.0
+		return
+	_overclock_pulse_t += delta * 6.0
+	var pulse := (sin(_overclock_pulse_t) + 1.0) * 0.5
+	var glow := get_node_or_null("PlayerGlow") as OmniLight3D
+	if glow:
+		glow.light_color = Color(0.0, 0.6, 0.9).lerp(Color(1.0, 0.2, 0.0), pulse * 0.6)
+		glow.light_energy = lerpf(1.0, 2.5, pulse)
+
+func _update_heartbeat(delta: float) -> void:
+	if GameState.game_over:
+		return
+	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	if hp_ratio > 0.25:
+		_heartbeat_timer = 0.0
+		return
+	# Faster heartbeat as HP drops lower
+	var beat_interval := lerpf(0.6, 1.2, hp_ratio / 0.25)
+	_heartbeat_timer -= delta
+	if _heartbeat_timer <= 0.0:
+		_heartbeat_timer = beat_interval
+		Audio.sfx_low_hp_heartbeat()
+
 func _update_dash_ring() -> void:
 	if not _dash_ring or not _dash_ring_mat:
 		return
@@ -196,6 +259,9 @@ func _process(delta: float) -> void:
 	_check_contact_damage(delta)
 	_update_weapon_glow()
 	_update_dash_ring()
+	_update_gravity_ring()
+	_update_overclock_visual(delta)
+	_update_heartbeat(delta)
 	_update_regen_vfx(delta)
 
 func _move(delta: float) -> void:
@@ -218,6 +284,18 @@ func _move(delta: float) -> void:
 			var model := get_node_or_null("Model")
 			if model:
 				model.rotation.y = lerp_angle(model.rotation.y, target_angle, 10.0 * delta)
+	else:
+		# When idle, face the nearest enemy (aim direction)
+		if _model_loaded:
+			var target := _find_nearest_enemy()
+			if target:
+				var aim_dir := (target.global_position - global_position)
+				aim_dir.y = 0.0
+				if aim_dir.length_squared() > 0.01:
+					var model := get_node_or_null("Model")
+					if model:
+						var target_angle := atan2(aim_dir.x, aim_dir.z)
+						model.rotation.y = lerp_angle(model.rotation.y, target_angle, 8.0 * delta)
 	position += dir * GameState.speed * delta
 	position.y = 0.0
 	position.x = clampf(position.x, -48.0, 48.0)
@@ -235,14 +313,15 @@ func _dash(delta: float) -> void:
 		position.y = 0.0
 		position.x = clampf(position.x, -48.0, 48.0)
 		position.z = clampf(position.z, -48.0, 48.0)
-		# Dash damage — hit enemies we pass through
+		# Dash damage — hit enemies we pass through (scales with speed)
+		var scaled_dash_dmg := DASH_DAMAGE * (GameState.speed / 6.5)
 		var enemies := get_tree().get_nodes_in_group("enemies")
 		for e in enemies:
 			if e is Node3D and e.has_method("take_damage"):
 				var eid := e.get_instance_id()
 				if eid not in _dash_hit_enemies:
 					if global_position.distance_to(e.global_position) < DASH_HIT_RADIUS:
-						e.take_damage(DASH_DAMAGE)
+						e.take_damage(scaled_dash_dmg)
 						_dash_hit_enemies.append(eid)
 		if dash_timer <= 0.0:
 			is_dashing = false
@@ -478,7 +557,7 @@ func _shoot_scatter(delta: float) -> void:
 		proj.set_meta("damage", GameState.damage * 0.5)
 		proj.set_meta("shatter", false)
 		proj.set_meta("weapon_type", "scatter")
-		proj.set_meta("chain_level", 0)
+		proj.set_meta("chain_level", GameState.chain_level)
 		proj.set_meta("piercing", GameState.piercing_level)
 		proj.set_meta("ricochet", GameState.ricochet_level)
 		proj.set_meta("lifetime", 1.0)
@@ -530,7 +609,34 @@ func _update_orbitals(delta: float) -> void:
 					if eid not in _orbital_hit_timers:
 						e.take_damage(ORBITAL_DAMAGE * (1.0 + GameState.orbital_level * 0.3))
 						_orbital_hit_timers[eid] = ORBITAL_HIT_CD
+						Audio.sfx_orbital_hit()
+						_spawn_orbital_hit_spark(orb_pos)
 					break
+
+func _spawn_orbital_hit_spark(hit_pos: Vector3) -> void:
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var spark := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.15
+	spark.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.0, 1.0, 0.6, 0.8)
+	mat.emission_enabled = true
+	mat.emission = Color(0.0, 1.0, 0.5)
+	mat.emission_energy_multiplier = 6.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	spark.material_override = mat
+	spark.position = hit_pos
+	spark.position.y = 0.6
+	container.add_child(spark)
+	var tw := spark.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(spark, "scale", Vector3(2.0, 2.0, 2.0), 0.12)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.12)
+	tw.set_parallel(false)
+	tw.tween_callback(spark.queue_free)
 
 # === ULTIMATE ===
 

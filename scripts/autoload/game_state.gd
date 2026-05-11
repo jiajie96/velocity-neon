@@ -18,6 +18,8 @@ signal kill_milestone(count: int)
 signal vampire_heal
 signal crit_landed
 signal boss_bonus_xp(amount: float)
+signal wave_heal(amount: float)
+signal golem_enraged
 
 # Player stats
 var hp: float = 80.0
@@ -79,6 +81,8 @@ var shake_direction: Vector3 = Vector3.ZERO
 func _process(delta: float) -> void:
 	if game_started and not game_over:
 		time_survived += delta
+		if _damage_immunity_timer > 0.0:
+			_damage_immunity_timer -= delta
 		if _streak_timer > 0.0:
 			_streak_timer -= delta
 			if _streak_timer <= 0.0:
@@ -87,8 +91,14 @@ func _process(delta: float) -> void:
 # Wave damage tracking (for no-damage bonus)
 var _wave_damage_taken: bool = false
 
+var _damage_immunity_timer: float = 0.0
+const DAMAGE_IMMUNITY_DURATION := 0.15
+
 func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	if invincible or game_over:
+		return
+	# Brief i-frames after taking a hit to prevent stacked damage from multiple enemies
+	if not is_self_damage and _damage_immunity_timer > 0.0:
 		return
 	# Apply damage reduction from Nano Shield (not for self-inflicted damage like overclock)
 	var reduced := amount * maxf(0.0, 1.0 - (0.0 if is_self_damage else damage_reduction))
@@ -97,6 +107,7 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	shake_amount = 2.0 * log(reduced + 1.0) / log(10.0)
 	if not is_self_damage:
 		_wave_damage_taken = true
+		_damage_immunity_timer = DAMAGE_IMMUNITY_DURATION
 	hp_changed.emit(hp, max_hp)
 	if amount >= 5.0:
 		Audio.sfx_player_hit()
@@ -162,8 +173,9 @@ func add_kill() -> void:
 	if lifesteal > 0.0 and hp < max_hp:
 		heal(lifesteal)
 		vampire_heal.emit()
-	# Kill milestone announcements
+	# Kill milestone announcements with celebratory SFX
 	if kills in [100, 250, 500, 1000, 2000]:
+		Audio.sfx_kill_milestone()
 		kill_milestone.emit(kills)
 
 func add_damage_dealt(amount: float) -> void:
@@ -220,4 +232,5 @@ func reset() -> void:
 	shake_amount = 0.0
 	shake_direction = Vector3.ZERO
 	_wave_damage_taken = false
+	_damage_immunity_timer = 0.0
 	acquired_upgrades.clear()

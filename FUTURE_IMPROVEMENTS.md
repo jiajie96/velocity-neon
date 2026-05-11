@@ -187,6 +187,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Enemy contact damage scales with wave
 - [x] Overclock self-damage doesn't break perfect wave bonus
 - [x] Game over screen shows damage taken and upgrade count
+- [x] Kill milestone celebratory SFX
+- [x] Overclock pulsing player glow (red/orange light shift)
+- [x] Gravity Well visible radius ring (purple pulse)
+- [x] Rogue dodge ghost trail (translucent afterimage)
+- [x] Scatter + Chain Arc synergy (pellets now chain)
+- [x] Dash damage scales with player speed (Swift upgrade reward)
+- [x] Orbital Guard hit spark VFX (green flash on hit)
+- [x] Enemy death SFX varies by type (unique pitch per enemy)
+- [x] Low HP heartbeat audio pulse (rhythmic thump below 25%)
+- [x] Mage/Necro bolt trail particles (fading spheres behind enemy projectiles)
 
 ---
 

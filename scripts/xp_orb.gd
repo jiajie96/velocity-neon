@@ -67,6 +67,11 @@ func _process(delta: float) -> void:
 	if mesh:
 		mesh.position.y = 0.5 + sin(_time * BOB_SPEED) * BOB_HEIGHT
 		mesh.rotation.y += delta * 2.0
+		# Subtle emission pulse for visual appeal
+		var mat := mesh.material_override as StandardMaterial3D
+		if mat and _time <= LIFETIME:
+			var pulse := (sin(_time * 4.0) + 1.0) * 0.5
+			mat.emission_energy_multiplier = lerpf(0.6, 2.0, pulse)
 		# Fade out near end of lifetime
 		if _time > LIFETIME:
 			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME

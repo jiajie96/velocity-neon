@@ -21,7 +21,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Auto-aim primary weapon with laser bolt visuals and trail effects
 - Critical hits (10% base chance, orange CRIT text, screen flash)
 - Kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
-- Phase Dash with afterimage trail, invincibility, contact damage, and audio-visual ready cue
+- Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
 - Ultimate ability with screen-clearing AoE, multi-ring VFX, and damage scaling with upgrades
 
 ### Weapons & Upgrades (21 upgrades)
@@ -45,13 +45,17 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Dynamic soundtrack that rotates across 8+ tracks as waves progress
 - Boss-specific music (cyberpunk_battle for early bosses, epic_boss for wave 10+)
 - Weapon-specific hit impact SFX (railgun, scatter, chain, pulse)
+- Enemy death SFX varies by type (unique pitch ranges per enemy for audio variety)
 - Ambient neon hum that shifts pitch based on HP
+- Low HP heartbeat pulse (rhythmic thump below 25% HP, increases urgency)
+- Kill milestone celebratory SFX (distinct sound at 100/250/500/1000 kills)
 - Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
 - XP pickup pitch scaling (pentatonic climb on rapid collection)
 - Dash ready audio cue when cooldown completes
 - Ultimate ready audio cue when cooldown finishes
 - Necromancer summon SFX (eerie pulse when minions spawn)
 - Golem charge telegraph SFX (low rumble before charge)
+- Orbital Guard hit SFX (subtle click when orbitals damage enemies)
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
@@ -69,6 +73,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Overclock HP drain warning (pulsing red HP bar border + red HP text)
 - Necromancer bolt telegraph (purple charge glow before firing)
 - Teleporter blink-scatter death effect (ghost copies flash outward)
+- Overclock pulsing player glow (light shifts red/orange during overclock)
+- Gravity Well visible radius ring (purple pulsing ring shows slow field area)
+- Rogue dodge ghost trail (translucent afterimage on sidestep)
+- Orbital Guard hit sparks (green flash when orbitals damage enemies)
+- Mage/Necromancer bolt trail particles (fading trail behind enemy projectiles)
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator

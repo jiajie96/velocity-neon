@@ -79,6 +79,8 @@ func _ready() -> void:
 	GameState.vampire_heal.connect(_on_vampire_heal)
 	GameState.crit_landed.connect(_on_crit_landed)
 	GameState.boss_bonus_xp.connect(_on_boss_bonus_xp)
+	GameState.wave_heal.connect(_on_wave_heal)
+	GameState.golem_enraged.connect(_on_golem_enraged)
 
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
@@ -898,6 +900,37 @@ func _on_crit_landed() -> void:
 	var tw := create_tween()
 	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.15).set_ease(Tween.EASE_OUT)
 
+func _on_golem_enraged() -> void:
+	if not wave_announce:
+		return
+	# Dramatic enrage announcement
+	wave_announce.text = "BOSS ENRAGED!"
+	wave_announce.add_theme_color_override("font_color", Color(1.0, 0.1, 0.0))
+	wave_announce.add_theme_font_size_override("font_size", 38)
+	wave_announce.modulate.a = 1.0
+	wave_announce.scale = Vector2(1.4, 1.4)
+	# Red screen flash for danger
+	if _levelup_flash:
+		_levelup_flash.color = Color(1.0, 0.0, 0.0, 0.3)
+		var flash_tw := create_tween()
+		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)
+	var tw := create_tween()
+	tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tw.tween_interval(1.5)
+	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+
+func _on_wave_heal(amount: float) -> void:
+	if not _streak_label:
+		return
+	# Brief green heal notification between waves
+	_streak_label.text = "+%d HP" % int(amount)
+	_streak_label.add_theme_font_size_override("font_size", 24)
+	_streak_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 1.0))
+	_streak_label.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_interval(1.0)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4)
+
 func _on_boss_bonus_xp(amount: float) -> void:
 	if not _streak_label:
 		return
@@ -936,6 +969,31 @@ func _update_danger_vignette(delta: float) -> void:
 	else:
 		_vignette_pulse = 0.0
 		_vignette_mat.set_shader_parameter("pulse", 0.0)
+
+var _hp_border_pulse_t: float = 0.0
+
+func _update_hp_bar_border(delta: float) -> void:
+	if not hp_bar or GameState.game_over or GameState.overclock_active:
+		return
+	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	var hp_bg_style := hp_bar.get_theme_stylebox("background") as StyleBoxFlat
+	if not hp_bg_style:
+		return
+	if hp_ratio < 0.3:
+		_hp_border_pulse_t += delta * 5.0
+		var pulse := (sin(_hp_border_pulse_t) + 1.0) * 0.5
+		var alpha := lerpf(0.3, 0.8, pulse)
+		hp_bg_style.border_color = Color(1.0, 0.1, 0.0, alpha)
+		hp_bg_style.border_width_top = 1
+		hp_bg_style.border_width_bottom = 1
+		hp_bg_style.border_width_left = 1
+		hp_bg_style.border_width_right = 1
+	else:
+		_hp_border_pulse_t = 0.0
+		hp_bg_style.border_width_top = 0
+		hp_bg_style.border_width_bottom = 0
+		hp_bg_style.border_width_left = 0
+		hp_bg_style.border_width_right = 0
 
 func _update_boss_bar() -> void:
 	var boss: Node3D = _boss_ref.get_ref() as Node3D
@@ -1208,7 +1266,17 @@ func _on_player_died() -> void:
 		var avg_dps := GameState.total_damage_dealt / maxf(GameState.time_survived, 1.0)
 		var upgrades_text := ""
 		if GameState.acquired_upgrades.size() > 0:
-			upgrades_text = "\nBuild: " + ", ".join(GameState.acquired_upgrades)
+			# Count stacks per upgrade for clearer build summary
+			var upgrade_counts := {}
+			for u_name in GameState.acquired_upgrades:
+				upgrade_counts[u_name] = upgrade_counts.get(u_name, 0) + 1
+			var parts: Array[String] = []
+			for u_name in upgrade_counts:
+				if upgrade_counts[u_name] > 1:
+					parts.append("%s x%d" % [u_name, upgrade_counts[u_name]])
+				else:
+					parts.append(u_name)
+			upgrades_text = "\nBuild: " + ", ".join(parts)
 		# Performance rating based on wave reached
 		var rating := "RECRUIT"
 		if GameState.wave >= 25:
@@ -1241,6 +1309,7 @@ func _process(delta: float) -> void:
 	_update_indicators()
 	_update_boss_bar()
 	_update_danger_vignette(delta)
+	_update_hp_bar_border(delta)
 	_update_overclock_indicator(delta)
 	_update_regen_indicator(delta)
 	_update_wave_timer()

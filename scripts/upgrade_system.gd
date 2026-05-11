@@ -67,8 +67,7 @@ static func get_random_choices(count: int = 3) -> Array[Upgrade]:
 
 static func apply_upgrade(upgrade: Upgrade) -> void:
 	upgrade.stacks += 1
-	if upgrade.title not in GameState.acquired_upgrades:
-		GameState.acquired_upgrades.append(upgrade.title)
+	GameState.acquired_upgrades.append(upgrade.title)
 	match upgrade.id:
 		"rapid_fire":
 			GameState.fire_rate *= 1.25

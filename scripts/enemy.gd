@@ -38,6 +38,7 @@ const NECRO_BOLT_DAMAGE := 12.0
 
 # Exploder behavior
 var _exploder_fuse_lit: bool = false
+var _exploder_warn_timer: float = 0.3
 const EXPLODER_DETONATE_RANGE := 1.8
 const EXPLODER_DAMAGE := 40.0
 const EXPLODER_RADIUS := 4.0
@@ -68,6 +69,7 @@ const GOLEM_CHARGE_DAMAGE := 30.0
 var _golem_charging: bool = false
 var _golem_charge_dir: Vector3 = Vector3.ZERO
 var _golem_charge_elapsed: float = 0.0
+var _golem_enraged: bool = false
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -229,6 +231,7 @@ func _process(delta: float) -> void:
 				var dodge_pos := position + side * ROGUE_DODGE_DIST
 				dodge_pos.x = clampf(dodge_pos.x, -48.0, 48.0)
 				dodge_pos.z = clampf(dodge_pos.z, -48.0, 48.0)
+				_spawn_rogue_dodge_ghost()
 				var tw := create_tween()
 				tw.tween_property(self, "position", dodge_pos, 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 			position += dir * spd * delta
@@ -249,6 +252,13 @@ func _process(delta: float) -> void:
 		elif is_boss:
 			# Golem: multi-ability boss with slam, rock throw, and charge
 			var enraged := hp < max_hp * 0.3
+			# First time entering enrage — announce it dramatically
+			if enraged and not _golem_enraged:
+				_golem_enraged = true
+				GameState.request_shake(3.0)
+				GameState.request_hit_stop(0.08)
+				Audio.sfx_golem_slam()
+				GameState.golem_enraged.emit()
 			var boss_spd := spd * (1.6 if enraged else 1.0)
 			# Handle charge state
 			if _golem_charging:
@@ -297,7 +307,13 @@ func _process(delta: float) -> void:
 			_mat.emission = _original_color
 			_mat.emission_energy_multiplier = 2.0
 
-	# Exploder warning glow — intensifies as they approach detonation range
+	# Exploder warning glow and beep — intensifies as they approach detonation range
+	if enemy_type == "exploder" and not _exploder_fuse_lit:
+		_exploder_warn_timer -= delta
+		if dist_to_player < EXPLODER_DETONATE_RANGE * 3.0 and _exploder_warn_timer <= 0.0:
+			var urgency := clampf(1.0 - dist_to_player / (EXPLODER_DETONATE_RANGE * 3.0), 0.0, 1.0)
+			_exploder_warn_timer = lerpf(0.5, 0.12, urgency)
+			Audio.sfx_exploder_warn(1.0 + urgency * 0.8)
 	if enemy_type == "exploder" and not _exploder_fuse_lit and _mat and _flash_timer <= 0.0:
 		var proximity := clampf(1.0 - dist_to_player / (EXPLODER_DETONATE_RANGE * 3.0), 0.0, 1.0)
 		if proximity > 0.01:
@@ -341,6 +357,7 @@ func _mage_telegraph(dir: Vector3) -> void:
 				if player:
 					var fresh_dir := (player.global_position - global_position).normalized()
 					fresh_dir.y = 0.0
+					Audio.sfx_mage_bolt()
 					_fire_mage_bolt(fresh_dir)
 		)
 
@@ -372,7 +389,7 @@ func _necro_bolt_telegraph(dir: Vector3) -> void:
 				if player:
 					var fresh_dir := (player.global_position - global_position).normalized()
 					fresh_dir.y = 0.0
-					_fire_mage_bolt(fresh_dir)
+					_fire_necro_bolt(fresh_dir)
 		)
 
 func _teleport_blink(player: Node3D) -> void:
@@ -482,11 +499,90 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 			GameState.take_damage(bolt_dmg)
 		bolt.queue_free()
 	)
+	# Trail particles for readability
+	_add_bolt_trail(bolt, container, Color(1.0, 0.2, 0.0))
 	# Move bolt via tween destination
 	var end_pos := bolt.position + bolt_dir * 20.0
 	var tw := bolt.create_tween()
 	tw.tween_property(bolt, "position", end_pos, 20.0 / bolt_spd)
 	tw.tween_callback(bolt.queue_free)
+
+func _fire_necro_bolt(dir: Vector3) -> void:
+	var container := get_parent().get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	Audio.sfx_necro_bolt()
+	var bolt := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.22
+	bolt.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	# Necromancer bolts are PURPLE — distinct from mage's red/orange
+	mat.albedo_color = Color(0.6, 0.1, 0.9, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(0.5, 0.0, 0.8)
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bolt.material_override = mat
+	bolt.position = global_position + Vector3(0, 1.0, 0)
+	container.add_child(bolt)
+	var bolt_light := OmniLight3D.new()
+	bolt_light.light_color = Color(0.5, 0.0, 0.8)
+	bolt_light.light_energy = 1.5
+	bolt_light.omni_range = 3.0
+	bolt_light.omni_attenuation = 2.0
+	bolt.add_child(bolt_light)
+	var area := Area3D.new()
+	area.collision_layer = 2
+	area.collision_mask = 1
+	area.monitoring = true
+	area.monitorable = false
+	var col := CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = 0.4
+	col.shape = shape
+	area.add_child(col)
+	bolt.add_child(area)
+	var bolt_spd := MAGE_PROJ_SPEED + minf(GameState.wave, 20) * 0.3
+	var bolt_dmg := NECRO_BOLT_DAMAGE * (1.0 + GameState.wave * 0.1)
+	area.area_entered.connect(func(_a: Area3D):
+		if not GameState.invincible:
+			GameState.take_damage(bolt_dmg)
+		bolt.queue_free()
+	)
+	# Trail particles for readability
+	_add_bolt_trail(bolt, container, Color(0.5, 0.0, 0.8))
+	var end_pos := bolt.position + dir * 20.0
+	var tw := bolt.create_tween()
+	tw.tween_property(bolt, "position", end_pos, 20.0 / bolt_spd)
+	tw.tween_callback(bolt.queue_free)
+
+func _add_bolt_trail(bolt: MeshInstance3D, container: Node, color: Color) -> void:
+	# Add a timer that spawns fading trail particles behind the bolt
+	var trail_timer := Timer.new()
+	trail_timer.wait_time = 0.05
+	trail_timer.autostart = true
+	trail_timer.timeout.connect(func():
+		if not bolt.is_inside_tree():
+			return
+		var p := MeshInstance3D.new()
+		var s := SphereMesh.new()
+		s.radius = 0.08
+		p.mesh = s
+		var pmat := StandardMaterial3D.new()
+		pmat.albedo_color = Color(color.r, color.g, color.b, 0.5)
+		pmat.emission_enabled = true
+		pmat.emission = color
+		pmat.emission_energy_multiplier = 3.0
+		pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		p.material_override = pmat
+		p.position = bolt.position
+		container.add_child(p)
+		var ptw := p.create_tween()
+		ptw.tween_property(pmat, "albedo_color:a", 0.0, 0.15)
+		ptw.tween_callback(p.queue_free)
+	)
+	bolt.add_child(trail_timer)
 
 func _necro_summon() -> void:
 	var container := get_parent()
@@ -890,10 +986,33 @@ func _teleporter_death_vfx() -> void:
 		gtw.set_parallel(false)
 		gtw.tween_callback(ghost.queue_free)
 
+func _spawn_rogue_dodge_ghost() -> void:
+	var container := get_parent()
+	if not container:
+		return
+	var ghost := MeshInstance3D.new()
+	var capsule := CapsuleMesh.new()
+	capsule.radius = 0.25
+	capsule.height = 0.8
+	ghost.mesh = capsule
+	var gmat := StandardMaterial3D.new()
+	gmat.albedo_color = Color(0.0, 1.0, 0.5, 0.5)
+	gmat.emission_enabled = true
+	gmat.emission = Color(0.0, 1.0, 0.4)
+	gmat.emission_energy_multiplier = 3.0
+	gmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ghost.material_override = gmat
+	ghost.position = global_position
+	ghost.position.y = 0.5
+	container.add_child(ghost)
+	var gtw := ghost.create_tween()
+	gtw.tween_property(gmat, "albedo_color:a", 0.0, 0.2)
+	gtw.tween_callback(ghost.queue_free)
+
 func _die() -> void:
 	_dead = true
 	GameState.add_kill()
-	Audio.sfx_enemy_death()
+	Audio.sfx_enemy_death_typed(enemy_type)
 	_spawn_xp()
 	# Necromancer death kills its summoned minions
 	if enemy_type == "necromancer":

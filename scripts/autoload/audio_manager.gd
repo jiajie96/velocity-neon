@@ -166,9 +166,50 @@ func sfx_golem_charge() -> void:
 func sfx_ult_ready() -> void:
 	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -10.0, 1.3)
 
+func sfx_mage_bolt() -> void:
+	play_sfx("res://assets/audio/sfx/shoot_inferno_warlock.ogg", -10.0, randf_range(1.4, 1.6))
+
+func sfx_necro_bolt() -> void:
+	play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -10.0, randf_range(1.3, 1.5))
+
+func sfx_exploder_warn(pitch: float = 1.0) -> void:
+	play_sfx("res://assets/audio/sfx/ui_click.ogg", -14.0, pitch)
+
 func sfx_exploder_boom() -> void:
 	var paths := ["res://assets/audio/sfx/enemy_death_01.ogg", "res://assets/audio/sfx/enemy_death_02.ogg"]
 	play_sfx(paths[randi() % paths.size()], 0.0, 0.5)
+
+func sfx_kill_milestone() -> void:
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -1.0, 1.2)
+
+func sfx_enemy_death_typed(enemy_type: String) -> void:
+	# Different pitch per enemy type for audio variety
+	var paths := ["res://assets/audio/sfx/enemy_death_01.ogg", "res://assets/audio/sfx/enemy_death_02.ogg"]
+	var pitch := 1.0
+	match enemy_type:
+		"minion":
+			pitch = randf_range(1.0, 1.2)
+		"warrior":
+			pitch = randf_range(0.7, 0.85)
+		"mage":
+			pitch = randf_range(1.1, 1.3)
+		"rogue":
+			pitch = randf_range(1.2, 1.4)
+		"necromancer":
+			pitch = randf_range(0.6, 0.75)
+		"exploder":
+			pitch = randf_range(0.9, 1.0)
+		"teleporter":
+			pitch = randf_range(1.3, 1.5)
+		"golem":
+			pitch = randf_range(0.4, 0.55)
+	play_sfx(paths[randi() % paths.size()], -4.0, pitch)
+
+func sfx_orbital_hit() -> void:
+	play_sfx("res://assets/audio/sfx/ui_click.ogg", -14.0, randf_range(1.8, 2.2))
+
+func sfx_low_hp_heartbeat() -> void:
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -10.0, 0.35)
 
 func play_victory_sting() -> void:
 	play_sfx("res://assets/audio/music/victory.ogg", -2.0, 1.0)
