@@ -957,7 +957,7 @@ func _trigger_levelup_flash() -> void:
 func _update_danger_vignette(delta: float) -> void:
 	if not _vignette_mat:
 		return
-	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
 	var target_intensity := 0.0
 	if hp_ratio < 0.3 and not GameState.game_over:
 		target_intensity = (1.0 - hp_ratio / 0.3)
@@ -975,7 +975,7 @@ var _hp_border_pulse_t: float = 0.0
 func _update_hp_bar_border(delta: float) -> void:
 	if not hp_bar or GameState.game_over or GameState.overclock_active:
 		return
-	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
 	var hp_bg_style := hp_bar.get_theme_stylebox("background") as StyleBoxFlat
 	if not hp_bg_style:
 		return
@@ -1000,7 +1000,7 @@ func _update_boss_bar() -> void:
 	if boss and not boss.is_queued_for_deletion() and boss.get("hp") != null:
 		boss_bar.max_value = boss.max_hp
 		boss_bar.value = boss.hp
-		var hp_ratio := boss.hp / maxf(boss.max_hp, 1.0)
+		var hp_ratio: float = boss.hp / maxf(boss.max_hp, 1.0)
 		var is_enraged := hp_ratio < 0.3
 		if boss_pct_label:
 			var pct := int(hp_ratio * 100.0)

@@ -236,10 +236,10 @@ func start_ambient_hum() -> void:
 func update_hum_pitch() -> void:
 	if not _hum_player:
 		return
-	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
 	# Low HP = higher pitch + louder for tension
-	var target_pitch := lerpf(0.5, 0.25, hp_ratio)
-	var target_vol := lerpf(-16.0, -24.0, hp_ratio)
+	var target_pitch: float = lerpf(0.5, 0.25, hp_ratio)
+	var target_vol: float = lerpf(-16.0, -24.0, hp_ratio)
 	_hum_player.pitch_scale = lerpf(_hum_player.pitch_scale, target_pitch, 0.05)
 	_hum_player.volume_db = lerpf(_hum_player.volume_db, target_vol, 0.05)
 

@@ -162,7 +162,7 @@ func _update_gravity_ring() -> void:
 		_gravity_ring.visible = true
 		# Gentle pulse animation
 		var pulse := (sin(GameState.time_survived * 2.0) + 1.0) * 0.5
-		var alpha := lerpf(0.08, 0.18, pulse) * minf(GameState.gravity_well_strength / 0.7, 1.0)
+		var alpha: float = lerpf(0.08, 0.18, pulse) * minf(GameState.gravity_well_strength / 0.7, 1.0)
 		_gravity_ring_mat.albedo_color.a = alpha
 		_gravity_ring_mat.emission_energy_multiplier = lerpf(1.0, 2.5, pulse)
 	else:
@@ -182,12 +182,12 @@ func _update_overclock_visual(delta: float) -> void:
 func _update_heartbeat(delta: float) -> void:
 	if GameState.game_over:
 		return
-	var hp_ratio := GameState.hp / maxf(GameState.max_hp, 1.0)
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
 	if hp_ratio > 0.25:
 		_heartbeat_timer = 0.0
 		return
 	# Faster heartbeat as HP drops lower
-	var beat_interval := lerpf(0.6, 1.2, hp_ratio / 0.25)
+	var beat_interval: float = lerpf(0.6, 1.2, hp_ratio / 0.25)
 	_heartbeat_timer -= delta
 	if _heartbeat_timer <= 0.0:
 		_heartbeat_timer = beat_interval
