@@ -56,6 +56,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Necromancer summon SFX (eerie pulse when minions spawn)
 - Golem charge telegraph SFX (low rumble before charge)
 - Orbital Guard hit SFX (subtle click when orbitals damage enemies)
+- Teleporter blink SFX (high-pitched warp sound on teleport)
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
@@ -78,6 +79,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Rogue dodge ghost trail (translucent afterimage on sidestep)
 - Orbital Guard hit sparks (green flash when orbitals damage enemies)
 - Mage/Necromancer bolt trail particles (fading trail behind enemy projectiles)
+- Player model damage flash (white flash on hit for clear feedback)
+- XP orb spawn burst (orbs pop outward from kills before settling)
+- Boss enrage arena red pulse (screen edge throb during enrage phase)
+- Kill streak slow-motion (brief time-slow on 5+ and 8+ streaks)
+- Threat-scaled spawn warnings (bigger glow rings for dangerous enemy types)
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
@@ -91,6 +97,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Pause menu (resume/restart/quit)
 - Game over screen with stats (damage dealt/taken, kills/min, DPS), performance rating, build summary, and restart button
 - Title screen with controls reference
+- Wave spawn progress counter (shows enemies spawned vs total)
+- Upgrade stat preview (concrete before/after values on level-up cards)
 
 ### Game Systems
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave)

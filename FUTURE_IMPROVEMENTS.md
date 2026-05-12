@@ -197,6 +197,14 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Enemy death SFX varies by type (unique pitch per enemy)
 - [x] Low HP heartbeat audio pulse (rhythmic thump below 25%)
 - [x] Mage/Necro bolt trail particles (fading spheres behind enemy projectiles)
+- [x] Teleporter blink SFX (warp sound on teleport)
+- [x] Player model damage flash (white flash on hit)
+- [x] XP orb spawn burst (pop outward before settling)
+- [x] Boss enrage arena red pulse (screen edges throb)
+- [x] Kill streak slow-mo (brief time-slow on 5+ streaks)
+- [x] Threat-scaled spawn warnings (bigger rings for dangerous types)
+- [x] Wave spawn progress HUD counter
+- [x] Upgrade stat preview (concrete before/after values)
 
 ---
 

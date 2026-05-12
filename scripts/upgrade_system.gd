@@ -62,8 +62,50 @@ static func get_random_choices(count: int = 3) -> Array[Upgrade]:
 	available.shuffle()
 	var result: Array[Upgrade] = []
 	for i in mini(count, available.size()):
-		result.append(available[i])
+		# Enrich description with concrete stat preview
+		var u: Upgrade = available[i]
+		u.description = _stat_preview(u)
+		result.append(u)
 	return result
+
+static func _stat_preview(u: Upgrade) -> String:
+	match u.id:
+		"rapid_fire":
+			var cur := GameState.fire_rate
+			return "+25%% fire rate (%.1f -> %.1f)" % [cur, cur * 1.25]
+		"power_shot":
+			var cur := GameState.damage
+			return "+20%% damage (%.1f -> %.1f)" % [cur, cur * 1.2]
+		"fortify":
+			return "+15 max HP, heal 15 (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp + 15)]
+		"swift":
+			var cur := GameState.speed
+			return "+12%% move speed (%.1f -> %.1f)" % [cur, cur * 1.12]
+		"multi_shot":
+			return "+1 projectile (%d -> %d)" % [GameState.projectile_count, GameState.projectile_count + 1]
+		"magnet":
+			var cur := GameState.magnet_range
+			return "+50%% pickup range (%.1f -> %.1f)" % [cur, cur * 1.5]
+		"regen":
+			var cur := GameState.hp_regen
+			return "+0.5 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.5]
+		"phase_shift":
+			var cur := GameState.dash_cooldown
+			return "Dash cooldown -25%% (%.2fs -> %.2fs)" % [cur, cur * 0.75]
+		"crit_surge":
+			var cur := GameState.crit_chance * 100.0
+			return "+5%% crit chance (%d%% -> %d%%)" % [int(cur), int(cur + 5)]
+		"vampire":
+			var cur := GameState.lifesteal
+			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 1.5]
+		"nano_shield":
+			var cur := GameState.damage_reduction * 100.0
+			return "-12%% incoming damage (%d%% -> %d%%)" % [int(cur), mini(int(cur + 12), 48)]
+		"velocity_rounds":
+			var cur := GameState.projectile_speed
+			return "+20%% projectile speed (%.0f -> %.0f)" % [cur, cur * 1.2]
+		_:
+			return u.description
 
 static func apply_upgrade(upgrade: Upgrade) -> void:
 	upgrade.stacks += 1

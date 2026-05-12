@@ -37,6 +37,7 @@ var _dps_timer: float = 0.0
 var _no_damage_label: Label
 var _hit_flash: ColorRect
 var _time_label: Label
+var _wave_progress_label: Label
 
 var _current_choices: Array = []
 var _prev_hp: float = -1.0
@@ -63,6 +64,7 @@ func _ready() -> void:
 	_build_no_damage_label()
 	_build_time_label()
 	_build_hit_flash()
+	_build_wave_progress_label()
 	_build_pause_menu()
 
 	GameState.hp_changed.connect(_on_hp_changed)
@@ -715,6 +717,18 @@ func _build_no_damage_label() -> void:
 	_no_damage_label.visible = false
 	add_child(_no_damage_label)
 
+func _build_wave_progress_label() -> void:
+	_wave_progress_label = Label.new()
+	_wave_progress_label.text = ""
+	_wave_progress_label.add_theme_font_size_override("font_size", 12)
+	_wave_progress_label.add_theme_color_override("font_color", Color(0.7, 0.4, 1.0, 0.5))
+	_wave_progress_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_wave_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_wave_progress_label.position = Vector2(-170, 50)
+	_wave_progress_label.custom_minimum_size = Vector2(150, 20)
+	_wave_progress_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_wave_progress_label)
+
 func _build_pause_menu() -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -1312,12 +1326,14 @@ func _process(delta: float) -> void:
 	_update_hp_bar_border(delta)
 	_update_overclock_indicator(delta)
 	_update_regen_indicator(delta)
+	_update_boss_enrage_pulse(delta)
 	_update_wave_timer()
 	_update_speed_lines(delta)
 	_update_enemy_count()
 	_update_dps(delta)
 	_update_no_damage_indicator()
 	_update_time_label()
+	_update_wave_progress()
 	Audio.update_hum_pitch()
 
 func _update_indicators() -> void:
@@ -1375,6 +1391,27 @@ func _update_overclock_indicator(delta: float) -> void:
 				hp_bg_style.border_width_right = 0
 
 var _regen_tick_t: float = 0.0
+var _enrage_pulse_t: float = 0.0
+
+func _update_boss_enrage_pulse(delta: float) -> void:
+	# Check if current boss is enraged
+	var boss: Node3D = _boss_ref.get_ref() as Node3D
+	if not boss or boss.is_queued_for_deletion() or boss.get("hp") == null:
+		_enrage_pulse_t = 0.0
+		return
+	var hp_ratio: float = boss.hp / maxf(boss.max_hp, 1.0)
+	if hp_ratio >= 0.3:
+		_enrage_pulse_t = 0.0
+		return
+	_enrage_pulse_t += delta
+	# Periodic red pulse at screen edges during boss enrage
+	if _vignette_mat:
+		var pulse := (sin(_enrage_pulse_t * 4.0) + 1.0) * 0.5
+		var enrage_intensity := clampf(0.15 + pulse * 0.2, 0.0, 0.4)
+		var current_intensity: float = _vignette_mat.get_shader_parameter("intensity")
+		# Only apply if enrage pulse is stronger than HP-based vignette
+		if enrage_intensity > current_intensity:
+			_vignette_mat.set_shader_parameter("intensity", enrage_intensity)
 
 func _update_regen_indicator(delta: float) -> void:
 	if not _regen_label:
@@ -1442,7 +1479,7 @@ func _dismiss_title() -> void:
 		title_screen.visible = false
 		title_screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		GameState.game_started = true
-		Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
+		Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -6.0)
 	)
 
 func _update_speed_lines(_delta: float) -> void:
@@ -1511,3 +1548,21 @@ func _update_time_label() -> void:
 	var mins := int(GameState.time_survived) / 60
 	var secs := int(GameState.time_survived) % 60
 	_time_label.text = "%d:%02d" % [mins, secs]
+
+func _update_wave_progress() -> void:
+	if not _wave_progress_label:
+		return
+	if not GameState.game_started or GameState.game_over:
+		_wave_progress_label.visible = false
+		return
+	var spawner := get_tree().root.find_child("EnemySpawner", true, false)
+	if spawner and spawner.get("_wave_active") != null and spawner._wave_active:
+		var spawned: int = spawner._spawned_this_wave if spawner.get("_spawned_this_wave") != null else 0
+		var target: int = spawner._target_this_wave if spawner.get("_target_this_wave") != null else 0
+		if target > 0:
+			_wave_progress_label.visible = true
+			_wave_progress_label.text = "SPAWNED: %d/%d" % [spawned, target]
+		else:
+			_wave_progress_label.visible = false
+	else:
+		_wave_progress_label.visible = false

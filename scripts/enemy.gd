@@ -418,6 +418,7 @@ func _teleport_blink(player: Node3D) -> void:
 		vtw.tween_property(vmat, "albedo_color:a", 0.0, 0.25)
 		vtw.set_parallel(false)
 		vtw.tween_callback(vanish.queue_free)
+	Audio.sfx_teleporter_blink()
 	# Pick a random position near the player
 	var angle := randf() * TAU
 	var dist := randf_range(3.0, TELEPORT_RANGE)
@@ -1038,7 +1039,7 @@ func _die() -> void:
 		if tree:
 			tree.create_timer(3.0).timeout.connect(func():
 				if not GameState.game_over:
-					Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
+					Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -6.0)
 			)
 	else:
 		GameState.request_shake(1.0)

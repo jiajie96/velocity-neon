@@ -211,6 +211,9 @@ func sfx_orbital_hit() -> void:
 func sfx_low_hp_heartbeat() -> void:
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", -10.0, 0.35)
 
+func sfx_teleporter_blink() -> void:
+	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -12.0, randf_range(1.8, 2.2))
+
 func play_victory_sting() -> void:
 	play_sfx("res://assets/audio/music/victory.ogg", -2.0, 1.0)
 

@@ -42,6 +42,7 @@ var _overclock_pulse_t: float = 0.0
 var _gravity_ring: MeshInstance3D
 var _gravity_ring_mat: StandardMaterial3D
 var _heartbeat_timer: float = 0.0
+var _damage_flash_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player_node")
@@ -50,6 +51,7 @@ func _ready() -> void:
 	_build_light()
 	_build_dash_ring()
 	_build_gravity_ring()
+	GameState.hp_changed.connect(_on_hp_changed)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -263,6 +265,7 @@ func _process(delta: float) -> void:
 	_update_overclock_visual(delta)
 	_update_heartbeat(delta)
 	_update_regen_vfx(delta)
+	_update_damage_flash(delta)
 
 func _move(delta: float) -> void:
 	if is_dashing:
@@ -776,3 +779,50 @@ func _update_regen_vfx(delta: float) -> void:
 		tw.tween_property(mat, "albedo_color:a", 0.0, 0.8)
 		tw.set_parallel(false)
 		tw.tween_callback(p.queue_free)
+
+var _prev_hp: float = -1.0
+
+func _on_hp_changed(current: float, _maximum: float) -> void:
+	if _prev_hp > 0.0 and current < _prev_hp:
+		_damage_flash_timer = 0.12
+		_set_model_flash(true)
+	_prev_hp = current
+
+func _update_damage_flash(delta: float) -> void:
+	if _damage_flash_timer > 0.0:
+		_damage_flash_timer -= delta
+		if _damage_flash_timer <= 0.0:
+			_set_model_flash(false)
+
+func _set_model_flash(flash_on: bool) -> void:
+	var model := get_node_or_null("Model")
+	var mesh := get_node_or_null("Mesh")
+	var target: Node = model if model else mesh
+	if not target:
+		return
+	_apply_flash_recursive(target, flash_on)
+
+func _apply_flash_recursive(node: Node, flash_on: bool) -> void:
+	if node is MeshInstance3D:
+		var mi: MeshInstance3D = node
+		var mat := mi.material_override as StandardMaterial3D
+		if not mat:
+			# Try to get surface material
+			for i in mi.get_surface_override_material_count():
+				var smat := mi.get_surface_override_material(i) as StandardMaterial3D
+				if smat:
+					if flash_on:
+						smat.emission = Color.WHITE
+						smat.emission_energy_multiplier = 8.0
+					else:
+						smat.emission = smat.albedo_color * 0.4
+						smat.emission_energy_multiplier = 1.8
+		else:
+			if flash_on:
+				mat.emission = Color.WHITE
+				mat.emission_energy_multiplier = 8.0
+			else:
+				mat.emission = Color(0.0, 0.4, 0.6)
+				mat.emission_energy_multiplier = 1.0
+	for child in node.get_children():
+		_apply_flash_recursive(child, flash_on)

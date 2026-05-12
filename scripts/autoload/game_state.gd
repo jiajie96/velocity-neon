@@ -158,7 +158,7 @@ func next_wave() -> void:
 		elif wave >= 7:
 			Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -5.0)
 		else:
-			Audio.play_music("res://assets/audio/music/neon_runner.mp3", -6.0)
+			Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -6.0)
 
 func add_kill() -> void:
 	kills += 1
@@ -170,6 +170,9 @@ func add_kill() -> void:
 	# XP magnet pulse on 3+ kill streaks for satisfying orb collection
 	if _streak_count == 3:
 		xp_magnet_pulse.emit()
+	# Brief slow-mo on big kill streaks for dramatic impact
+	if _streak_count == 5 or _streak_count == 8:
+		request_hit_stop(0.06)
 	if lifesteal > 0.0 and hp < max_hp:
 		heal(lifesteal)
 		vampire_heal.emit()

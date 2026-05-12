@@ -11,12 +11,19 @@ var xp_value: float = 10.0
 var _magnetized: bool = false
 var _time: float = 0.0
 var _collected: bool = false
+var _burst_velocity: Vector3 = Vector3.ZERO
+var _burst_timer: float = 0.0
 
 func _ready() -> void:
 	xp_value = get_meta("xp_value", 10.0)
 	_time = randf() * TAU
 	_build_visual()
 	GameState.xp_magnet_pulse.connect(_on_magnet_pulse)
+	# Initial burst outward from spawn point for juicy kill feedback
+	var angle := randf() * TAU
+	var burst_speed := randf_range(4.0, 8.0)
+	_burst_velocity = Vector3(cos(angle), 0, sin(angle)) * burst_speed
+	_burst_timer = 0.25
 
 func _on_magnet_pulse() -> void:
 	_magnetized = true
@@ -73,12 +80,19 @@ func _process(delta: float) -> void:
 			var pulse := (sin(_time * 4.0) + 1.0) * 0.5
 			mat.emission_energy_multiplier = lerpf(0.6, 2.0, pulse)
 		# Fade out near end of lifetime
-		if _time > LIFETIME:
+		if _time > LIFETIME and mat:
 			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME
-			var mat := mesh.material_override as StandardMaterial3D
-			if mat:
-				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-				mat.albedo_color.a = fade_ratio
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			mat.albedo_color.a = fade_ratio
+
+	# Apply initial burst outward (decays quickly)
+	if _burst_timer > 0.0:
+		_burst_timer -= delta
+		position += _burst_velocity * delta
+		_burst_velocity *= 0.85  # Rapid deceleration
+		position.x = clampf(position.x, -48.0, 48.0)
+		position.z = clampf(position.z, -48.0, 48.0)
+		position.y = 0.0
 
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if not player:
@@ -89,7 +103,7 @@ func _process(delta: float) -> void:
 	if dist < GameState.magnet_range:
 		_magnetized = true
 
-	if _magnetized:
+	if _magnetized and _burst_timer <= 0.0:
 		var dir := (player.global_position - global_position).normalized()
 		dir.y = 0.0
 		position += dir * MAGNET_SPEED * delta

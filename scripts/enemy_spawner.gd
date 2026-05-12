@@ -181,18 +181,29 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 		"exploder": Color(1.0, 0.8, 0.0),
 		"teleporter": Color(0.0, 0.8, 1.0),
 	}
+	# Dangerous enemies get bigger, brighter warnings so players can react
+	var threat_scale := {
+		"minion": 1.0,
+		"warrior": 1.2,
+		"mage": 1.3,
+		"rogue": 1.1,
+		"necromancer": 1.6,
+		"exploder": 1.5,
+		"teleporter": 1.4,
+	}
 	var color: Color = warn_colors.get(type, Color(1.0, 0.0, 0.6))
+	var scale_factor: float = threat_scale.get(type, 1.0)
 	var ring := MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.6
-	cyl.bottom_radius = 0.6
+	cyl.top_radius = 0.6 * scale_factor
+	cyl.bottom_radius = 0.6 * scale_factor
 	cyl.height = 0.02
 	ring.mesh = cyl
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.4 + scale_factor * 0.1)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 4.0
+	mat.emission_energy_multiplier = 3.0 + scale_factor * 2.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring.material_override = mat
 	ring.position = pos
@@ -200,7 +211,7 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 	container.add_child(ring)
 	var tw := ring.create_tween()
 	ring.scale = Vector3(0.1, 1.0, 0.1)
-	tw.tween_property(ring, "scale", Vector3(1.5, 1.0, 1.5), 0.3)
+	tw.tween_property(ring, "scale", Vector3(1.5 * scale_factor, 1.0, 1.5 * scale_factor), 0.3)
 	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3)
 	tw.set_parallel(false)
 	tw.tween_callback(ring.queue_free)
