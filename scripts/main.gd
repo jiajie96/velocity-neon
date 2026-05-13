@@ -182,7 +182,8 @@ func _build_spawner() -> void:
 func _wait_for_start() -> void:
 	while not GameState.game_started:
 		await get_tree().process_frame
-	await get_tree().create_timer(0.5).timeout
+	# Short delay then start — snappy enough to feel responsive
+	await get_tree().create_timer(0.2).timeout
 	GameState.next_wave()
 
 func _process(delta: float) -> void:

@@ -41,6 +41,7 @@ var _wave_progress_label: Label
 
 var _current_choices: Array = []
 var _prev_hp: float = -1.0
+var _overclock_death: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -83,6 +84,7 @@ func _ready() -> void:
 	GameState.boss_bonus_xp.connect(_on_boss_bonus_xp)
 	GameState.wave_heal.connect(_on_wave_heal)
 	GameState.golem_enraged.connect(_on_golem_enraged)
+	GameState.death_by_overclock.connect(_on_death_by_overclock)
 
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
@@ -1267,10 +1269,28 @@ func _on_upgrade_chosen(index: int) -> void:
 	get_tree().create_timer(1.5).timeout.connect(func(): GameState.invincible = false)
 	GameState.upgrade_selected.emit()
 
+func _on_death_by_overclock() -> void:
+	_overclock_death = true
+
 func _on_player_died() -> void:
 	Audio.play_music("res://assets/audio/music/defeat.ogg", -4.0)
 	Audio.stop_ambient_hum()
+	# Enhanced death VFX — dramatic slow-mo and screen flash
+	GameState.request_shake(6.0)
+	GameState.request_hit_stop(0.15)
+	if _levelup_flash:
+		_levelup_flash.color = Color(1.0, 0.0, 0.1, 0.5)
+		var flash_tw := create_tween()
+		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 1.0).set_ease(Tween.EASE_OUT)
 	game_over_panel.visible = true
+	# Customize title for overclock burnout
+	var title_node := game_over_panel.find_child("*", true, false)
+	for child in game_over_panel.get_child(0).get_children():
+		if child is Label and child.text == "SYSTEM FAILURE":
+			if _overclock_death:
+				child.text = "OVERCLOCK BURNOUT"
+				child.add_theme_color_override("font_color", Color(1.0, 0.3, 0.0))
+			break
 	var stats_label := game_over_panel.find_child("StatsLabel") as Label
 	if stats_label:
 		var mins := int(GameState.time_survived) / 60
@@ -1432,7 +1452,14 @@ func _update_wave_timer() -> void:
 	var spawner := get_tree().root.find_child("EnemySpawner", true, false)
 	if spawner and spawner.get("_wave_active") != null:
 		if not spawner._wave_active and spawner._wave_timer > 0.0:
-			_wave_timer_label.text = "NEXT WAVE IN %.1f" % spawner._wave_timer
+			var next_wave := GameState.wave + 1
+			var is_boss_wave := next_wave % 5 == 0
+			if is_boss_wave:
+				_wave_timer_label.text = "BOSS WAVE %d IN %.1f" % [next_wave, spawner._wave_timer]
+				_wave_timer_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.0, 0.8))
+			else:
+				_wave_timer_label.text = "WAVE %d IN %.1f" % [next_wave, spawner._wave_timer]
+				_wave_timer_label.add_theme_color_override("font_color", Color(0.6, 0.5, 0.8, 0.7))
 			_wave_timer_label.visible = true
 		else:
 			_wave_timer_label.visible = false
