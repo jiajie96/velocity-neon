@@ -49,6 +49,7 @@
 - ~~**Ultimate ready audio cue**: Sound when ultimate cooldown completes~~ DONE — pitch-shifted ready ping
 - ~~**Necromancer summon SFX**: Audio when necromancer spawns minions~~ DONE — eerie pulse sound
 - ~~**Golem charge SFX**: Audio telegraph for boss charge~~ DONE — low rumble before charge
+- ~~**Enemy projectile bounds cleanup**: Mage/necro bolts and golem rocks now despawn at arena edges~~ DONE
 - **Positional audio**: 3D audio for enemy approach sounds — hear them coming from specific directions
 - ~~**Hit confirmation sounds**: Distinct SFX for regular hit, critical hit, shatter split, kill confirm~~ DONE — weapon-specific hit impact SFX (railgun, scatter, chain, pulse each have unique sounds)
 - **Boss music**: ~~Dedicated intense track for boss waves (every 5th)~~ DONE — cyberpunk_battle for early bosses, epic_boss for wave 10+
@@ -205,6 +206,14 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Threat-scaled spawn warnings (bigger rings for dangerous types)
 - [x] Wave spawn progress HUD counter
 - [x] Upgrade stat preview (concrete before/after values)
+- [x] Mini HP bars above elite enemies (warriors, mages, necromancers, teleporters)
+- [x] Nano Shield visual ring (blue pulse around player when damage reduction active)
+- [x] Batched XP pickup text (rapid collection shows combined "+X XP")
+- [x] Wave number shown in countdown ("WAVE X IN 2.1s")
+- [x] Enhanced death VFX (bigger shake, slow-mo, red flash on death)
+- [x] Overclock burnout death message (distinct game over title)
+- [x] Golem charge end impact VFX (ground slam ring when charge stops)
+- [x] Boss speed scales with wave (late-game golems are faster)
 
 ---
 

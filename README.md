@@ -28,7 +28,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Scatter Shot (pellet burst), Chain Arc, Orbital Guard
 - **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds
-- **Defense**: Nano Shield, Regeneration (with heal particle VFX), Vampire (lifesteal)
+- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (lifesteal)
 - **Utility**: Phase Shift (dash cooldown), Gravity Well, Overclock (with HP drain warning)
 
 ### Enemies (8 types)
@@ -39,7 +39,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave
 - **Exploder** — rushes player, detonates on proximity with chain reaction potential
 - **Teleporter** — blinks to random positions near the player, unpredictable
-- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw, charge, and enrage below 30% HP. Defeating a boss awards bonus XP
+- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw, charge (with ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP
+- Non-minion enemies display mini HP bars for target prioritization
 
 ### Audio
 - Dynamic soundtrack that rotates across 8+ tracks as waves progress
@@ -84,6 +85,9 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Boss enrage arena red pulse (screen edge throb during enrage phase)
 - Kill streak slow-motion (brief time-slow on 5+ and 8+ streaks)
 - Threat-scaled spawn warnings (bigger glow rings for dangerous enemy types)
+- Nano Shield visible ring (blue pulse around player when damage reduction is active)
+- Golem charge end ground impact ring (visual punctuation when charge stops)
+- Enemy projectiles despawn at arena boundaries (prevents stale node buildup)
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
@@ -99,6 +103,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Title screen with controls reference
 - Wave spawn progress counter (shows enemies spawned vs total)
 - Upgrade stat preview (concrete before/after values on level-up cards)
+- Wave countdown shows upcoming wave number and boss wave warnings
+- Batched XP pickup text (rapid collection combines into one "+X XP" label)
+- Enhanced death sequence (screen shake, slow-mo, red flash)
+- Overclock burnout has distinct game over title ("OVERCLOCK BURNOUT")
+- Mini HP bars above elite enemies for target prioritization
 
 ### Game Systems
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave)
