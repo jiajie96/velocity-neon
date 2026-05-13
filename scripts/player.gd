@@ -43,6 +43,9 @@ var _gravity_ring: MeshInstance3D
 var _gravity_ring_mat: StandardMaterial3D
 var _heartbeat_timer: float = 0.0
 var _damage_flash_timer: float = 0.0
+var _shield_ring: MeshInstance3D
+var _shield_ring_mat: StandardMaterial3D
+var _shield_pulse_t: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player_node")
@@ -51,6 +54,7 @@ func _ready() -> void:
 	_build_light()
 	_build_dash_ring()
 	_build_gravity_ring()
+	_build_shield_ring()
 	GameState.hp_changed.connect(_on_hp_changed)
 
 func _build_visual() -> void:
@@ -156,6 +160,42 @@ func _build_gravity_ring() -> void:
 	_gravity_ring.position.y = 0.03
 	_gravity_ring.visible = false
 	add_child(_gravity_ring)
+
+func _build_shield_ring() -> void:
+	_shield_ring = MeshInstance3D.new()
+	_shield_ring.name = "ShieldRing"
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.7
+	cyl.bottom_radius = 0.7
+	cyl.height = 0.015
+	_shield_ring.mesh = cyl
+	_shield_ring_mat = StandardMaterial3D.new()
+	_shield_ring_mat.albedo_color = Color(0.2, 0.5, 1.0, 0.0)
+	_shield_ring_mat.emission_enabled = true
+	_shield_ring_mat.emission = Color(0.3, 0.6, 1.0)
+	_shield_ring_mat.emission_energy_multiplier = 2.0
+	_shield_ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_shield_ring_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_shield_ring.material_override = _shield_ring_mat
+	_shield_ring.position.y = 0.04
+	_shield_ring.visible = false
+	add_child(_shield_ring)
+
+func _update_shield_ring(delta: float) -> void:
+	if not _shield_ring or not _shield_ring_mat:
+		return
+	if GameState.damage_reduction > 0.0:
+		_shield_ring.visible = true
+		_shield_pulse_t += delta * 3.0
+		var pulse := (sin(_shield_pulse_t) + 1.0) * 0.5
+		var alpha := lerpf(0.1, 0.3, pulse) * minf(GameState.damage_reduction / 0.24, 1.0)
+		_shield_ring_mat.albedo_color.a = alpha
+		_shield_ring_mat.emission_energy_multiplier = lerpf(1.5, 3.5, pulse)
+		# Scale ring slightly with stacks
+		var ring_scale := 1.0 + GameState.damage_reduction * 0.5
+		_shield_ring.scale = Vector3(ring_scale, 1.0, ring_scale)
+	else:
+		_shield_ring.visible = false
 
 func _update_gravity_ring() -> void:
 	if not _gravity_ring or not _gravity_ring_mat:
@@ -266,6 +306,7 @@ func _process(delta: float) -> void:
 	_update_heartbeat(delta)
 	_update_regen_vfx(delta)
 	_update_damage_flash(delta)
+	_update_shield_ring(delta)
 
 func _move(delta: float) -> void:
 	if is_dashing:

@@ -71,6 +71,10 @@ var _golem_charge_dir: Vector3 = Vector3.ZERO
 var _golem_charge_elapsed: float = 0.0
 var _golem_enraged: bool = false
 
+var _hp_bar: MeshInstance3D
+var _hp_bar_mat: StandardMaterial3D
+var _hp_bar_bg: MeshInstance3D
+
 func _ready() -> void:
 	add_to_group("enemies")
 	var meta_type: String = get_meta("_enemy_type", "minion")
@@ -78,6 +82,9 @@ func _ready() -> void:
 	setup(meta_type, meta_wave)
 	_build_visual()
 	_build_hitbox()
+	# Mini HP bars above non-minion enemies for target prioritization
+	if enemy_type != "minion":
+		_build_hp_bar()
 
 func _build_visual() -> void:
 	var model_map := {
@@ -165,6 +172,63 @@ func _add_glow_light(color: Color) -> void:
 	light.omni_attenuation = 2.0
 	light.position.y = 1.0
 	add_child(light)
+
+func _build_hp_bar() -> void:
+	# Background bar (dark)
+	_hp_bar_bg = MeshInstance3D.new()
+	_hp_bar_bg.name = "HPBarBG"
+	var bg_box := BoxMesh.new()
+	bg_box.size = Vector3(1.0, 0.06, 0.01)
+	_hp_bar_bg.mesh = bg_box
+	var bg_mat := StandardMaterial3D.new()
+	bg_mat.albedo_color = Color(0.1, 0.1, 0.15, 0.7)
+	bg_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bg_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_hp_bar_bg.material_override = bg_mat
+	_hp_bar_bg.position = Vector3(0, 1.8 if not is_boss else 3.2, 0)
+	add_child(_hp_bar_bg)
+	# Foreground fill bar
+	_hp_bar = MeshInstance3D.new()
+	_hp_bar.name = "HPBarFill"
+	var fill_box := BoxMesh.new()
+	fill_box.size = Vector3(1.0, 0.06, 0.012)
+	_hp_bar.mesh = fill_box
+	_hp_bar_mat = StandardMaterial3D.new()
+	_hp_bar_mat.albedo_color = Color(1.0, 0.3, 0.1, 0.85)
+	_hp_bar_mat.emission_enabled = true
+	_hp_bar_mat.emission = Color(1.0, 0.2, 0.0)
+	_hp_bar_mat.emission_energy_multiplier = 1.5
+	_hp_bar_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_hp_bar_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_hp_bar.material_override = _hp_bar_mat
+	_hp_bar.position = Vector3(0, 1.8 if not is_boss else 3.2, 0)
+	add_child(_hp_bar)
+
+func _update_hp_bar() -> void:
+	if not _hp_bar or not _hp_bar_mat:
+		return
+	var ratio := clampf(hp / maxf(max_hp, 1.0), 0.0, 1.0)
+	_hp_bar.scale.x = ratio
+	_hp_bar.position.x = -(1.0 - ratio) * 0.5
+	# Color shifts from green (full) to red (low)
+	if ratio > 0.5:
+		_hp_bar_mat.albedo_color = Color(0.2, 1.0, 0.4, 0.85)
+		_hp_bar_mat.emission = Color(0.1, 1.0, 0.3)
+	elif ratio > 0.25:
+		_hp_bar_mat.albedo_color = Color(1.0, 0.8, 0.1, 0.85)
+		_hp_bar_mat.emission = Color(1.0, 0.7, 0.0)
+	else:
+		_hp_bar_mat.albedo_color = Color(1.0, 0.15, 0.1, 0.85)
+		_hp_bar_mat.emission = Color(1.0, 0.1, 0.0)
+	# Face camera — billboard the HP bar
+	var cam := get_viewport().get_camera_3d()
+	if cam and _hp_bar_bg:
+		var cam_dir := cam.global_position - global_position
+		cam_dir.y = 0.0
+		if cam_dir.length_squared() > 0.01:
+			var angle := atan2(cam_dir.x, cam_dir.z)
+			_hp_bar.rotation.y = angle
+			_hp_bar_bg.rotation.y = angle
 
 func _build_hitbox() -> void:
 	var area := Area3D.new()
@@ -271,8 +335,10 @@ func _process(delta: float) -> void:
 					GameState.take_damage(GOLEM_CHARGE_DAMAGE)
 					GameState.request_shake(4.0, dir)
 					_golem_charging = false
+					_golem_charge_impact()
 				if _golem_charge_elapsed >= GOLEM_CHARGE_DURATION:
 					_golem_charging = false
+					_golem_charge_impact()
 			else:
 				position += dir * boss_spd * delta
 			_golem_slam_timer -= delta
@@ -321,6 +387,9 @@ func _process(delta: float) -> void:
 			var glow_intensity := lerpf(2.0, 8.0, proximity * pulse)
 			_mat.emission = Color(1.0, 0.8, 0.0).lerp(Color(1.0, 0.3, 0.0), proximity)
 			_mat.emission_energy_multiplier = glow_intensity
+
+	# Update mini HP bar
+	_update_hp_bar()
 
 	# Boss enrage visual — pulsing red glow below 30% HP
 	if is_boss and hp < max_hp * 0.3 and _mat:
@@ -502,11 +571,12 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 	)
 	# Trail particles for readability
 	_add_bolt_trail(bolt, container, Color(1.0, 0.2, 0.0))
-	# Move bolt via tween destination
+	# Move bolt via tween destination — despawn at arena bounds
 	var end_pos := bolt.position + bolt_dir * 20.0
 	var tw := bolt.create_tween()
 	tw.tween_property(bolt, "position", end_pos, 20.0 / bolt_spd)
 	tw.tween_callback(bolt.queue_free)
+	_add_bounds_check(bolt)
 
 func _fire_necro_bolt(dir: Vector3) -> void:
 	var container := get_parent().get_parent().get_node_or_null("Projectiles")
@@ -557,6 +627,21 @@ func _fire_necro_bolt(dir: Vector3) -> void:
 	var tw := bolt.create_tween()
 	tw.tween_property(bolt, "position", end_pos, 20.0 / bolt_spd)
 	tw.tween_callback(bolt.queue_free)
+	_add_bounds_check(bolt)
+
+func _add_bounds_check(node: MeshInstance3D) -> void:
+	# Despawn projectiles that leave the arena — prevents node buildup
+	var timer := Timer.new()
+	timer.wait_time = 0.15
+	timer.autostart = true
+	timer.timeout.connect(func():
+		if not node.is_inside_tree():
+			return
+		var p := node.position
+		if absf(p.x) > 52.0 or absf(p.z) > 52.0 or absf(p.y) > 20.0:
+			node.queue_free()
+	)
+	node.add_child(timer)
 
 func _add_bolt_trail(bolt: MeshInstance3D, container: Node, color: Color) -> void:
 	# Add a timer that spawns fading trail particles behind the bolt
@@ -776,6 +861,7 @@ func _golem_throw_rock(dir: Vector3) -> void:
 	var tw := rock.create_tween()
 	tw.tween_property(rock, "position", end_pos, 25.0 / GOLEM_THROW_SPEED)
 	tw.tween_callback(rock.queue_free)
+	_add_bounds_check(rock)
 
 func _golem_start_charge(dir: Vector3) -> void:
 	# Telegraph — red flash and brief pause before charging
@@ -813,6 +899,36 @@ func _golem_start_charge(dir: Vector3) -> void:
 				_golem_charging = true
 				_golem_charge_elapsed = 0.0
 		)
+
+func _golem_charge_impact() -> void:
+	# Ground slam ring when charge ends — visual punctuation for the attack
+	var container := get_parent()
+	if not container:
+		return
+	Audio.sfx_golem_slam()
+	GameState.request_shake(2.5)
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 2.0
+	cyl.bottom_radius = 2.0
+	cyl.height = 0.04
+	ring.mesh = cyl
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(1.0, 0.3, 0.0, 0.7)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(1.0, 0.2, 0.0)
+	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = ring_mat
+	ring.position = global_position
+	ring.position.y = 0.1
+	container.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.set_parallel(true)
+	rtw.tween_property(ring, "scale", Vector3(3.0, 1.0, 3.0), 0.3)
+	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.35)
+	rtw.set_parallel(false)
+	rtw.tween_callback(ring.queue_free)
 
 func _explode() -> void:
 	# Area damage to player if in range
@@ -1176,7 +1292,8 @@ func setup(type: String, wave: int) -> void:
 			is_boss = false
 		"golem":
 			hp = 500.0 * wave_scale
-			speed = 2.2
+			# Boss speed scales with wave — late-game golems are noticeably faster
+			speed = 2.2 + minf(wave, 20) * 0.12
 			# Boss XP scales with wave for rewarding late-game bosses
 			xp_value = 80.0 + wave * 10.0
 			contact_damage = 35.0

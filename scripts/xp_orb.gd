@@ -65,6 +65,12 @@ func _process(delta: float) -> void:
 
 	_time += delta
 
+	# Flush batched XP text after a brief window
+	if _batch_timer > 0.0:
+		_batch_timer -= delta
+		if _batch_timer <= 0.0:
+			_flush_batch_label()
+
 	# Despawn old orbs to prevent buildup in late waves
 	if _time > LIFETIME + FADE_TIME:
 		queue_free()
@@ -112,12 +118,16 @@ func _process(delta: float) -> void:
 	if dist < COLLECT_DISTANCE:
 		_collect()
 
+static var _batch_xp: float = 0.0
+static var _batch_timer: float = 0.0
+static var _batch_label: Label = null
+
 func _collect() -> void:
 	_collected = true
 	GameState.add_xp(xp_value)
 	Audio.sfx_xp_pickup()
 	_spawn_collect_burst()
-	_spawn_xp_text()
+	_batch_xp_text()
 
 	var mesh := get_node_or_null("Mesh")
 	if mesh:
@@ -177,6 +187,57 @@ func _spawn_collect_burst() -> void:
 		stw.tween_property(smat, "albedo_color:a", 0.0, 0.2)
 		stw.set_parallel(false)
 		stw.tween_callback(spark.queue_free)
+
+func _batch_xp_text() -> void:
+	# Combine rapid pickups into one big "+X XP" instead of many small labels
+	_batch_xp += xp_value
+	_batch_timer = 0.3
+	if _batch_label and is_instance_valid(_batch_label):
+		# Update existing batch label
+		_batch_label.text = "+%d" % int(_batch_xp)
+		# Reset its fade timer
+		var cam := get_viewport().get_camera_3d()
+		if cam:
+			var screen_pos := cam.unproject_position(global_position + Vector3(0, 1.2, 0))
+			_batch_label.position = screen_pos + Vector2(-15, 0)
+		return
+	# Spawn a new batch label
+	var cam := get_viewport().get_camera_3d()
+	if not cam:
+		_batch_xp = 0.0
+		return
+	var screen_pos := cam.unproject_position(global_position + Vector3(0, 1.2, 0))
+	var canvas := get_tree().get_first_node_in_group("hud_node") as Control
+	if not canvas:
+		_batch_xp = 0.0
+		return
+	var label := Label.new()
+	label.text = "+%d" % int(_batch_xp)
+	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4, 0.9))
+	label.position = screen_pos + Vector2(-15, 0)
+	label.z_index = 90
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(label)
+	_batch_label = label
+	# The label gets cleaned up by the static timer flush below
+
+static func _flush_batch_label() -> void:
+	if _batch_label and is_instance_valid(_batch_label):
+		var lbl := _batch_label
+		_batch_label = null
+		# Scale up for big pickups
+		if _batch_xp > 30:
+			lbl.add_theme_font_size_override("font_size", 20)
+		if _batch_xp > 80:
+			lbl.add_theme_font_size_override("font_size", 24)
+		var tw := lbl.create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(lbl, "position:y", lbl.position.y - 35.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_property(lbl, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
+		tw.set_parallel(false)
+		tw.tween_callback(lbl.queue_free)
+	_batch_xp = 0.0
 
 func _spawn_xp_text() -> void:
 	var cam := get_viewport().get_camera_3d()

@@ -20,6 +20,7 @@ signal crit_landed
 signal boss_bonus_xp(amount: float)
 signal wave_heal(amount: float)
 signal golem_enraged
+signal death_by_overclock
 
 # Player stats
 var hp: float = 80.0
@@ -113,6 +114,8 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 		Audio.sfx_player_hit()
 	if hp <= 0.0:
 		game_over = true
+		if is_self_damage:
+			death_by_overclock.emit()
 		player_died.emit()
 
 func heal(amount: float) -> void:
