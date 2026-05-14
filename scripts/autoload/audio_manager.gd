@@ -214,6 +214,13 @@ func sfx_low_hp_heartbeat() -> void:
 func sfx_teleporter_blink() -> void:
 	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -12.0, randf_range(1.8, 2.2))
 
+func sfx_player_death() -> void:
+	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -1.0, 0.5)
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", 0.0, 0.3)
+
+func sfx_wave_heal() -> void:
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.6)
+
 func play_victory_sting() -> void:
 	play_sfx("res://assets/audio/music/victory.ogg", -2.0, 1.0)
 

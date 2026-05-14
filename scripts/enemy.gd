@@ -70,6 +70,7 @@ var _golem_charging: bool = false
 var _golem_charge_dir: Vector3 = Vector3.ZERO
 var _golem_charge_elapsed: float = 0.0
 var _golem_enraged: bool = false
+var _enrage_dust_timer: float = 0.0
 
 var _hp_bar: MeshInstance3D
 var _hp_bar_mat: StandardMaterial3D
@@ -391,11 +392,16 @@ func _process(delta: float) -> void:
 	# Update mini HP bar
 	_update_hp_bar()
 
-	# Boss enrage visual — pulsing red glow below 30% HP
+	# Boss enrage visual — pulsing red glow below 30% HP + speed dust particles
 	if is_boss and hp < max_hp * 0.3 and _mat:
 		var pulse := (sin(_golem_slam_timer * 8.0) + 1.0) * 0.5
 		_mat.emission = Color(1.0, 0.1, 0.0).lerp(_original_color, pulse * 0.3)
 		_mat.emission_energy_multiplier = lerpf(3.0, 5.0, pulse)
+		# Dust trail behind enraged boss for visual intensity
+		_enrage_dust_timer -= delta
+		if _enrage_dust_timer <= 0.0:
+			_enrage_dust_timer = 0.08
+			_spawn_enrage_dust()
 
 func _mage_telegraph(dir: Vector3) -> void:
 	# Brief charge-up glow before firing so players can react
@@ -1007,7 +1013,7 @@ func _spawn_explosion_vfx() -> void:
 	ftw.set_parallel(false)
 	ftw.tween_callback(flash.queue_free)
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, weapon_hint: String = "") -> void:
 	if _dead:
 		return
 	# Critical hit check
@@ -1027,7 +1033,7 @@ func take_damage(amount: float) -> void:
 		var kb_dir := (global_position - player.global_position).normalized()
 		kb_dir.y = 0.0
 		position += kb_dir * (0.6 if is_crit else 0.3)
-	_spawn_damage_number(final_amount, is_crit)
+	_spawn_damage_number(final_amount, is_crit, weapon_hint)
 	if hp <= 0.0:
 		if enemy_type == "exploder" and not _exploder_fuse_lit:
 			_exploder_fuse_lit = true
@@ -1035,7 +1041,7 @@ func take_damage(amount: float) -> void:
 			return
 		_die()
 
-func _spawn_damage_number(amount: float, is_crit: bool = false) -> void:
+func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: String = "") -> void:
 	var cam := get_viewport().get_camera_3d()
 	if not cam:
 		return
@@ -1046,6 +1052,13 @@ func _spawn_damage_number(amount: float, is_crit: bool = false) -> void:
 	var label := Label.new()
 	label.text = ("CRIT " if is_crit else "") + str(int(amount))
 	var is_big_hit := amount >= 30.0 or is_crit
+	# Weapon-colored damage numbers for visual clarity
+	var weapon_colors := {
+		"railgun": Color(0.3, 0.5, 1.0),
+		"scatter": Color(1.0, 0.6, 0.2),
+		"chain": Color(0.4, 0.9, 1.0),
+		"orbital": Color(0.0, 1.0, 0.6),
+	}
 	if is_crit:
 		label.add_theme_font_size_override("font_size", 32)
 		label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0))
@@ -1053,12 +1066,14 @@ func _spawn_damage_number(amount: float, is_crit: bool = false) -> void:
 		label.add_theme_constant_override("outline_size", 4)
 	elif is_big_hit:
 		label.add_theme_font_size_override("font_size", 28)
-		label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.1))
-		label.add_theme_color_override("font_outline_color", Color(1.0, 0.0, 0.0))
+		var big_color: Color = weapon_colors.get(weapon_hint, Color(1.0, 0.3, 0.1))
+		label.add_theme_color_override("font_color", big_color)
+		label.add_theme_color_override("font_outline_color", big_color.darkened(0.4))
 		label.add_theme_constant_override("outline_size", 3)
 	else:
 		label.add_theme_font_size_override("font_size", 20)
-		label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3))
+		var base_color: Color = weapon_colors.get(weapon_hint, Color(1.0, 1.0, 0.3))
+		label.add_theme_color_override("font_color", base_color)
 	label.position = screen_pos + Vector2(randf_range(-20, 20), randf_range(-10, 5))
 	label.z_index = 100
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1125,6 +1140,31 @@ func _spawn_rogue_dodge_ghost() -> void:
 	var gtw := ghost.create_tween()
 	gtw.tween_property(gmat, "albedo_color:a", 0.0, 0.2)
 	gtw.tween_callback(ghost.queue_free)
+
+func _spawn_enrage_dust() -> void:
+	var container := get_parent()
+	if not container:
+		return
+	var dust := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.15
+	dust.mesh = sphere
+	var dmat := StandardMaterial3D.new()
+	dmat.albedo_color = Color(1.0, 0.15, 0.0, 0.5)
+	dmat.emission_enabled = true
+	dmat.emission = Color(1.0, 0.1, 0.0)
+	dmat.emission_energy_multiplier = 3.0
+	dmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	dust.material_override = dmat
+	dust.position = global_position + Vector3(randf_range(-0.6, 0.6), 0.2, randf_range(-0.6, 0.6))
+	container.add_child(dust)
+	var dtw := dust.create_tween()
+	dtw.set_parallel(true)
+	dtw.tween_property(dust, "position:y", dust.position.y + 1.0, 0.3)
+	dtw.tween_property(dust, "scale", Vector3(0.3, 0.3, 0.3), 0.3)
+	dtw.tween_property(dmat, "albedo_color:a", 0.0, 0.3)
+	dtw.set_parallel(false)
+	dtw.tween_callback(dust.queue_free)
 
 func _die() -> void:
 	_dead = true

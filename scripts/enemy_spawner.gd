@@ -60,6 +60,7 @@ func _process(delta: float) -> void:
 			var wave_heal := minf(5.0 + GameState.wave * 0.5, 15.0)
 			if GameState.hp < GameState.max_hp:
 				GameState.heal(wave_heal)
+				Audio.sfx_wave_heal()
 				GameState.wave_heal.emit(wave_heal)
 			GameState.wave_cleared.emit()
 

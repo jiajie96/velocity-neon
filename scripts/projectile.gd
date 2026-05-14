@@ -197,8 +197,8 @@ func _on_hit(area: Area3D) -> void:
 			return
 		_hit = true
 
-	enemy.take_damage(damage)
-	if chain_level > 0 and weapon_type == "pulse":
+	enemy.take_damage(damage, weapon_type)
+	if chain_level > 0 and weapon_type in ["pulse", "scatter"]:
 		_do_chain(enemy, chain_level)
 	GameState.request_hit_stop(0.025)
 	Audio.sfx_hit_impact(weapon_type)

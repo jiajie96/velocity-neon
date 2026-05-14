@@ -534,7 +534,7 @@ func _shoot_railgun(delta: float) -> void:
 			var perp := (to_enemy - dir * along).length()
 			if perp < 1.2:
 				if e.has_method("take_damage"):
-					e.take_damage(beam_damage)
+					e.take_damage(beam_damage, "railgun")
 	Audio.sfx_shoot_railgun()
 	_spawn_railgun_beam(origin, dir)
 	GameState.request_shake(2.5, -dir)
@@ -651,7 +651,7 @@ func _update_orbitals(delta: float) -> void:
 				if orb_pos.distance_to(e.global_position) < 1.2:
 					var eid := e.get_instance_id()
 					if eid not in _orbital_hit_timers:
-						e.take_damage(ORBITAL_DAMAGE * (1.0 + GameState.orbital_level * 0.3))
+						e.take_damage(ORBITAL_DAMAGE * (1.0 + GameState.orbital_level * 0.3), "orbital")
 						_orbital_hit_timers[eid] = ORBITAL_HIT_CD
 						Audio.sfx_orbital_hit()
 						_spawn_orbital_hit_spark(orb_pos)

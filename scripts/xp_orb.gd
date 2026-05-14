@@ -114,6 +114,11 @@ func _process(delta: float) -> void:
 		dir.y = 0.0
 		position += dir * MAGNET_SPEED * delta
 		position.y = 0.0
+		# Glow brighter when being pulled for satisfying visual feedback
+		if mesh:
+			var mat2 := mesh.material_override as StandardMaterial3D
+			if mat2:
+				mat2.emission_energy_multiplier = lerpf(mat2.emission_energy_multiplier, 4.0, 8.0 * delta)
 
 	if dist < COLLECT_DISTANCE:
 		_collect()
