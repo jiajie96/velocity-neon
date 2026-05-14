@@ -42,6 +42,8 @@ var _wave_progress_label: Label
 var _current_choices: Array = []
 var _prev_hp: float = -1.0
 var _overclock_death: bool = false
+var _ult_was_on_cd: bool = false
+var _best_streak: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -86,6 +88,7 @@ func _ready() -> void:
 	GameState.golem_enraged.connect(_on_golem_enraged)
 	GameState.death_by_overclock.connect(_on_death_by_overclock)
 
+	_ult_was_on_cd = false
 	_on_hp_changed(GameState.hp, GameState.max_hp)
 	_on_xp_changed(GameState.xp, GameState.xp_to_next)
 
@@ -183,6 +186,14 @@ Every 5th wave summons a BOSS."""
 	tw.set_loops()
 	tw.tween_property(start_label, "modulate:a", 0.3, 0.8)
 	tw.tween_property(start_label, "modulate:a", 1.0, 0.8)
+
+	# Neon color cycle on title text for visual flair
+	var title_tw := title.create_tween()
+	title_tw.set_loops()
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.0, 1.0, 0.9), 2.0)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.3, 0.5, 1.0), 2.0)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.8, 0.2, 1.0), 2.0)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.0, 1.0, 0.9), 2.0)
 
 	title_screen.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(title_screen)
@@ -842,6 +853,8 @@ func _on_boss_defeated() -> void:
 		stw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
 
 func _on_kill_streak(count: int) -> void:
+	if count > _best_streak:
+		_best_streak = count
 	if not _streak_label:
 		return
 	var streak_names := {
@@ -1266,13 +1279,49 @@ func _on_upgrade_chosen(index: int) -> void:
 		level_label.text = "LV %d | %d upgrades" % [GameState.level, upgrades_count]
 	# Brief invincibility so player doesn't die instantly after picking
 	GameState.invincible = true
+	_spawn_invincibility_ring()
 	get_tree().create_timer(1.5).timeout.connect(func(): GameState.invincible = false)
 	GameState.upgrade_selected.emit()
+
+func _spawn_invincibility_ring() -> void:
+	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+	if not player:
+		return
+	var container := player.get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 1.2
+	cyl.bottom_radius = 1.2
+	cyl.height = 0.02
+	ring.mesh = cyl
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.0, 1.0, 0.9, 0.5)
+	mat.emission_enabled = true
+	mat.emission = Color(0.0, 1.0, 0.9)
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	ring.material_override = mat
+	ring.position = player.global_position
+	ring.position.y = 0.1
+	container.add_child(ring)
+	# Pulse out then fade over 1.5s to match invincibility duration
+	var tw := ring.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(ring, "scale", Vector3(1.5, 1.0, 1.5), 0.2).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.2, 0.2)
+	tw.set_parallel(false)
+	tw.tween_interval(1.0)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3).set_ease(Tween.EASE_IN)
+	tw.tween_callback(ring.queue_free)
 
 func _on_death_by_overclock() -> void:
 	_overclock_death = true
 
 func _on_player_died() -> void:
+	Audio.sfx_player_death()
 	Audio.play_music("res://assets/audio/music/defeat.ogg", -4.0)
 	Audio.stop_ambient_hum()
 	# Enhanced death VFX — dramatic slow-mo and screen flash
@@ -1325,10 +1374,13 @@ func _on_player_died() -> void:
 			rating = "SURVIVOR"
 		var dmg_taken_text := _format_damage(GameState.total_damage_taken)
 		var upgrade_count := GameState.acquired_upgrades.size()
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d  |  %d upgrades\nSurvived %d:%02d  |  Dealt: %s  |  Taken: %s\nKills/min: %.1f  |  Avg DPS: %s\nRating: %s%s" % [
+		var streak_text := ""
+		if _best_streak >= 2:
+			streak_text = "  |  Best Streak: %d" % _best_streak
+		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d  |  %d upgrades\nSurvived %d:%02d  |  Dealt: %s  |  Taken: %s\nKills/min: %.1f  |  Avg DPS: %s%s\nRating: %s%s" % [
 			GameState.wave, GameState.kills, GameState.level, upgrade_count,
 			mins, secs, dmg_text, dmg_taken_text,
-			kpm, _format_damage(avg_dps), rating, upgrades_text]
+			kpm, _format_damage(avg_dps), streak_text, rating, upgrades_text]
 
 func _format_damage(amount: float) -> String:
 	if amount >= 1000000:
@@ -1371,6 +1423,7 @@ func _update_indicators() -> void:
 	if ult_indicator:
 		var cd = player.get("ult_cd_timer")
 		if cd != null and cd > 0.0:
+			_ult_was_on_cd = true
 			var max_cd := 12.0 * maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
 			var pct := int((1.0 - cd / maxf(max_cd, 0.01)) * 100.0)
 			ult_indicator.text = "ULT [%d%%]" % pct
@@ -1378,6 +1431,13 @@ func _update_indicators() -> void:
 		else:
 			ult_indicator.text = "ULT [Q] READY"
 			ult_indicator.add_theme_color_override("font_color", Color(0.9, 0.4, 1.0, 0.8))
+			# Purple screen-edge pulse when ult just became ready
+			if _ult_was_on_cd:
+				_ult_was_on_cd = false
+				if _levelup_flash:
+					_levelup_flash.color = Color(0.7, 0.2, 1.0, 0.15)
+					var ult_tw := create_tween()
+					ult_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.3).set_ease(Tween.EASE_OUT)
 
 var _overclock_pulse_t: float = 0.0
 

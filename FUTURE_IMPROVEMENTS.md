@@ -214,6 +214,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Overclock burnout death message (distinct game over title)
 - [x] Golem charge end impact VFX (ground slam ring when charge stops)
 - [x] Boss speed scales with wave (late-game golems are faster)
+- [x] Player death SFX (dramatic explosion on game over)
+- [x] Wave heal SFX (chime on between-wave HP recovery)
+- [x] XP orb magnetize glow (brighter emission when pulled)
+- [x] Ultimate ready screen flash (purple pulse when ult is ready)
+- [x] Weapon-colored damage numbers (railgun blue, scatter orange, chain cyan)
+- [x] Boss enrage dust trail (red particles behind enraged golem)
+- [x] Level-up invincibility shield ring (cyan ring during post-upgrade i-frames)
+- [x] Best kill streak shown on game over screen
+- [x] Title screen neon color cycle animation
+- [x] Scatter + Chain Arc synergy fix (pellets now properly chain to nearby enemies)
 
 ---
 

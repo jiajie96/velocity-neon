@@ -58,6 +58,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Golem charge telegraph SFX (low rumble before charge)
 - Orbital Guard hit SFX (subtle click when orbitals damage enemies)
 - Teleporter blink SFX (high-pitched warp sound on teleport)
+- Player death SFX (dramatic low-pitched explosion on game over)
+- Wave clear heal SFX (subtle chime when HP recovers between waves)
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
@@ -87,6 +89,12 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Threat-scaled spawn warnings (bigger glow rings for dangerous enemy types)
 - Nano Shield visible ring (blue pulse around player when damage reduction is active)
 - Golem charge end ground impact ring (visual punctuation when charge stops)
+- Boss enrage dust trail (red particles behind enraged golem for visual intensity)
+- XP orb magnetize glow (orbs glow brighter when being pulled toward player)
+- Weapon-colored damage numbers (railgun blue, scatter orange, chain cyan, orbital green)
+- Level-up invincibility shield ring (cyan pulse ring during post-upgrade i-frames)
+- Ultimate ready screen flash (purple screen-edge pulse when ult comes off cooldown)
+- Title screen neon color cycle (animated title text with shifting neon colors)
 - Enemy projectiles despawn at arena boundaries (prevents stale node buildup)
 
 ### HUD & UI
@@ -99,7 +107,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Kill streak and milestone announcements
 - No-damage wave indicator
 - Pause menu (resume/restart/quit)
-- Game over screen with stats (damage dealt/taken, kills/min, DPS), performance rating, build summary, and restart button
+- Game over screen with stats (damage dealt/taken, kills/min, DPS, best kill streak), performance rating, build summary, and restart button
 - Title screen with controls reference
 - Wave spawn progress counter (shows enemies spawned vs total)
 - Upgrade stat preview (concrete before/after values on level-up cards)
