@@ -288,10 +288,11 @@ func _process(delta: float) -> void:
 			else:
 				position += dir * spd * 0.3 * delta
 		elif enemy_type == "rogue":
-			# Rogues sidestep periodically to dodge projectiles
+			# Rogues sidestep periodically to dodge projectiles — faster in later waves
 			_rogue_dodge_timer -= delta
+			var dodge_cd := ROGUE_DODGE_CD * maxf(0.5, 1.0 - GameState.wave * 0.03)
 			if _rogue_dodge_timer <= 0.0:
-				_rogue_dodge_timer = ROGUE_DODGE_CD + randf_range(-0.3, 0.3)
+				_rogue_dodge_timer = dodge_cd + randf_range(-0.3, 0.3)
 				var side := Vector3(-dir.z, 0, dir.x) * (1.0 if randf() > 0.5 else -1.0)
 				var dodge_pos := position + side * ROGUE_DODGE_DIST
 				dodge_pos.x = clampf(dodge_pos.x, -48.0, 48.0)
@@ -350,11 +351,16 @@ func _process(delta: float) -> void:
 			if _golem_slam_timer <= 0.0 and dist_to_player < GOLEM_SLAM_RANGE:
 				_golem_slam_timer = slam_cd
 				_golem_slam()
-			# Rock throw when far — ranged attack
+			# Rock throw when far — ranged attack (3-rock spread when enraged)
 			var throw_cd := GOLEM_THROW_CD * (0.6 if enraged else 1.0)
 			if _golem_throw_timer <= 0.0 and dist_to_player > GOLEM_SLAM_RANGE:
 				_golem_throw_timer = throw_cd
-				_golem_throw_rock(dir)
+				if enraged:
+					for spread_i in 3:
+						var spread_angle := deg_to_rad(20.0) * (float(spread_i) - 1.0)
+						_golem_throw_rock(dir.rotated(Vector3.UP, spread_angle))
+				else:
+					_golem_throw_rock(dir)
 			# Charge/dash at player periodically
 			var charge_cd := GOLEM_CHARGE_CD * (0.6 if enraged else 1.0)
 			if _golem_charge_timer <= 0.0 and dist_to_player > 6.0 and not _golem_charging:
@@ -959,7 +965,7 @@ func _explode() -> void:
 	Audio.sfx_exploder_boom()
 	_spawn_explosion_vfx()
 	_dead = true
-	GameState.add_kill()
+	GameState.add_kill(enemy_type)
 	_spawn_xp()
 	queue_free()
 
@@ -1168,7 +1174,7 @@ func _spawn_enrage_dust() -> void:
 
 func _die() -> void:
 	_dead = true
-	GameState.add_kill()
+	GameState.add_kill(enemy_type)
 	Audio.sfx_enemy_death_typed(enemy_type)
 	_spawn_xp()
 	# Necromancer death kills its summoned minions

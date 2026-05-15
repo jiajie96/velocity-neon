@@ -198,6 +198,9 @@ Every 5th wave summons a BOSS."""
 	title_screen.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(title_screen)
 
+	# Play ambient title music
+	Audio.play_music("res://assets/audio/music/neon_runner.mp3", -8.0)
+
 # === TOP BAR ===
 
 func _build_top_bar() -> void:
@@ -837,20 +840,23 @@ func toggle_pause() -> void:
 func _on_boss_defeated() -> void:
 	if not _levelup_flash:
 		return
-	# Gold flash for boss defeat
-	_levelup_flash.color = Color(1.0, 0.8, 0.0, 0.5)
+	# Dramatic gold flash for boss defeat — bright initial burst then slow fade
+	_levelup_flash.color = Color(1.0, 0.8, 0.0, 0.7)
 	var tw := create_tween()
-	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	# Show "BOSS DEFEATED" via wave announce label
+	tw.tween_property(_levelup_flash, "color:a", 0.15, 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.8).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
+	# Show "BOSS DEFEATED" via wave announce label with bigger punch-in
 	if wave_announce:
 		wave_announce.text = "BOSS DEFEATED"
 		wave_announce.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
+		wave_announce.add_theme_font_size_override("font_size", 50)
 		wave_announce.modulate.a = 1.0
-		wave_announce.scale = Vector2(1.3, 1.3)
+		wave_announce.scale = Vector2(1.6, 1.6)
 		var stw := create_tween()
-		stw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT)
-		stw.tween_interval(1.5)
+		stw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		stw.tween_interval(2.0)
 		stw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+		stw.tween_callback(func(): wave_announce.add_theme_font_size_override("font_size", 40))
 
 func _on_kill_streak(count: int) -> void:
 	if count > _best_streak:
@@ -1322,7 +1328,7 @@ func _on_death_by_overclock() -> void:
 
 func _on_player_died() -> void:
 	Audio.sfx_player_death()
-	Audio.play_music("res://assets/audio/music/defeat.ogg", -4.0)
+	Audio.play_defeat_music()
 	Audio.stop_ambient_hum()
 	# Enhanced death VFX — dramatic slow-mo and screen flash
 	GameState.request_shake(6.0)
@@ -1377,10 +1383,32 @@ func _on_player_died() -> void:
 		var streak_text := ""
 		if _best_streak >= 2:
 			streak_text = "  |  Best Streak: %d" % _best_streak
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d  |  %d upgrades\nSurvived %d:%02d  |  Dealt: %s  |  Taken: %s\nKills/min: %.1f  |  Avg DPS: %s%s\nRating: %s%s" % [
+		var xp_text := _format_damage(GameState.total_xp_earned)
+		# Build enemy kill breakdown — show top enemy types killed
+		var kill_breakdown := ""
+		if GameState.kills_by_type.size() > 0:
+			var sorted_types: Array[String] = []
+			var sorted_counts: Array[int] = []
+			for etype in GameState.kills_by_type:
+				var count: int = GameState.kills_by_type[etype]
+				var inserted := false
+				for j in sorted_types.size():
+					if count > sorted_counts[j]:
+						sorted_types.insert(j, etype)
+						sorted_counts.insert(j, count)
+						inserted = true
+						break
+				if not inserted:
+					sorted_types.append(etype)
+					sorted_counts.append(count)
+			var parts: Array[String] = []
+			for j in mini(sorted_types.size(), 5):
+				parts.append("%s: %d" % [sorted_types[j].capitalize(), sorted_counts[j]])
+			kill_breakdown = "\nKills: " + ", ".join(parts)
+		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d  |  %d upgrades\nSurvived %d:%02d  |  Dealt: %s  |  Taken: %s\nKills/min: %.1f  |  Avg DPS: %s%s  |  XP: %s\nRating: %s%s%s" % [
 			GameState.wave, GameState.kills, GameState.level, upgrade_count,
 			mins, secs, dmg_text, dmg_taken_text,
-			kpm, _format_damage(avg_dps), streak_text, rating, upgrades_text]
+			kpm, _format_damage(avg_dps), streak_text, xp_text, rating, kill_breakdown, upgrades_text]
 
 func _format_damage(amount: float) -> String:
 	if amount >= 1000000:

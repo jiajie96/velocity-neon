@@ -35,16 +35,18 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Skeleton Minion** — basic melee rusher
 - **Skeleton Warrior** — tougher, slower
 - **Skeleton Mage** — ranged caster with telegraphed fire bolts, speed scales with wave
-- **Skeleton Rogue** — fast with periodic sidestep dodge
+- **Skeleton Rogue** — fast with periodic sidestep dodge (dodge frequency increases in later waves)
 - **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave
 - **Exploder** — rushes player, detonates on proximity with chain reaction potential
 - **Teleporter** — blinks to random positions near the player, unpredictable
-- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw, charge (with ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP
+- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw (3-rock spread when enraged), charge (with ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP with dramatic gold flash
 - Non-minion enemies display mini HP bars for target prioritization
 
 ### Audio
-- Dynamic soundtrack that rotates across 8+ tracks as waves progress
+- Title screen ambient music (neon_runner) with crossfade into gameplay tracks
+- Dynamic soundtrack that rotates across 9 tracks as waves progress
 - Boss-specific music (cyberpunk_battle for early bosses, epic_boss for wave 10+)
+- Defeat music on game over (somber track plays on death)
 - Weapon-specific hit impact SFX (railgun, scatter, chain, pulse)
 - Enemy death SFX varies by type (unique pitch ranges per enemy for audio variety)
 - Ambient neon hum that shifts pitch based on HP
@@ -121,11 +123,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave)
 - Overclock HP drain no longer ruins perfect wave bonus
 - Perfect wave bonus XP (no damage taken)
-- Wave clear heal bonus (small HP recovery between waves)
+- Wave clear heal bonus (small HP recovery + brief invulnerability between waves)
 - XP magnet pulse on level-up, wave clear, kill streaks (3+), and boss defeat
 - XP orbs fade out after 15 seconds to prevent late-game buildup
 - Enemy spawn throttle (caps at 100 alive enemies to maintain performance)
 - Post-game performance rating (RECRUIT → LEGENDARY based on waves survived)
+- Game over enemy kill breakdown (top enemy types killed, total XP earned)
+- Enemy kills tracked by type for detailed post-game stats
 - Arena boundary walls with neon glow pillars
 
 ## Running the Game

@@ -218,6 +218,9 @@ func sfx_player_death() -> void:
 	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -1.0, 0.5)
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", 0.0, 0.3)
 
+func play_defeat_music() -> void:
+	play_music("res://assets/audio/music/defeat.ogg", -4.0)
+
 func sfx_wave_heal() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.6)
 

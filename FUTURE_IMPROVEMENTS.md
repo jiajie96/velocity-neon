@@ -224,6 +224,15 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Best kill streak shown on game over screen
 - [x] Title screen neon color cycle animation
 - [x] Scatter + Chain Arc synergy fix (pellets now properly chain to nearby enemies)
+- [x] Title screen ambient music (neon_runner.mp3)
+- [x] Defeat music on game over
+- [x] neon_runner.mp3 in mid-game music rotation (wave 15+)
+- [x] Golem enraged 3-rock spread throw pattern
+- [x] Rogue dodge frequency scales with wave
+- [x] Brief invulnerability on wave clear (1s breathing room)
+- [x] Enhanced boss defeat gold flash + punch-in text
+- [x] Enemy kills tracked by type for game over breakdown
+- [x] Game over shows enemy kill breakdown and total XP earned
 
 ---
 

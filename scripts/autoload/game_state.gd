@@ -70,6 +70,10 @@ var total_damage_taken: float = 0.0
 # Acquired upgrades for game over summary
 var acquired_upgrades: Array[String] = []
 
+# Enemy kill breakdown for game over stats
+var kills_by_type: Dictionary = {}
+var total_xp_earned: float = 0.0
+
 # Kill streak tracking
 var _streak_count: int = 0
 var _streak_timer: float = 0.0
@@ -124,6 +128,7 @@ func heal(amount: float) -> void:
 
 func add_xp(amount: float) -> void:
 	xp += amount
+	total_xp_earned += amount
 	xp_changed.emit(xp, xp_to_next)
 	if xp >= xp_to_next:
 		xp -= xp_to_next
@@ -156,6 +161,8 @@ func next_wave() -> void:
 			Audio.play_music("res://assets/audio/music/cavern_ambient.ogg", -4.0)
 		elif wave >= 20:
 			Audio.play_music("res://assets/audio/music/synthwave_hostile_territory.ogg", -5.0)
+		elif wave >= 15:
+			Audio.play_music("res://assets/audio/music/neon_runner.mp3", -5.0)
 		elif wave >= 12:
 			Audio.play_music("res://assets/audio/music/synthwave_deadly_contracts.ogg", -5.0)
 		elif wave >= 7:
@@ -163,8 +170,10 @@ func next_wave() -> void:
 		else:
 			Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -6.0)
 
-func add_kill() -> void:
+func add_kill(enemy_type: String = "") -> void:
 	kills += 1
+	if enemy_type != "":
+		kills_by_type[enemy_type] = kills_by_type.get(enemy_type, 0) + 1
 	kills_changed.emit(kills)
 	_streak_count += 1
 	_streak_timer = STREAK_WINDOW
@@ -240,3 +249,5 @@ func reset() -> void:
 	_wave_damage_taken = false
 	_damage_immunity_timer = 0.0
 	acquired_upgrades.clear()
+	kills_by_type.clear()
+	total_xp_earned = 0.0

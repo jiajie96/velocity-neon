@@ -62,6 +62,14 @@ func _process(delta: float) -> void:
 				GameState.heal(wave_heal)
 				Audio.sfx_wave_heal()
 				GameState.wave_heal.emit(wave_heal)
+			# Brief invulnerability on wave clear — breathing room between waves
+			GameState.invincible = true
+			var tree := get_tree()
+			if tree:
+				tree.create_timer(1.0).timeout.connect(func():
+					if not GameState.game_over:
+						GameState.invincible = false
+				)
 			GameState.wave_cleared.emit()
 
 func _spawn_enemy() -> void:
