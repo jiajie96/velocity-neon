@@ -98,102 +98,171 @@ func _build_title_screen() -> void:
 	title_screen = PanelContainer.new()
 	title_screen.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.01, 0.005, 0.03, 0.95)
+	bg.bg_color = Color(0.008, 0.004, 0.025, 0.97)
 	title_screen.add_theme_stylebox_override("panel", bg)
 
 	var center := VBoxContainer.new()
 	center.alignment = BoxContainer.ALIGNMENT_CENTER
-	center.add_theme_constant_override("separation", 20)
+	center.add_theme_constant_override("separation", 0)
 	title_screen.add_child(center)
 
+	# --- Top spacer pushes content toward upper-center ---
 	var spacer_top := Control.new()
-	spacer_top.custom_minimum_size.y = 80
+	spacer_top.custom_minimum_size.y = 60
 	center.add_child(spacer_top)
 
-	# Title
+	# --- Decorative top line ---
+	var top_line := ColorRect.new()
+	top_line.custom_minimum_size = Vector2(320, 1)
+	top_line.color = Color(0.0, 0.8, 1.0, 0.25)
+	top_line.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	center.add_child(top_line)
+
+	var gap1 := Control.new()
+	gap1.custom_minimum_size.y = 28
+	center.add_child(gap1)
+
+	# --- Main title ---
 	var title := Label.new()
-	title.text = "VELOCITY NEON"
-	title.add_theme_color_override("font_color", Color(0.0, 1.0, 0.9))
-	title.add_theme_font_size_override("font_size", 48)
+	title.text = "VELOCITY  NEON"
+	title.add_theme_color_override("font_color", Color(0.0, 1.0, 0.85))
+	title.add_theme_font_size_override("font_size", 56)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	center.add_child(title)
 
+	var gap1b := Control.new()
+	gap1b.custom_minimum_size.y = 4
+	center.add_child(gap1b)
+
+	# --- Subtitle with letter-spaced look ---
 	var subtitle := Label.new()
-	subtitle.text = "HAPTIC HAVOC"
-	subtitle.add_theme_color_override("font_color", Color(1.0, 0.0, 0.7))
-	subtitle.add_theme_font_size_override("font_size", 28)
+	subtitle.text = "H A P T I C   H A V O C"
+	subtitle.add_theme_color_override("font_color", Color(1.0, 0.0, 0.65, 0.85))
+	subtitle.add_theme_font_size_override("font_size", 16)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	center.add_child(subtitle)
 
-	var sep := Control.new()
-	sep.custom_minimum_size.y = 30
-	center.add_child(sep)
+	var gap2 := Control.new()
+	gap2.custom_minimum_size.y = 28
+	center.add_child(gap2)
 
-	# Controls
+	# --- Center divider line ---
+	var mid_line := ColorRect.new()
+	mid_line.custom_minimum_size = Vector2(200, 1)
+	mid_line.color = Color(1.0, 0.0, 0.65, 0.2)
+	mid_line.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	center.add_child(mid_line)
+
+	var gap3 := Control.new()
+	gap3.custom_minimum_size.y = 30
+	center.add_child(gap3)
+
+	# --- Controls in a minimal two-column style ---
 	var controls_panel := PanelContainer.new()
 	controls_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	controls_panel.custom_minimum_size = Vector2(500, 0)
+	controls_panel.custom_minimum_size = Vector2(420, 0)
 	var cp_style := StyleBoxFlat.new()
-	cp_style.bg_color = Color(0.03, 0.015, 0.06, 0.8)
-	cp_style.border_color = Color(0.0, 0.6, 0.8, 0.3)
+	cp_style.bg_color = Color(0.02, 0.01, 0.04, 0.6)
+	cp_style.border_color = Color(0.0, 0.6, 0.8, 0.12)
 	cp_style.border_width_top = 1
 	cp_style.border_width_bottom = 1
-	cp_style.border_width_left = 1
-	cp_style.border_width_right = 1
-	cp_style.corner_radius_top_left = 6
-	cp_style.corner_radius_top_right = 6
-	cp_style.corner_radius_bottom_left = 6
-	cp_style.corner_radius_bottom_right = 6
-	cp_style.content_margin_left = 30
-	cp_style.content_margin_right = 30
-	cp_style.content_margin_top = 20
-	cp_style.content_margin_bottom = 20
+	cp_style.border_width_left = 0
+	cp_style.border_width_right = 0
+	cp_style.content_margin_left = 24
+	cp_style.content_margin_right = 24
+	cp_style.content_margin_top = 16
+	cp_style.content_margin_bottom = 16
 	controls_panel.add_theme_stylebox_override("panel", cp_style)
 
-	var controls_text := Label.new()
-	controls_text.text = """HOW TO PLAY
-
-WASD / Arrows    Move on the neon grid
-Auto-Aim         Shoots nearest enemy automatically
-SPACE            Phase Dash (invincible + fire trail)
-Q                Ultimate Ability (area damage burst)
-Scroll Wheel     Zoom camera in/out
-ESC              Pause / Menu
-R                Restart (game over)
-
-Survive relentless waves of enemies. Kill them for XP.
-Level up to choose powerful upgrades.
-Every 5th wave summons a BOSS."""
-	controls_text.add_theme_color_override("font_color", Color(0.7, 0.65, 0.85))
-	controls_text.add_theme_font_size_override("font_size", 15)
-	controls_panel.add_child(controls_text)
+	var controls_grid := VBoxContainer.new()
+	controls_grid.add_theme_constant_override("separation", 6)
+	# Compact control hints — clean two-column look
+	var bindings := [
+		["WASD", "Move"],
+		["AUTO-AIM", "Shoot nearest"],
+		["SPACE", "Phase Dash"],
+		["Q", "Ultimate"],
+		["ESC", "Pause"],
+	]
+	for b in bindings:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 0)
+		var key_label := Label.new()
+		key_label.text = b[0]
+		key_label.add_theme_color_override("font_color", Color(0.0, 0.9, 1.0, 0.9))
+		key_label.add_theme_font_size_override("font_size", 14)
+		key_label.custom_minimum_size.x = 120
+		row.add_child(key_label)
+		var desc_label := Label.new()
+		desc_label.text = b[1]
+		desc_label.add_theme_color_override("font_color", Color(0.55, 0.5, 0.7, 0.75))
+		desc_label.add_theme_font_size_override("font_size", 14)
+		row.add_child(desc_label)
+		controls_grid.add_child(row)
+	controls_panel.add_child(controls_grid)
 	center.add_child(controls_panel)
 
-	var sep2 := Control.new()
-	sep2.custom_minimum_size.y = 20
-	center.add_child(sep2)
+	var gap4 := Control.new()
+	gap4.custom_minimum_size.y = 14
+	center.add_child(gap4)
 
+	# --- Tagline ---
+	var tagline := Label.new()
+	tagline.text = "Survive the waves. Level up. Push deeper."
+	tagline.add_theme_color_override("font_color", Color(0.5, 0.45, 0.65, 0.5))
+	tagline.add_theme_font_size_override("font_size", 13)
+	tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	center.add_child(tagline)
+
+	var gap5 := Control.new()
+	gap5.custom_minimum_size.y = 36
+	center.add_child(gap5)
+
+	# --- Bottom divider ---
+	var bot_line := ColorRect.new()
+	bot_line.custom_minimum_size = Vector2(200, 1)
+	bot_line.color = Color(0.0, 0.8, 1.0, 0.15)
+	bot_line.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	center.add_child(bot_line)
+
+	var gap6 := Control.new()
+	gap6.custom_minimum_size.y = 20
+	center.add_child(gap6)
+
+	# --- Start prompt ---
 	var start_label := Label.new()
 	start_label.name = "StartPrompt"
-	start_label.text = "[ PRESS SPACE TO START ]"
-	start_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
-	start_label.add_theme_font_size_override("font_size", 22)
+	start_label.text = "PRESS  SPACE"
+	start_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.3))
+	start_label.add_theme_font_size_override("font_size", 20)
 	start_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	center.add_child(start_label)
 
-	# Pulse the start prompt
+	# Pulse the start prompt — slow breathe
 	var tw := start_label.create_tween()
 	tw.set_loops()
-	tw.tween_property(start_label, "modulate:a", 0.3, 0.8)
-	tw.tween_property(start_label, "modulate:a", 1.0, 0.8)
+	tw.tween_property(start_label, "modulate:a", 0.2, 1.2).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(start_label, "modulate:a", 1.0, 1.2).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 
-	# Neon color cycle on title text for visual flair
+	# Neon color cycle on title text
 	var title_tw := title.create_tween()
 	title_tw.set_loops()
-	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.0, 1.0, 0.9), 2.0)
-	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.3, 0.5, 1.0), 2.0)
-	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.8, 0.2, 1.0), 2.0)
-	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.0, 1.0, 0.9), 2.0)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.0, 1.0, 0.85), 2.5).set_trans(Tween.TRANS_SINE)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.2, 0.5, 1.0), 2.5).set_trans(Tween.TRANS_SINE)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.7, 0.15, 1.0), 2.5).set_trans(Tween.TRANS_SINE)
+	title_tw.tween_property(title, "theme_override_colors/font_color", Color(0.0, 1.0, 0.85), 2.5).set_trans(Tween.TRANS_SINE)
+
+	# Subtle pulse on subtitle too
+	var sub_tw := subtitle.create_tween()
+	sub_tw.set_loops()
+	sub_tw.tween_property(subtitle, "modulate:a", 0.5, 3.0).set_trans(Tween.TRANS_SINE)
+	sub_tw.tween_property(subtitle, "modulate:a", 1.0, 3.0).set_trans(Tween.TRANS_SINE)
+
+	# Decorative top line pulses gently
+	var line_tw := top_line.create_tween()
+	line_tw.set_loops()
+	line_tw.tween_property(top_line, "color:a", 0.08, 2.0).set_trans(Tween.TRANS_SINE)
+	line_tw.tween_property(top_line, "color:a", 0.3, 2.0).set_trans(Tween.TRANS_SINE)
 
 	title_screen.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(title_screen)

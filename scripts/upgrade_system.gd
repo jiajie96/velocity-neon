@@ -38,7 +38,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("regen", "REGENERATION", "+0.5 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
-		Upgrade.new("overclock", "OVERCLOCK", "2x fire rate, drains HP", Color(1.0, 0.0, 0.3), "OC", 1),
+		# Overclock removed — too punishing without guaranteed healing upgrade
 		Upgrade.new("phase_shift", "PHASE SHIFT", "Dash cooldown -25%", Color(0.3, 0.9, 1.0), "<<", 3),
 		# Weapon upgrades
 		Upgrade.new("railgun", "RAILGUN", "Piercing beam every 2s", Color(0.3, 0.5, 1.0), "==", 3),
@@ -130,8 +130,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.has_shatter = true
 		"gravity_well":
 			GameState.gravity_well_strength += 0.35
-		"overclock":
-			GameState.overclock_active = true
+		# "overclock" removed from upgrade pool
 		"phase_shift":
 			GameState.dash_cooldown *= 0.75
 		"railgun":

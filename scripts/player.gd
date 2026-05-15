@@ -66,7 +66,7 @@ func _build_visual() -> void:
 			inst.name = "Model"
 			inst.scale = Vector3(0.6, 0.6, 0.6)
 			add_child(inst)
-			_apply_neon_tint(inst, Color(0.0, 0.5, 0.7))
+			_apply_neon_tint(inst, Color(0.0, 0.3, 0.5))
 			_model_loaded = true
 			return
 	var mesh_inst := MeshInstance3D.new()
@@ -76,10 +76,10 @@ func _build_visual() -> void:
 	capsule.height = 1.3
 	mesh_inst.mesh = capsule
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.0, 0.6, 0.8)
+	mat.albedo_color = Color(0.0, 0.3, 0.45)
 	mat.emission_enabled = true
-	mat.emission = Color(0.0, 0.4, 0.6)
-	mat.emission_energy_multiplier = 1.0
+	mat.emission = Color(0.0, 0.2, 0.35)
+	mat.emission_energy_multiplier = 0.6
 	mesh_inst.material_override = mat
 	mesh_inst.position.y = 0.65
 	add_child(mesh_inst)
@@ -91,9 +91,11 @@ func _apply_neon_tint(node: Node, color: Color) -> void:
 			var base_mat = mi.mesh.surface_get_material(i) if mi.mesh else null
 			if base_mat and base_mat is StandardMaterial3D:
 				var new_mat: StandardMaterial3D = base_mat.duplicate()
+				# Darken the base albedo so the model reads as a solid dark figure
+				new_mat.albedo_color = new_mat.albedo_color.darkened(0.35)
 				new_mat.emission_enabled = true
-				new_mat.emission = color * 0.15
-				new_mat.emission_energy_multiplier = 0.8
+				new_mat.emission = color * 0.08
+				new_mat.emission_energy_multiplier = 0.5
 				mi.set_surface_override_material(i, new_mat)
 	for child in node.get_children():
 		_apply_neon_tint(child, color)
@@ -117,9 +119,9 @@ func _build_light() -> void:
 	var light := OmniLight3D.new()
 	light.name = "PlayerGlow"
 	light.light_color = Color(0.0, 0.6, 0.9)
-	light.light_energy = 1.0
-	light.omni_range = 6.0
-	light.omni_attenuation = 2.0
+	light.light_energy = 0.6
+	light.omni_range = 5.0
+	light.omni_attenuation = 2.5
 	light.position.y = 1.5
 	add_child(light)
 
