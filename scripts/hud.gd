@@ -1474,10 +1474,12 @@ func _on_player_died() -> void:
 			for j in mini(sorted_types.size(), 5):
 				parts.append("%s: %d" % [sorted_types[j].capitalize(), sorted_counts[j]])
 			kill_breakdown = "\nKills: " + ", ".join(parts)
-		stats_label.text = "Wave %d  |  Kills: %d  |  Level %d  |  %d upgrades\nSurvived %d:%02d  |  Dealt: %s  |  Taken: %s\nKills/min: %.1f  |  Avg DPS: %s%s  |  XP: %s\nRating: %s%s%s" % [
-			GameState.wave, GameState.kills, GameState.level, upgrade_count,
-			mins, secs, dmg_text, dmg_taken_text,
-			kpm, _format_damage(avg_dps), streak_text, xp_text, rating, kill_breakdown, upgrades_text]
+		# Show wave reached prominently at top, then detailed stats below
+		stats_label.text = "REACHED WAVE %d — %s\n%d Kills  |  Level %d  |  %d upgrades  |  %d:%02d survived\nDealt: %s  |  Taken: %s  |  Kills/min: %.1f  |  DPS: %s%s\nXP: %s%s%s" % [
+			GameState.wave, rating,
+			GameState.kills, GameState.level, upgrade_count, mins, secs,
+			dmg_text, dmg_taken_text, kpm, _format_damage(avg_dps), streak_text,
+			xp_text, kill_breakdown, upgrades_text]
 
 func _format_damage(amount: float) -> String:
 	if amount >= 1000000:

@@ -24,16 +24,16 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
 - Ultimate ability with screen-clearing AoE, multi-ring VFX, and damage scaling with upgrades
 
-### Weapons & Upgrades (21 upgrades)
+### Weapons & Upgrades (22 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Scatter Shot (pellet burst), Chain Arc, Orbital Guard
-- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds
+- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies)
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (lifesteal)
-- **Utility**: Phase Shift (dash cooldown), Gravity Well, Overclock (with HP drain warning)
+- **Utility**: Phase Shift (dash cooldown), Gravity Well
 
 ### Enemies (8 types)
 - **Skeleton Minion** — basic melee rusher
-- **Skeleton Warrior** — tougher, slower
+- **Skeleton Warrior** — tougher, with periodic lunge attacks when in range
 - **Skeleton Mage** — ranged caster with telegraphed fire bolts, speed scales with wave
 - **Skeleton Rogue** — fast with periodic sidestep dodge (dodge frequency increases in later waves)
 - **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave
@@ -54,6 +54,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Kill milestone celebratory SFX (distinct sound at 100/250/500/1000 kills)
 - Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
 - XP pickup pitch scaling (pentatonic climb on rapid collection)
+- Big XP batch collection chime (satisfying sound when collecting many orbs at once)
 - Dash ready audio cue when cooldown completes
 - Ultimate ready audio cue when cooldown finishes
 - Necromancer summon SFX (eerie pulse when minions spawn)
@@ -112,7 +113,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Game over screen with stats (damage dealt/taken, kills/min, DPS, best kill streak), performance rating, build summary, and restart button
 - Title screen with controls reference
 - Wave spawn progress counter (shows enemies spawned vs total)
-- Upgrade stat preview (concrete before/after values on level-up cards)
+- Upgrade stat preview (concrete before/after values on level-up cards, including all weapon upgrades)
 - Wave countdown shows upcoming wave number and boss wave warnings
 - Batched XP pickup text (rapid collection combines into one "+X XP" label)
 - Enhanced death sequence (screen shake, slow-mo, red flash)
@@ -124,10 +125,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Overclock HP drain no longer ruins perfect wave bonus
 - Perfect wave bonus XP (no damage taken)
 - Wave clear heal bonus (small HP recovery + brief invulnerability between waves)
-- XP magnet pulse on level-up, wave clear, kill streaks (3+), and boss defeat
+- XP magnet pulse on level-up, wave clear, kill streaks (3+), boss defeat, and exploder chain reactions
 - XP orbs fade out after 15 seconds to prevent late-game buildup
 - Enemy spawn throttle (caps at 100 alive enemies to maintain performance)
 - Post-game performance rating (RECRUIT → LEGENDARY based on waves survived)
+- Game over shows wave reached prominently with performance rating
 - Game over enemy kill breakdown (top enemy types killed, total XP earned)
 - Enemy kills tracked by type for detailed post-game stats
 - Arena boundary walls with neon glow pillars
@@ -147,7 +149,7 @@ scripts/
   enemy_spawner.gd   — Wave logic and spawn system
   main.gd            — Scene setup
   hud.gd             — All UI rendering
-  upgrade_system.gd  — 21 upgrade definitions
+  upgrade_system.gd  — 22 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
   camera_rig.gd      — Camera follow, shake, zoom

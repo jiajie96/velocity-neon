@@ -233,6 +233,15 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Enhanced boss defeat gold flash + punch-in text
 - [x] Enemy kills tracked by type for game over breakdown
 - [x] Game over shows enemy kill breakdown and total XP earned
+- [x] Warrior lunge attack (short burst charge when close to player)
+- [x] Executioner upgrade (bonus damage to enemies below 30% HP)
+- [x] Capped mage/necro bolt damage scaling (prevents one-shots in late waves)
+- [x] XP magnet pulse on exploder chain reactions
+- [x] Big XP batch collection SFX (chime on mass orb pickup)
+- [x] Game over shows wave reached prominently at top
+- [x] All weapon upgrades show concrete stat previews
+- [x] XP orb batch state properly resets between runs
+- [x] Longer first-wave startup delay (1.2s breathing room)
 
 ---
 

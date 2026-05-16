@@ -224,6 +224,11 @@ func play_defeat_music() -> void:
 func sfx_wave_heal() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.6)
 
+func sfx_big_xp_batch() -> void:
+	# Satisfying chime when a big batch of XP orbs finishes collecting
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -6.0, 1.0)
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -14.0, 2.0)
+
 func play_victory_sting() -> void:
 	play_sfx("res://assets/audio/music/victory.ogg", -2.0, 1.0)
 
