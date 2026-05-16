@@ -43,6 +43,16 @@ const EXPLODER_DETONATE_RANGE := 1.8
 const EXPLODER_DAMAGE := 40.0
 const EXPLODER_RADIUS := 4.0
 
+# Warrior lunge behavior
+var _warrior_lunge_timer: float = 3.0
+const WARRIOR_LUNGE_CD := 3.5
+const WARRIOR_LUNGE_RANGE := 5.0
+const WARRIOR_LUNGE_SPEED := 14.0
+var _warrior_lunging: bool = false
+var _warrior_lunge_dir: Vector3 = Vector3.ZERO
+var _warrior_lunge_elapsed: float = 0.0
+const WARRIOR_LUNGE_DURATION := 0.25
+
 # Golem slam attack
 var _golem_slam_timer: float = 4.0
 const GOLEM_SLAM_CD := 4.0
@@ -366,6 +376,27 @@ func _process(delta: float) -> void:
 			if _golem_charge_timer <= 0.0 and dist_to_player > 6.0 and not _golem_charging:
 				_golem_charge_timer = charge_cd
 				_golem_start_charge(dir)
+		elif enemy_type == "warrior":
+			# Warriors periodically lunge at the player for a burst of aggression
+			_warrior_lunge_timer -= delta
+			if _warrior_lunging:
+				_warrior_lunge_elapsed += delta
+				position += _warrior_lunge_dir * WARRIOR_LUNGE_SPEED * delta
+				position.x = clampf(position.x, -48.0, 48.0)
+				position.z = clampf(position.z, -48.0, 48.0)
+				if _warrior_lunge_elapsed >= WARRIOR_LUNGE_DURATION:
+					_warrior_lunging = false
+			else:
+				position += dir * spd * delta
+				if _warrior_lunge_timer <= 0.0 and dist_to_player < WARRIOR_LUNGE_RANGE and dist_to_player > 1.5:
+					_warrior_lunge_timer = WARRIOR_LUNGE_CD + randf_range(-0.5, 0.5)
+					_warrior_lunging = true
+					_warrior_lunge_dir = dir
+					_warrior_lunge_elapsed = 0.0
+					# Brief red flash to telegraph the lunge
+					if _mat:
+						_mat.emission = Color(1.0, 0.2, 0.0)
+						_mat.emission_energy_multiplier = 5.0
 		else:
 			position += dir * spd * delta
 		var model := get_node_or_null("Model")
@@ -574,7 +605,8 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 	bolt.add_child(area)
 	var bolt_dir := dir
 	var bolt_spd := MAGE_PROJ_SPEED + minf(GameState.wave, 20) * 0.3
-	var bolt_dmg := MAGE_PROJ_DAMAGE * (1.0 + GameState.wave * 0.1)
+	# Cap damage scaling so mage bolts don't one-shot in late waves
+	var bolt_dmg := MAGE_PROJ_DAMAGE * (1.0 + minf(GameState.wave, 18) * 0.08)
 	var bolt_alive := 0.0
 	area.area_entered.connect(func(_a: Area3D):
 		if not GameState.invincible:
@@ -627,7 +659,8 @@ func _fire_necro_bolt(dir: Vector3) -> void:
 	area.add_child(col)
 	bolt.add_child(area)
 	var bolt_spd := MAGE_PROJ_SPEED + minf(GameState.wave, 20) * 0.3
-	var bolt_dmg := NECRO_BOLT_DAMAGE * (1.0 + GameState.wave * 0.1)
+	# Cap damage scaling so necro bolts don't one-shot in late waves
+	var bolt_dmg := NECRO_BOLT_DAMAGE * (1.0 + minf(GameState.wave, 18) * 0.08)
 	area.area_entered.connect(func(_a: Area3D):
 		if not GameState.invincible:
 			GameState.take_damage(bolt_dmg)
@@ -959,9 +992,10 @@ func _explode() -> void:
 			if d < EXPLODER_RADIUS * 0.6:
 				e.take_damage(EXPLODER_DAMAGE * 0.5)
 				chain_hit = true
-	# Extra hit-stop on chain reactions for dramatic feel
+	# Extra hit-stop + XP magnet on chain reactions for dramatic feel and reward
 	if chain_hit:
 		GameState.request_hit_stop(0.06)
+		GameState.xp_magnet_pulse.emit()
 	Audio.sfx_exploder_boom()
 	_spawn_explosion_vfx()
 	_dead = true
@@ -1025,6 +1059,9 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	# Critical hit check
 	var is_crit := randf() < GameState.crit_chance
 	var final_amount := amount * (2.0 if is_crit else 1.0)
+	# Executioner bonus — extra damage to enemies below 30% HP
+	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:
+		final_amount *= (1.0 + GameState.execute_bonus)
 	hp -= final_amount
 	GameState.add_damage_dealt(final_amount)
 	if is_crit:

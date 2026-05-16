@@ -8,6 +8,10 @@ var orb_container: Node3D
 func _ready() -> void:
 	GameState.reset()
 	UpgradeSystem.reset_all()
+	# Clear static XP batch state from previous run to prevent stale label references
+	var XPOrb := load("res://scripts/xp_orb.gd")
+	if XPOrb and XPOrb.has_method("reset_batch"):
+		XPOrb.reset_batch()
 	_build_environment()
 	_build_ground()
 	_build_arena_walls()
@@ -182,8 +186,8 @@ func _build_spawner() -> void:
 func _wait_for_start() -> void:
 	while not GameState.game_started:
 		await get_tree().process_frame
-	# Short delay then start — snappy enough to feel responsive
-	await get_tree().create_timer(0.2).timeout
+	# Give the player a moment to orient before wave 1 hits
+	await get_tree().create_timer(1.2).timeout
 	GameState.next_wave()
 
 func _process(delta: float) -> void:

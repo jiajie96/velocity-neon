@@ -127,6 +127,11 @@ static var _batch_xp: float = 0.0
 static var _batch_timer: float = 0.0
 static var _batch_label: Label = null
 
+static func reset_batch() -> void:
+	_batch_xp = 0.0
+	_batch_timer = 0.0
+	_batch_label = null
+
 func _collect() -> void:
 	_collected = true
 	GameState.add_xp(xp_value)
@@ -236,6 +241,9 @@ static func _flush_batch_label() -> void:
 			lbl.add_theme_font_size_override("font_size", 20)
 		if _batch_xp > 80:
 			lbl.add_theme_font_size_override("font_size", 24)
+		# Satisfying SFX on big batch collection
+		if _batch_xp > 40:
+			Audio.sfx_big_xp_batch()
 		var tw := lbl.create_tween()
 		tw.set_parallel(true)
 		tw.tween_property(lbl, "position:y", lbl.position.y - 35.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)

@@ -51,6 +51,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("vampire", "VAMPIRE", "Heal 1.5 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 2),
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 		Upgrade.new("velocity_rounds", "VELOCITY ROUNDS", "+20% projectile speed", Color(0.9, 1.0, 0.3), "=>", 3),
+		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to low-HP enemies", Color(0.9, 0.1, 0.2), "XX", 3),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -104,6 +105,34 @@ static func _stat_preview(u: Upgrade) -> String:
 		"velocity_rounds":
 			var cur := GameState.projectile_speed
 			return "+20%% projectile speed (%.0f -> %.0f)" % [cur, cur * 1.2]
+		"railgun":
+			var cur := GameState.railgun_level
+			var dmg_mult := 1.5 + 0.5 * (cur + 1)
+			return "Piercing beam (Lv %d -> %d, %.1fx base dmg)" % [cur, cur + 1, dmg_mult]
+		"scatter":
+			var cur := GameState.scatter_level
+			var pellets := 4 + (cur + 1) * 2
+			return "Pellet burst (Lv %d -> %d, %d pellets)" % [cur, cur + 1, pellets]
+		"chain":
+			var cur := GameState.chain_level
+			return "Chain bounces (Lv %d -> %d targets)" % [cur, cur + 1]
+		"orbital":
+			var cur := GameState.orbital_level
+			return "Orbiting orbs (%d -> %d orbs)" % [cur, cur + 1]
+		"piercing":
+			var cur := GameState.piercing_level
+			return "Pierce through enemies (%d -> %d targets)" % [cur, cur + 1]
+		"ricochet":
+			var cur := GameState.ricochet_level
+			return "Wall bounces (%d -> %d bounces)" % [cur, cur + 1]
+		"shatter":
+			return "Bullets split into 3 fragments on hit"
+		"gravity_well":
+			var cur := GameState.gravity_well_strength
+			return "Slow nearby enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.35) * 100]
+		"executioner":
+			var cur := GameState.execute_bonus
+			return "+25%% dmg to low HP enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
 		_:
 			return u.description
 
@@ -153,6 +182,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.48)
 		"velocity_rounds":
 			GameState.projectile_speed *= 1.20
+		"executioner":
+			GameState.execute_bonus += 0.25
 
 static func reset_all() -> void:
 	_initialized = false

@@ -43,6 +43,7 @@ var overclock_active: bool = false
 var crit_chance: float = 0.10
 var lifesteal: float = 0.0
 var damage_reduction: float = 0.0
+var execute_bonus: float = 0.0  # Bonus damage multiplier vs low-HP enemies
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -225,6 +226,7 @@ func reset() -> void:
 	crit_chance = 0.10
 	lifesteal = 0.0
 	damage_reduction = 0.0
+	execute_bonus = 0.0
 	railgun_level = 0
 	scatter_level = 0
 	chain_level = 0
