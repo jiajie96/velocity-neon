@@ -314,28 +314,8 @@ func _dash_ready_pulse() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var ring := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.9
-	cyl.bottom_radius = 0.9
-	cyl.height = 0.02
-	ring.mesh = cyl
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.4, 0.95, 1.0, 0.6)
-	mat.emission_enabled = true
-	mat.emission = Color(0.3, 0.9, 1.0)
-	mat.emission_energy_multiplier = 6.0
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ring.material_override = mat
-	ring.position = position
-	ring.position.y = 0.05
-	container.add_child(ring)
-	var tw := ring.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(ring, "scale", Vector3(2.0, 1.0, 2.0), 0.3)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3)
-	tw.set_parallel(false)
-	tw.tween_callback(ring.queue_free)
+	var VFX := load("res://scripts/vfx.gd")
+	VFX.spawn_shockwave(container, position, Color(0.3, 0.8, 0.95, 0.4), 1.8, 0.25, 0.05)
 
 func _process(delta: float) -> void:
 	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
@@ -742,26 +722,9 @@ func _spawn_orbital_hit_spark(hit_pos: Vector3) -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var spark := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.15
-	spark.mesh = sphere
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.0, 1.0, 0.6, 0.8)
-	mat.emission_enabled = true
-	mat.emission = Color(0.0, 1.0, 0.5)
-	mat.emission_energy_multiplier = 6.0
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	spark.material_override = mat
-	spark.position = hit_pos
-	spark.position.y = 0.6
-	container.add_child(spark)
-	var tw := spark.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(spark, "scale", Vector3(2.0, 2.0, 2.0), 0.12)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.12)
-	tw.set_parallel(false)
-	tw.tween_callback(spark.queue_free)
+	var VFX := load("res://scripts/vfx.gd")
+	VFX.spawn_spark_burst(container, Vector3(hit_pos.x, 0.6, hit_pos.z), Color(0.1, 0.8, 0.5), 6, 2.5, 0.15)
+	VFX.spawn_impact_flash(container, Vector3(hit_pos.x, 0.6, hit_pos.z), Color(0.1, 0.8, 0.5), 1.0, 0.08)
 
 # === ULTIMATE ===
 
@@ -797,30 +760,26 @@ func _spawn_ult_vfx() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
+	var VFX := load("res://scripts/vfx.gd")
+	var ult_color := Color(0.1, 0.8, 0.9)
+	# Staggered shockwave rings expanding outward
 	for ring_i in 3:
-		var ring := MeshInstance3D.new()
-		var torus := CylinderMesh.new()
-		torus.top_radius = ULTIMATE_RADIUS * (0.5 + ring_i * 0.3)
-		torus.bottom_radius = ULTIMATE_RADIUS * (0.5 + ring_i * 0.3)
-		torus.height = 0.05
-		ring.mesh = torus
-		var mat := StandardMaterial3D.new()
-		var c := Color(0.0, 1.0, 1.0, 0.8 - ring_i * 0.2)
-		mat.albedo_color = c
-		mat.emission_enabled = true
-		mat.emission = Color(0.0, 1.0, 1.0)
-		mat.emission_energy_multiplier = 6.0 - ring_i
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		ring.material_override = mat
-		ring.position = global_position
-		ring.position.y = 0.3 + ring_i * 0.2
-		container.add_child(ring)
-		var tw := ring.create_tween()
-		tw.set_parallel(true)
-		tw.tween_property(ring, "scale", Vector3(1.8, 1.0, 1.8), 0.4 + ring_i * 0.1)
-		tw.tween_property(mat, "albedo_color:a", 0.0, 0.4 + ring_i * 0.1)
-		tw.set_parallel(false)
-		tw.tween_callback(ring.queue_free)
+		var delay := ring_i * 0.06
+		var alpha := 0.6 - ring_i * 0.15
+		var ring_radius := ULTIMATE_RADIUS * (0.6 + ring_i * 0.25)
+		var ring_duration := 0.35 + ring_i * 0.08
+		var tree := get_tree()
+		if tree and delay > 0.0:
+			tree.create_timer(delay).timeout.connect(func():
+				if container and is_instance_valid(container):
+					VFX.spawn_shockwave(container, global_position, Color(ult_color.r, ult_color.g, ult_color.b, alpha), ring_radius, ring_duration, 0.2 + ring_i * 0.15)
+			)
+		else:
+			VFX.spawn_shockwave(container, global_position, Color(ult_color.r, ult_color.g, ult_color.b, alpha), ring_radius, ring_duration, 0.2)
+	# Big spark burst at the center
+	VFX.spawn_spark_burst(container, global_position + Vector3(0, 0.5, 0), ult_color, 24, 6.0, 0.4)
+	# Bright impact flash
+	VFX.spawn_impact_flash(container, global_position + Vector3(0, 0.8, 0), ult_color, 3.0, 0.2)
 
 func _find_nearest_enemy() -> Node3D:
 	var enemies := get_tree().get_nodes_in_group("enemies")
@@ -925,32 +884,12 @@ func _set_model_flash(flash_on: bool) -> void:
 	_apply_flash_recursive(target, flash_on)
 
 func _on_iframes_started() -> void:
-	# Brief cyan flicker to show the player they have i-frames after a hit
+	# Brief cyan shockwave to show i-frames after a hit
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var ring := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.6
-	cyl.bottom_radius = 0.6
-	cyl.height = 0.015
-	ring.mesh = cyl
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.3, 0.9, 1.0, 0.5)
-	mat.emission_enabled = true
-	mat.emission = Color(0.2, 0.8, 1.0)
-	mat.emission_energy_multiplier = 4.0
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ring.material_override = mat
-	ring.position = position
-	ring.position.y = 0.05
-	container.add_child(ring)
-	var tw := ring.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(ring, "scale", Vector3(1.8, 1.0, 1.8), 0.15)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.15)
-	tw.set_parallel(false)
-	tw.tween_callback(ring.queue_free)
+	var VFX := load("res://scripts/vfx.gd")
+	VFX.spawn_shockwave(container, position, Color(0.2, 0.7, 0.9, 0.35), 1.2, 0.15, 0.05)
 
 func _apply_flash_recursive(node: Node, flash_on: bool) -> void:
 	if node is MeshInstance3D:

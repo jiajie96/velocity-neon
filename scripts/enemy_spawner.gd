@@ -200,30 +200,10 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 		"exploder": 1.5,
 		"teleporter": 1.4,
 	}
-	var color: Color = warn_colors.get(type, Color(1.0, 0.0, 0.6))
+	var color: Color = warn_colors.get(type, Color(0.85, 0.08, 0.35))
 	var scale_factor: float = threat_scale.get(type, 1.0)
-	var ring := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.6 * scale_factor
-	cyl.bottom_radius = 0.6 * scale_factor
-	cyl.height = 0.02
-	ring.mesh = cyl
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(color.r, color.g, color.b, 0.25 + scale_factor * 0.08)
-	mat.emission_enabled = true
-	mat.emission = color
-	mat.emission_energy_multiplier = 1.5 + scale_factor * 1.0
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ring.material_override = mat
-	ring.position = pos
-	ring.position.y = 0.05
-	container.add_child(ring)
-	var tw := ring.create_tween()
-	ring.scale = Vector3(0.1, 1.0, 0.1)
-	tw.tween_property(ring, "scale", Vector3(1.5 * scale_factor, 1.0, 1.5 * scale_factor), 0.3)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3)
-	tw.set_parallel(false)
-	tw.tween_callback(ring.queue_free)
+	var VFX := load("res://scripts/vfx.gd")
+	VFX.spawn_warning_pulse(container, pos, color, scale_factor)
 
 func _create_enemy(type: String, pos: Vector3) -> Node3D:
 	var container := get_parent().get_node_or_null("Enemies")

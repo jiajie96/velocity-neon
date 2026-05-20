@@ -909,23 +909,21 @@ func toggle_pause() -> void:
 func _on_boss_defeated() -> void:
 	if not _levelup_flash:
 		return
-	# Dramatic gold flash for boss defeat — bright initial burst then slow fade
-	_levelup_flash.color = Color(1.0, 0.8, 0.0, 0.7)
+	# Gold screen flash for boss defeat — subtle burst
+	_levelup_flash.color = Color(0.9, 0.7, 0.1, 0.2)
 	var tw := create_tween()
-	tw.tween_property(_levelup_flash, "color:a", 0.15, 0.15).set_ease(Tween.EASE_OUT)
-	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.8).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
-	# Show "BOSS DEFEATED" via wave announce label with bigger punch-in
+	tw.tween_property(_levelup_flash, "color:a", 0.05, 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 	if wave_announce:
 		wave_announce.text = "BOSS DEFEATED"
-		wave_announce.add_theme_color_override("font_color", Color(1.0, 0.8, 0.0))
-		wave_announce.add_theme_font_size_override("font_size", 50)
-		wave_announce.modulate.a = 1.0
-		wave_announce.scale = Vector2(1.6, 1.6)
+		wave_announce.add_theme_color_override("font_color", Color(0.9, 0.75, 0.15, 0.9))
+		wave_announce.add_theme_font_size_override("font_size", 32)
+		wave_announce.modulate.a = 0.0
+		wave_announce.scale = Vector2(1.0, 1.0)
 		var stw := create_tween()
-		stw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-		stw.tween_interval(2.0)
-		stw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
-		stw.tween_callback(func(): wave_announce.add_theme_font_size_override("font_size", 40))
+		stw.tween_property(wave_announce, "modulate:a", 0.9, 0.2).set_ease(Tween.EASE_OUT)
+		stw.tween_interval(1.8)
+		stw.tween_property(wave_announce, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 
 func _on_kill_streak(count: int) -> void:
 	if count > _best_streak:
@@ -1036,12 +1034,13 @@ func _on_wave_heal(amount: float) -> void:
 		return
 	# Brief green heal notification between waves
 	_streak_label.text = "+%d HP" % int(amount)
-	_streak_label.add_theme_font_size_override("font_size", 24)
-	_streak_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 1.0))
-	_streak_label.modulate.a = 1.0
+	_streak_label.add_theme_font_size_override("font_size", 18)
+	_streak_label.add_theme_color_override("font_color", Color(0.2, 0.8, 0.35, 0.8))
+	_streak_label.modulate.a = 0.0
 	var tw := create_tween()
-	tw.tween_interval(1.0)
-	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4)
+	tw.tween_property(_streak_label, "modulate:a", 0.8, 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.8)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4).set_ease(Tween.EASE_IN)
 
 func _on_boss_bonus_xp(amount: float) -> void:
 	if not _streak_label:
@@ -1050,21 +1049,22 @@ func _on_boss_bonus_xp(amount: float) -> void:
 	var tree := get_tree()
 	if tree:
 		tree.create_timer(1.0).timeout.connect(func():
-			_streak_label.text = "BOSS BONUS +%d XP" % int(amount)
-			_streak_label.add_theme_font_size_override("font_size", 28)
-			_streak_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2, 1.0))
-			_streak_label.modulate.a = 1.0
-			var tw := create_tween()
-			tw.tween_interval(1.5)
-			tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5)
+			_streak_label.text = "+%d XP" % int(amount)
+			_streak_label.add_theme_font_size_override("font_size", 20)
+			_streak_label.add_theme_color_override("font_color", Color(0.85, 0.75, 0.2, 0.85))
+			_streak_label.modulate.a = 0.0
+			var tw2 := create_tween()
+			tw2.tween_property(_streak_label, "modulate:a", 0.85, 0.15).set_ease(Tween.EASE_OUT)
+			tw2.tween_interval(1.2)
+			tw2.tween_property(_streak_label, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 		)
 
 func _trigger_levelup_flash() -> void:
 	if not _levelup_flash:
 		return
-	_levelup_flash.color = Color(0.0, 1.0, 0.9, 0.45)
+	_levelup_flash.color = Color(0.0, 0.8, 0.7, 0.15)
 	var tw := create_tween()
-	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.3).set_ease(Tween.EASE_OUT)
 
 func _update_danger_vignette(delta: float) -> void:
 	if not _vignette_mat:

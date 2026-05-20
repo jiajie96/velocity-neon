@@ -1278,42 +1278,50 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 	if not canvas:
 		return
 	var label := Label.new()
-	label.text = ("CRIT " if is_crit else "") + str(int(amount))
+	# Star prefix for crits instead of "CRIT" text
+	label.text = ("★" if is_crit else "") + str(int(amount))
 	var is_big_hit := amount >= 30.0 or is_crit
-	# Weapon-colored damage numbers for visual clarity
+	# Weapon-tinted damage numbers — subtle, small, readable
 	var weapon_colors := {
-		"railgun": Color(0.3, 0.5, 1.0),
-		"scatter": Color(1.0, 0.6, 0.2),
-		"chain": Color(0.4, 0.9, 1.0),
-		"orbital": Color(0.0, 1.0, 0.6),
-		"dash": Color(0.2, 0.85, 1.0),
+		"railgun": Color(0.4, 0.55, 0.9),
+		"scatter": Color(0.9, 0.55, 0.2),
+		"chain": Color(0.35, 0.7, 0.85),
+		"orbital": Color(0.15, 0.8, 0.5),
+		"dash": Color(0.25, 0.7, 0.9),
 	}
+	# All sizes much smaller — crits only slightly bigger than normal hits
 	if is_crit:
-		label.add_theme_font_size_override("font_size", 32)
-		label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0))
-		label.add_theme_color_override("font_outline_color", Color(1.0, 0.2, 0.0))
-		label.add_theme_constant_override("outline_size", 4)
-	elif is_big_hit:
-		label.add_theme_font_size_override("font_size", 28)
-		var big_color: Color = weapon_colors.get(weapon_hint, Color(1.0, 0.3, 0.1))
-		label.add_theme_color_override("font_color", big_color)
-		label.add_theme_color_override("font_outline_color", big_color.darkened(0.4))
+		label.add_theme_font_size_override("font_size", 16)
+		label.add_theme_color_override("font_color", Color(1.0, 0.75, 0.2))
+		label.add_theme_color_override("font_outline_color", Color(0.15, 0.1, 0.05))
 		label.add_theme_constant_override("outline_size", 3)
+	elif is_big_hit:
+		label.add_theme_font_size_override("font_size", 14)
+		var big_color: Color = weapon_colors.get(weapon_hint, Color(0.95, 0.85, 0.7))
+		label.add_theme_color_override("font_color", big_color)
+		label.add_theme_color_override("font_outline_color", Color(0.1, 0.08, 0.05))
+		label.add_theme_constant_override("outline_size", 2)
 	else:
-		label.add_theme_font_size_override("font_size", 20)
-		var base_color: Color = weapon_colors.get(weapon_hint, Color(1.0, 1.0, 0.3))
+		label.add_theme_font_size_override("font_size", 11)
+		var base_color: Color = weapon_colors.get(weapon_hint, Color(0.85, 0.82, 0.7, 0.8))
 		label.add_theme_color_override("font_color", base_color)
-	label.position = screen_pos + Vector2(randf_range(-20, 20), randf_range(-10, 5))
+		label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+		label.add_theme_constant_override("outline_size", 2)
+	label.position = screen_pos + Vector2(randf_range(-12, 12), randf_range(-6, 3))
 	label.z_index = 100
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(label)
+	# Smooth float-up and fade — shorter distance, quicker fade
+	var float_dist := 30.0 if is_crit else 22.0
+	var duration := 0.5 if is_crit else 0.4
 	var tw := label.create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(label, "position:y", label.position.y - 50.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tw.tween_property(label, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-	if is_big_hit or is_crit:
-		tw.tween_property(label, "scale", Vector2(1.4, 1.4), 0.08).set_ease(Tween.EASE_OUT)
-		tw.chain().tween_property(label, "scale", Vector2(1.0, 1.0), 0.15)
+	tw.tween_property(label, "position:y", label.position.y - float_dist, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(label, "modulate:a", 0.0, duration).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	if is_crit:
+		# Subtle scale pop for crits only
+		tw.tween_property(label, "scale", Vector2(1.2, 1.2), 0.06).set_ease(Tween.EASE_OUT)
+		tw.chain().tween_property(label, "scale", Vector2(1.0, 1.0), 0.12)
 	tw.set_parallel(false)
 	tw.tween_callback(label.queue_free)
 

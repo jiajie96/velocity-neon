@@ -321,50 +321,10 @@ func _hit_vfx() -> void:
 	if not container:
 		return
 	var color: Color = _colors.get(weapon_type, Color(1.0, 1.0, 0.5))
-	# Impact ring
-	var ring := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.5
-	cyl.bottom_radius = 0.5
-	cyl.height = 0.02
-	ring.mesh = cyl
-	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
-	ring_mat.emission_enabled = true
-	ring_mat.emission = color
-	ring_mat.emission_energy_multiplier = 3.0
-	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ring.material_override = ring_mat
-	ring.position = global_position
-	ring.position.y = 0.5
-	container.add_child(ring)
-	var tw := ring.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(ring, "scale", Vector3(3.0, 1.0, 3.0), 0.15)
-	tw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.15)
-	tw.set_parallel(false)
-	tw.tween_callback(ring.queue_free)
-
-	# Spark burst
-	for i in 4:
-		var spark := MeshInstance3D.new()
-		var ss := SphereMesh.new()
-		ss.radius = 0.05
-		spark.mesh = ss
-		var smat := StandardMaterial3D.new()
-		smat.albedo_color = Color(color.r, color.g, color.b, 0.6)
-		smat.emission_enabled = true
-		smat.emission = color
-		smat.emission_energy_multiplier = 2.5
-		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		spark.material_override = smat
-		spark.position = global_position + Vector3(0, 0.5, 0)
-		container.add_child(spark)
-		var angle := TAU / 4.0 * i + randf() * 0.5
-		var spark_dir := Vector3(cos(angle), randf_range(0.2, 0.8), sin(angle)) * 1.5
-		var stw := spark.create_tween()
-		stw.set_parallel(true)
-		stw.tween_property(spark, "position", spark.position + spark_dir, 0.2)
-		stw.tween_property(smat, "albedo_color:a", 0.0, 0.2)
-		stw.set_parallel(false)
-		stw.tween_callback(spark.queue_free)
+	var VFX := load("res://scripts/vfx.gd")
+	# Shader-driven expanding shockwave ring
+	VFX.spawn_shockwave(container, global_position, Color(color.r, color.g, color.b, 0.5), 1.5, 0.18, 0.4)
+	# GPU particle spark burst
+	VFX.spawn_spark_burst(container, global_position + Vector3(0, 0.5, 0), color, 8, 3.0, 0.25)
+	# Brief point light flash at impact
+	VFX.spawn_impact_flash(container, global_position + Vector3(0, 0.5, 0), color, 1.5, 0.1)

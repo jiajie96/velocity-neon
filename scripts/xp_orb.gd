@@ -152,52 +152,12 @@ func _spawn_collect_burst() -> void:
 	var container := get_parent()
 	if not container:
 		return
-	# Ring flash
-	var ring := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.3
-	cyl.bottom_radius = 0.3
-	cyl.height = 0.02
-	ring.mesh = cyl
-	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(0.15, 0.7, 0.25, 0.4)
-	ring_mat.emission_enabled = true
-	ring_mat.emission = Color(0.1, 0.6, 0.2)
-	ring_mat.emission_energy_multiplier = 2.5
-	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ring.material_override = ring_mat
-	ring.position = global_position
-	ring.position.y = 0.4
-	container.add_child(ring)
-	var rtw := ring.create_tween()
-	rtw.set_parallel(true)
-	rtw.tween_property(ring, "scale", Vector3(3.0, 1.0, 3.0), 0.2)
-	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.2)
-	rtw.set_parallel(false)
-	rtw.tween_callback(ring.queue_free)
-	# Spark particles
-	for i in 4:
-		var spark := MeshInstance3D.new()
-		var ss := SphereMesh.new()
-		ss.radius = 0.04
-		spark.mesh = ss
-		var smat := StandardMaterial3D.new()
-		smat.albedo_color = Color(0.2, 0.7, 0.3, 0.5)
-		smat.emission_enabled = true
-		smat.emission = Color(0.15, 0.6, 0.25)
-		smat.emission_energy_multiplier = 2.0
-		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		spark.material_override = smat
-		spark.position = global_position + Vector3(0, 0.4, 0)
-		container.add_child(spark)
-		var angle := TAU / 4.0 * float(i) + randf() * 0.5
-		var spark_dir := Vector3(cos(angle), randf_range(0.3, 0.8), sin(angle)) * randf_range(0.5, 1.0)
-		var stw := spark.create_tween()
-		stw.set_parallel(true)
-		stw.tween_property(spark, "position", spark.position + spark_dir, 0.2)
-		stw.tween_property(smat, "albedo_color:a", 0.0, 0.2)
-		stw.set_parallel(false)
-		stw.tween_callback(spark.queue_free)
+	var VFX := load("res://scripts/vfx.gd")
+	var collect_color := Color(0.15, 0.65, 0.3)
+	# Shader shockwave ring instead of flat cylinder
+	VFX.spawn_shockwave(container, global_position, Color(collect_color.r, collect_color.g, collect_color.b, 0.35), 1.0, 0.2, 0.3)
+	# GPU particle sparks instead of manual mesh sparks
+	VFX.spawn_spark_burst(container, global_position + Vector3(0, 0.4, 0), collect_color, 6, 2.0, 0.2)
 
 func _batch_xp_text() -> void:
 	# Combine rapid pickups into one big "+X XP" instead of many small labels
