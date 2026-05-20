@@ -1795,7 +1795,7 @@ func _update_wave_progress() -> void:
 func _xp_bar_level_pulse() -> void:
 	if not xp_bar:
 		return
-	var style := xp_bar.get("theme_override_styles/fill")
+	var style = xp_bar.get("theme_override_styles/fill")
 	if style and style is StyleBoxFlat:
 		var orig_color: Color = style.bg_color
 		var gold := Color(1.0, 1.0, 0.6, 1.0)
