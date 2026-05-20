@@ -21,6 +21,7 @@ func _ready() -> void:
 	_build_containers()
 	_build_hud()
 	_build_spawner()
+	_build_ambient_particles()
 
 	GameState.leveled_up.connect(_on_leveled_up)
 	GameState.player_died.connect(_on_player_died)
@@ -183,6 +184,45 @@ func _build_spawner() -> void:
 	spawner.set_script(load("res://scripts/enemy_spawner.gd"))
 	add_child(spawner)
 
+var _ambient_timer: float = 0.0
+const AMBIENT_INTERVAL := 0.4
+
+func _build_ambient_particles() -> void:
+	# Timer-driven to avoid upfront cost — spawns floating neon motes around the player
+	pass
+
+func _spawn_ambient_mote() -> void:
+	if not player or GameState.game_over:
+		return
+	var container := get_node_or_null("Projectiles")
+	if not container:
+		return
+	var offset := Vector3(randf_range(-20, 20), randf_range(0.1, 0.5), randf_range(-20, 20))
+	var mote_pos := player.global_position + offset
+	mote_pos.x = clampf(mote_pos.x, -48.0, 48.0)
+	mote_pos.z = clampf(mote_pos.z, -48.0, 48.0)
+	var mote := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.03
+	mote.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	var hue := randf()
+	var mote_color := Color.from_hsv(hue, 0.8, 1.0, 0.4)
+	mat.albedo_color = mote_color
+	mat.emission_enabled = true
+	mat.emission = mote_color
+	mat.emission_energy_multiplier = 2.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mote.material_override = mat
+	mote.position = mote_pos
+	container.add_child(mote)
+	var tw := mote.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(mote, "position:y", mote_pos.y + randf_range(1.5, 3.0), 3.0).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 3.0).set_ease(Tween.EASE_IN)
+	tw.set_parallel(false)
+	tw.tween_callback(mote.queue_free)
+
 func _wait_for_start() -> void:
 	while not GameState.game_started:
 		await get_tree().process_frame
@@ -197,6 +237,12 @@ func _process(delta: float) -> void:
 		GameState.heal(GameState.hp_regen * delta)
 	if GameState.overclock_active:
 		GameState.take_damage(2.0 * delta, true)
+	# Ambient floating neon motes for atmosphere
+	if GameState.game_started:
+		_ambient_timer -= delta
+		if _ambient_timer <= 0.0:
+			_ambient_timer = AMBIENT_INTERVAL
+			_spawn_ambient_mote()
 
 func _on_leveled_up(_level: int) -> void:
 	get_tree().paused = true

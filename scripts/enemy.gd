@@ -51,7 +51,9 @@ const WARRIOR_LUNGE_SPEED := 14.0
 var _warrior_lunging: bool = false
 var _warrior_lunge_dir: Vector3 = Vector3.ZERO
 var _warrior_lunge_elapsed: float = 0.0
+var _warrior_lunge_hit: bool = false
 const WARRIOR_LUNGE_DURATION := 0.25
+const WARRIOR_LUNGE_DAMAGE := 20.0
 
 # Golem slam attack
 var _golem_slam_timer: float = 4.0
@@ -264,10 +266,23 @@ func _process(delta: float) -> void:
 		return
 
 	var spd := speed
+	var _gravity_slowed := false
 	if GameState.gravity_well_strength > 0.0:
 		var dist := global_position.distance_to(player.global_position)
 		if dist < 6.0:
-			spd *= maxf(0.3, 1.0 - GameState.gravity_well_strength * (1.0 - dist / 6.0))
+			var slow_factor := GameState.gravity_well_strength * (1.0 - dist / 6.0)
+			spd *= maxf(0.3, 1.0 - slow_factor)
+			if slow_factor > 0.1:
+				_gravity_slowed = true
+	# Purple tint on enemies slowed by Gravity Well
+	if _gravity_slowed and _mat and _flash_timer <= 0.0:
+		var gw_pulse := (sin(GameState.time_survived * 5.0) + 1.0) * 0.5
+		_mat.emission = _original_color.lerp(Color(0.6, 0.2, 1.0), 0.4 + gw_pulse * 0.2)
+		_mat.emission_energy_multiplier = lerpf(2.0, 3.5, gw_pulse)
+	elif not _gravity_slowed and _flash_timer <= 0.0 and _mat and not is_boss:
+		if enemy_type != "exploder":
+			_mat.emission = _original_color
+			_mat.emission_energy_multiplier = 2.0
 
 	var dir := (player.global_position - global_position)
 	dir.y = 0.0
@@ -280,8 +295,13 @@ func _process(delta: float) -> void:
 			if _mage_shoot_timer <= 0.0:
 				_mage_shoot_timer = MAGE_SHOOT_CD
 				_mage_telegraph(dir)
-			# Slow approach — mages still drift closer but much slower
-			position += dir * spd * 0.3 * delta
+			# Strafe orbit — mages circle the player instead of standing still
+			var strafe_dir := Vector3(-dir.z, 0, dir.x)  # Perpendicular to player direction
+			var orbit_speed := spd * 0.5
+			var approach_speed := spd * 0.15 if dist_to_player > MAGE_RANGE * 0.6 else -spd * 0.2
+			position += strafe_dir * orbit_speed * delta + dir * approach_speed * delta
+			position.x = clampf(position.x, -47.0, 47.0)
+			position.z = clampf(position.z, -47.0, 47.0)
 		elif enemy_type == "necromancer":
 			# Necromancers stay at range, summon minions, and fire bolts
 			_necro_summon_timer -= delta
@@ -295,8 +315,12 @@ func _process(delta: float) -> void:
 			if dist_to_player < NECRO_KEEP_RANGE:
 				# Back away slowly to maintain distance
 				position -= dir * spd * 0.4 * delta
+				position.x = clampf(position.x, -47.0, 47.0)
+				position.z = clampf(position.z, -47.0, 47.0)
 			else:
 				position += dir * spd * 0.3 * delta
+				position.x = clampf(position.x, -47.0, 47.0)
+				position.z = clampf(position.z, -47.0, 47.0)
 		elif enemy_type == "rogue":
 			# Rogues sidestep periodically to dodge projectiles — faster in later waves
 			_rogue_dodge_timer -= delta
@@ -321,7 +345,8 @@ func _process(delta: float) -> void:
 			# Teleporters blink to random positions near the player
 			_teleport_timer -= delta
 			if _teleport_timer <= 0.0:
-				_teleport_timer = TELEPORT_CD + randf_range(-0.4, 0.4)
+				var tp_cd := TELEPORT_CD * maxf(0.5, 1.0 - GameState.wave * 0.03)
+				_teleport_timer = tp_cd + randf_range(-0.4, 0.4)
 				_teleport_blink(player)
 			else:
 				position += dir * spd * delta
@@ -345,6 +370,11 @@ func _process(delta: float) -> void:
 				# Damage player if we reach them during charge
 				if dist_to_player < 2.5 and not GameState.invincible:
 					GameState.take_damage(GOLEM_CHARGE_DAMAGE)
+					var charge_kb := (player.global_position - global_position).normalized()
+					charge_kb.y = 0.0
+					player.position += charge_kb * 5.0
+					player.position.x = clampf(player.position.x, -48.0, 48.0)
+					player.position.z = clampf(player.position.z, -48.0, 48.0)
 					GameState.request_shake(4.0, dir)
 					_golem_charging = false
 					_golem_charge_impact()
@@ -384,15 +414,35 @@ func _process(delta: float) -> void:
 				position += _warrior_lunge_dir * WARRIOR_LUNGE_SPEED * delta
 				position.x = clampf(position.x, -48.0, 48.0)
 				position.z = clampf(position.z, -48.0, 48.0)
+				# Deal damage on lunge impact if close to player
+				if not _warrior_lunge_hit and dist_to_player < 1.5 and not GameState.invincible:
+					_warrior_lunge_hit = true
+					GameState.take_damage(WARRIOR_LUNGE_DAMAGE)
+					var lunge_kb := (player.global_position - global_position).normalized()
+					lunge_kb.y = 0.0
+					player.position += lunge_kb * 2.5
+					player.position.x = clampf(player.position.x, -48.0, 48.0)
+					player.position.z = clampf(player.position.z, -48.0, 48.0)
+					GameState.request_shake(2.5, lunge_kb)
+					GameState.request_hit_stop(0.04)
 				if _warrior_lunge_elapsed >= WARRIOR_LUNGE_DURATION:
 					_warrior_lunging = false
+					_warrior_lunge_hit = false
+					_spawn_lunge_dust()
+					# Reset emission after lunge — otherwise stays red from telegraph
+					if _mat:
+						_mat.emission = _original_color
+						_mat.emission_energy_multiplier = 2.0
 			else:
 				position += dir * spd * delta
+				# Lunge cooldown decreases with wave so warriors stay threatening
+				var lunge_cd := WARRIOR_LUNGE_CD * maxf(0.5, 1.0 - GameState.wave * 0.03)
 				if _warrior_lunge_timer <= 0.0 and dist_to_player < WARRIOR_LUNGE_RANGE and dist_to_player > 1.5:
-					_warrior_lunge_timer = WARRIOR_LUNGE_CD + randf_range(-0.5, 0.5)
+					_warrior_lunge_timer = lunge_cd + randf_range(-0.5, 0.5)
 					_warrior_lunging = true
 					_warrior_lunge_dir = dir
 					_warrior_lunge_elapsed = 0.0
+					Audio.sfx_warrior_lunge()
 					# Brief red flash to telegraph the lunge
 					if _mat:
 						_mat.emission = Color(1.0, 0.2, 0.0)
@@ -418,6 +468,9 @@ func _process(delta: float) -> void:
 			var urgency := clampf(1.0 - dist_to_player / (EXPLODER_DETONATE_RANGE * 3.0), 0.0, 1.0)
 			_exploder_warn_timer = lerpf(0.5, 0.12, urgency)
 			Audio.sfx_exploder_warn(1.0 + urgency * 0.8)
+			# Pulsing danger ring showing blast radius when close
+			if urgency > 0.3:
+				_spawn_exploder_danger_ring(urgency)
 	if enemy_type == "exploder" and not _exploder_fuse_lit and _mat and _flash_timer <= 0.0:
 		var proximity := clampf(1.0 - dist_to_player / (EXPLODER_DETONATE_RANGE * 3.0), 0.0, 1.0)
 		if proximity > 0.01:
@@ -806,6 +859,8 @@ func _golem_slam_impact() -> void:
 			var kb_dir := (player.global_position - global_position).normalized()
 			kb_dir.y = 0.0
 			player.position += kb_dir * 3.0
+			player.position.x = clampf(player.position.x, -48.0, 48.0)
+			player.position.z = clampf(player.position.z, -48.0, 48.0)
 	GameState.request_shake(3.5)
 	GameState.request_hit_stop(0.06)
 	Audio.sfx_golem_slam()
@@ -842,7 +897,32 @@ func _golem_throw_rock(dir: Vector3) -> void:
 	if not container:
 		container = get_parent()
 	# Telegraph — brief glow at hands
-	Audio.sfx_golem_slam()
+	Audio.sfx_golem_rock_throw()
+	# Ground target indicator showing where the rock is headed
+	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+	if player and get_parent():
+		var target_ring := MeshInstance3D.new()
+		var tcyl := CylinderMesh.new()
+		tcyl.top_radius = 1.2
+		tcyl.bottom_radius = 1.2
+		tcyl.height = 0.015
+		target_ring.mesh = tcyl
+		var tmat := StandardMaterial3D.new()
+		tmat.albedo_color = Color(1.0, 0.2, 0.0, 0.35)
+		tmat.emission_enabled = true
+		tmat.emission = Color(1.0, 0.1, 0.0)
+		tmat.emission_energy_multiplier = 3.0
+		tmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		tmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		target_ring.material_override = tmat
+		target_ring.position = player.global_position
+		target_ring.position.y = 0.06
+		target_ring.scale = Vector3(0.3, 1.0, 0.3)
+		get_parent().add_child(target_ring)
+		var ttw := target_ring.create_tween()
+		ttw.tween_property(target_ring, "scale", Vector3(1.0, 1.0, 1.0), 0.3).set_ease(Tween.EASE_OUT)
+		ttw.tween_property(tmat, "albedo_color:a", 0.0, 0.8)
+		ttw.tween_callback(target_ring.queue_free)
 	var rock := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.4
@@ -901,6 +981,8 @@ func _golem_throw_rock(dir: Vector3) -> void:
 		ftw.tween_callback(flash.queue_free)
 		rock.queue_free()
 	)
+	# Fiery trail behind rocks for readability
+	_add_bolt_trail(rock, container, Color(1.0, 0.3, 0.0))
 	# Move rock toward player
 	var end_pos := rock.position + dir * 25.0
 	var tw := rock.create_tween()
@@ -976,12 +1058,14 @@ func _golem_charge_impact() -> void:
 	rtw.tween_callback(ring.queue_free)
 
 func _explode() -> void:
+	# Explosion damage scales with wave to stay threatening in late game
+	var scaled_explode_dmg := EXPLODER_DAMAGE * (1.0 + minf(GameState.wave, 20) * 0.05)
 	# Area damage to player if in range
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:
 		var dist := global_position.distance_to(player.global_position)
 		if dist < EXPLODER_RADIUS and not GameState.invincible:
-			GameState.take_damage(EXPLODER_DAMAGE)
+			GameState.take_damage(scaled_explode_dmg)
 			GameState.request_shake(3.0)
 	# Also damage nearby enemies (chain reaction potential)
 	var chain_hit := false
@@ -990,7 +1074,7 @@ func _explode() -> void:
 		if e != self and e is Node3D and e.has_method("take_damage"):
 			var d := global_position.distance_to(e.global_position)
 			if d < EXPLODER_RADIUS * 0.6:
-				e.take_damage(EXPLODER_DAMAGE * 0.5)
+				e.take_damage(scaled_explode_dmg * 0.5)
 				chain_hit = true
 	# Extra hit-stop + XP magnet on chain reactions for dramatic feel and reward
 	if chain_hit:
@@ -1053,6 +1137,39 @@ func _spawn_explosion_vfx() -> void:
 	ftw.set_parallel(false)
 	ftw.tween_callback(flash.queue_free)
 
+
+func _spawn_chain_arc_vfx(from_pos: Vector3, to_pos: Vector3) -> void:
+	var container := get_parent()
+	if not container:
+		return
+	var mid := (from_pos + to_pos) * 0.5
+	mid.y = 0.8
+	var dist := from_pos.distance_to(to_pos)
+	var arc := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.06
+	cyl.bottom_radius = 0.06
+	cyl.height = dist
+	arc.mesh = cyl
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.6, 0.0, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.4, 0.0)
+	mat.emission_energy_multiplier = 6.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	arc.material_override = mat
+	arc.position = mid
+	var arc_dir := (to_pos - from_pos).normalized()
+	arc.rotation.x = PI / 2.0
+	arc.rotation.y = atan2(arc_dir.x, arc_dir.z)
+	container.add_child(arc)
+	var tw := arc.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(arc, "scale:x", 2.5, 0.15)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.2)
+	tw.set_parallel(false)
+	tw.tween_callback(arc.queue_free)
+
 func take_damage(amount: float, weapon_hint: String = "") -> void:
 	if _dead:
 		return
@@ -1060,16 +1177,25 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	var is_crit := randf() < GameState.crit_chance
 	var final_amount := amount * (2.0 if is_crit else 1.0)
 	# Executioner bonus — extra damage to enemies below 30% HP
+	var _execute_proc := false
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:
 		final_amount *= (1.0 + GameState.execute_bonus)
+		_execute_proc = true
 	hp -= final_amount
 	GameState.add_damage_dealt(final_amount)
 	if is_crit:
 		GameState.crit_landed.emit()
 	_flash_timer = FLASH_DURATION
 	if _mat:
-		_mat.emission = Color(1.0, 0.6, 0.0) if is_crit else Color.WHITE
-		_mat.emission_energy_multiplier = 10.0 if is_crit else 6.0
+		if _execute_proc:
+			_mat.emission = Color(0.9, 0.0, 0.15)
+			_mat.emission_energy_multiplier = 12.0
+		elif is_crit:
+			_mat.emission = Color(1.0, 0.6, 0.0)
+			_mat.emission_energy_multiplier = 10.0
+		else:
+			_mat.emission = Color.WHITE
+			_mat.emission_energy_multiplier = 6.0
 	# Knockback — crits knock back harder
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:
@@ -1101,6 +1227,7 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 		"scatter": Color(1.0, 0.6, 0.2),
 		"chain": Color(0.4, 0.9, 1.0),
 		"orbital": Color(0.0, 1.0, 0.6),
+		"dash": Color(0.2, 0.85, 1.0),
 	}
 	if is_crit:
 		label.add_theme_font_size_override("font_size", 32)
@@ -1184,6 +1311,31 @@ func _spawn_rogue_dodge_ghost() -> void:
 	gtw.tween_property(gmat, "albedo_color:a", 0.0, 0.2)
 	gtw.tween_callback(ghost.queue_free)
 
+func _spawn_lunge_dust() -> void:
+	var container := get_parent()
+	if not container:
+		return
+	for i in 4:
+		var dust := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.1
+		dust.mesh = sphere
+		var dmat := StandardMaterial3D.new()
+		dmat.albedo_color = Color(0.9, 0.2, 0.1, 0.5)
+		dmat.emission_enabled = true
+		dmat.emission = Color(0.9, 0.15, 0.0)
+		dmat.emission_energy_multiplier = 2.5
+		dmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		dust.material_override = dmat
+		dust.position = global_position + Vector3(randf_range(-0.5, 0.5), 0.1, randf_range(-0.5, 0.5))
+		container.add_child(dust)
+		var dtw := dust.create_tween()
+		dtw.set_parallel(true)
+		dtw.tween_property(dust, "position:y", dust.position.y + 0.8, 0.25)
+		dtw.tween_property(dmat, "albedo_color:a", 0.0, 0.25)
+		dtw.set_parallel(false)
+		dtw.tween_callback(dust.queue_free)
+
 func _spawn_enrage_dust() -> void:
 	var container := get_parent()
 	if not container:
@@ -1208,6 +1360,31 @@ func _spawn_enrage_dust() -> void:
 	dtw.tween_property(dmat, "albedo_color:a", 0.0, 0.3)
 	dtw.set_parallel(false)
 	dtw.tween_callback(dust.queue_free)
+
+func _spawn_exploder_danger_ring(urgency: float) -> void:
+	var container := get_parent()
+	if not container:
+		return
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = EXPLODER_RADIUS
+	cyl.bottom_radius = EXPLODER_RADIUS
+	cyl.height = 0.015
+	ring.mesh = cyl
+	var ring_mat := StandardMaterial3D.new()
+	ring_mat.albedo_color = Color(1.0, 0.4, 0.0, 0.15 * urgency)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(1.0, 0.3, 0.0)
+	ring_mat.emission_energy_multiplier = 2.0 + urgency * 3.0
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	ring.material_override = ring_mat
+	ring.position = global_position
+	ring.position.y = 0.06
+	container.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.25)
+	rtw.tween_callback(ring.queue_free)
 
 func _die() -> void:
 	_dead = true

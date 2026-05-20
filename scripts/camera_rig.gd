@@ -17,6 +17,19 @@ var _hit_stop_frames: int = 0
 
 func _ready() -> void:
 	GameState.hit_stop_requested.connect(_on_hit_stop)
+	GameState.hp_changed.connect(_on_hp_changed)
+
+var _prev_cam_hp: float = -1.0
+
+func _on_hp_changed(current: float, _maximum: float) -> void:
+	if _prev_cam_hp > 0.0 and current < _prev_cam_hp:
+		# Camera punch toward damage direction for visceral hit feedback
+		var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
+		if player and GameState.shake_direction.length_squared() > 0.01:
+			_punch_offset = GameState.shake_direction * 0.4
+		else:
+			_punch_offset = Vector3(randf_range(-0.3, 0.3), 0, randf_range(-0.3, 0.3))
+	_prev_cam_hp = current
 
 func _on_hit_stop(duration: float) -> void:
 	var frames := maxi(int(duration * 60.0), 2)

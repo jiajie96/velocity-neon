@@ -76,8 +76,10 @@ func _build_visual() -> void:
 	if weapon_type != "scatter":
 		var light := OmniLight3D.new()
 		light.light_color = color
-		light.light_energy = 1.2 if weapon_type == "pulse" else 1.5
-		light.omni_range = 2.5
+		# Faster projectiles glow brighter for visual feedback on Velocity Rounds
+		var spd_glow := clampf(speed / 38.0, 1.0, 2.0)
+		light.light_energy = (1.2 if weapon_type == "pulse" else 1.5) * spd_glow
+		light.omni_range = 2.5 + (spd_glow - 1.0) * 1.0
 		light.omni_attenuation = 2.0
 		add_child(light)
 
@@ -99,24 +101,26 @@ func _spawn_trail_timer(color: Color) -> void:
 
 func _spawn_trail_particle(color: Color) -> void:
 	var p := MeshInstance3D.new()
+	# Scale trail thickness with projectile speed — Velocity Rounds feel more powerful
+	var speed_factor := clampf(speed / 38.0, 1.0, 2.5)
 	if weapon_type == "pulse":
 		# Thin streak segment for laser trail
 		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.015
-		cyl.bottom_radius = 0.02
-		cyl.height = 0.4
+		cyl.top_radius = 0.015 * speed_factor
+		cyl.bottom_radius = 0.02 * speed_factor
+		cyl.height = 0.4 * speed_factor
 		p.mesh = cyl
 		p.rotation.x = PI / 2.0
 		p.rotation.y = atan2(direction.x, direction.z)
 	else:
 		var sphere := SphereMesh.new()
-		sphere.radius = 0.06
+		sphere.radius = 0.06 * speed_factor
 		p.mesh = sphere
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 4.0 if weapon_type == "pulse" else 3.0
+	mat.emission_energy_multiplier = (4.0 if weapon_type == "pulse" else 3.0) * speed_factor
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	p.material_override = mat
 	p.position = global_position

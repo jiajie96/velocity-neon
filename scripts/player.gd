@@ -56,6 +56,7 @@ func _ready() -> void:
 	_build_gravity_ring()
 	_build_shield_ring()
 	GameState.hp_changed.connect(_on_hp_changed)
+	GameState.damage_iframes_started.connect(_on_iframes_started)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -367,7 +368,7 @@ func _dash(delta: float) -> void:
 				var eid := e.get_instance_id()
 				if eid not in _dash_hit_enemies:
 					if global_position.distance_to(e.global_position) < DASH_HIT_RADIUS:
-						e.take_damage(scaled_dash_dmg)
+						e.take_damage(scaled_dash_dmg, "dash")
 						_dash_hit_enemies.append(eid)
 		if dash_timer <= 0.0:
 			is_dashing = false
@@ -390,6 +391,7 @@ func _dash(delta: float) -> void:
 		dash_timer = DASH_DURATION
 		dash_cd_timer = GameState.dash_cooldown
 		GameState.invincible = true
+		GameState.total_dashes += 1
 		_dash_hit_enemies.clear()
 		Audio.sfx_dash()
 		_spawn_dash_trail()
@@ -610,7 +612,37 @@ func _shoot_scatter(delta: float) -> void:
 		container.add_child(proj)
 	Audio.sfx_shoot_scatter()
 	_spawn_muzzle_flash(dir)
+	_spawn_scatter_cone(dir)
 	GameState.request_shake(1.5, -dir)
+
+func _spawn_scatter_cone(dir: Vector3) -> void:
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	# Brief cone flash showing the scatter spread
+	var cone := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 2.5
+	cyl.bottom_radius = 0.2
+	cyl.height = 3.0
+	cone.mesh = cyl
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.5, 0.0, 0.2)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.4, 0.0)
+	mat.emission_energy_multiplier = 3.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	cone.material_override = mat
+	cone.position = global_position + dir * 2.0
+	cone.position.y = 0.5
+	# Rotate cone to point in the firing direction
+	cone.rotation.x = PI / 2.0
+	cone.rotation.y = atan2(dir.x, dir.z)
+	container.add_child(cone)
+	var tw := cone.create_tween()
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.15)
+	tw.tween_callback(cone.queue_free)
 
 # === ORBITAL GUARD ===
 
@@ -844,6 +876,34 @@ func _set_model_flash(flash_on: bool) -> void:
 	if not target:
 		return
 	_apply_flash_recursive(target, flash_on)
+
+func _on_iframes_started() -> void:
+	# Brief cyan flicker to show the player they have i-frames after a hit
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var ring := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.6
+	cyl.bottom_radius = 0.6
+	cyl.height = 0.015
+	ring.mesh = cyl
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.3, 0.9, 1.0, 0.5)
+	mat.emission_enabled = true
+	mat.emission = Color(0.2, 0.8, 1.0)
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = mat
+	ring.position = position
+	ring.position.y = 0.05
+	container.add_child(ring)
+	var tw := ring.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(ring, "scale", Vector3(1.8, 1.0, 1.8), 0.15)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.15)
+	tw.set_parallel(false)
+	tw.tween_callback(ring.queue_free)
 
 func _apply_flash_recursive(node: Node, flash_on: bool) -> void:
 	if node is MeshInstance3D:

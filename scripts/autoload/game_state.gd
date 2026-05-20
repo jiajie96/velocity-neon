@@ -21,6 +21,7 @@ signal boss_bonus_xp(amount: float)
 signal wave_heal(amount: float)
 signal golem_enraged
 signal death_by_overclock
+signal damage_iframes_started
 
 # Player stats
 var hp: float = 80.0
@@ -75,6 +76,9 @@ var acquired_upgrades: Array[String] = []
 var kills_by_type: Dictionary = {}
 var total_xp_earned: float = 0.0
 
+# Dash tracking
+var total_dashes: int = 0
+
 # Kill streak tracking
 var _streak_count: int = 0
 var _streak_timer: float = 0.0
@@ -106,6 +110,9 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	# Brief i-frames after taking a hit to prevent stacked damage from multiple enemies
 	if not is_self_damage and _damage_immunity_timer > 0.0:
 		return
+	# Emit signal so player can flash during i-frames
+	if not is_self_damage:
+		damage_iframes_started.emit()
 	# Apply damage reduction from Nano Shield (not for self-inflicted damage like overclock)
 	var reduced := amount * maxf(0.0, 1.0 - (0.0 if is_self_damage else damage_reduction))
 	hp = clampf(hp - reduced, 0.0, max_hp)
@@ -244,6 +251,7 @@ func reset() -> void:
 	time_survived = 0.0
 	total_damage_dealt = 0.0
 	total_damage_taken = 0.0
+	total_dashes = 0
 	_streak_count = 0
 	_streak_timer = 0.0
 	shake_amount = 0.0

@@ -966,7 +966,12 @@ func _on_perfect_wave(bonus_xp: float) -> void:
 func _on_wave_cleared() -> void:
 	if not wave_announce:
 		return
-	wave_announce.text = "WAVE CLEAR"
+	# Count remaining XP orbs being vacuumed up
+	var orb_count := get_tree().get_nodes_in_group("xp_orbs").size()
+	if orb_count > 0:
+		wave_announce.text = "WAVE CLEAR  +%d ORBS" % orb_count
+	else:
+		wave_announce.text = "WAVE CLEAR"
 	wave_announce.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
 	wave_announce.add_theme_font_size_override("font_size", 34)
 	wave_announce.modulate.a = 1.0
@@ -1114,12 +1119,17 @@ func _update_boss_bar() -> void:
 			else:
 				boss_pct_label.text = "%d%%" % pct
 				boss_pct_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.8))
-		# Change bar color when enraged
+		# Boss bar color shifts green→yellow→red as HP drops
 		var fill := boss_bar.get_theme_stylebox("fill") as StyleBoxFlat
 		if fill:
 			if is_enraged:
 				var pulse := (sin(GameState.time_survived * 6.0) + 1.0) * 0.5
 				fill.bg_color = Color(1.0, 0.1, 0.0, 0.9).lerp(Color(1.0, 0.4, 0.0, 0.9), pulse)
+			elif hp_ratio > 0.6:
+				fill.bg_color = Color(0.2, 1.0, 0.3, 0.9)
+			elif hp_ratio > 0.3:
+				var t := (hp_ratio - 0.3) / 0.3
+				fill.bg_color = Color(1.0, 0.8, 0.1, 0.9).lerp(Color(0.2, 1.0, 0.3, 0.9), t)
 			else:
 				fill.bg_color = Color(1.0, 0.3, 0.0, 0.9)
 		if not boss_bar_container.visible:
@@ -1137,7 +1147,7 @@ func _update_boss_bar() -> void:
 func track_boss(boss_node: Node3D) -> void:
 	_boss_ref = weakref(boss_node)
 	var type_name: String = boss_node.get("enemy_type") if boss_node.get("enemy_type") else "BOSS"
-	boss_name_label.text = type_name.to_upper()
+	boss_name_label.text = "SKELETON %s — WAVE %d" % [type_name.to_upper(), GameState.wave]
 	boss_bar.max_value = boss_node.max_hp
 	boss_bar.value = boss_node.hp
 	boss_bar_container.visible = true
@@ -1280,16 +1290,28 @@ func _on_wave_changed(wave: int) -> void:
 		_levelup_flash.color = Color(0.7, 0.0, 1.0, 0.2)
 		var pulse_tw := create_tween()
 		pulse_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.35).set_ease(Tween.EASE_OUT)
+	# Victory sting on major wave milestones for extra hype
+	if wave in [10, 15, 20, 25]:
+		Audio.play_victory_sting()
+		_show_wave_milestone(wave)
 	if wave_announce:
 		var is_boss := wave % 5 == 0
 		if is_boss:
 			wave_announce.text = ">> BOSS WAVE %d <<" % wave
 			wave_announce.add_theme_color_override("font_color", Color(1.0, 0.3, 0.0))
 			wave_announce.add_theme_font_size_override("font_size", 46)
+			# Dramatic red flash and rumble for boss wave arrival
+			GameState.request_shake(3.0)
+			if _levelup_flash:
+				_levelup_flash.color = Color(1.0, 0.1, 0.0, 0.25)
+				var boss_flash_tw := create_tween()
+				boss_flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
 		else:
 			wave_announce.text = "WAVE %d" % wave
 			wave_announce.add_theme_color_override("font_color", Color(1.0, 0.0, 0.8))
-			wave_announce.add_theme_font_size_override("font_size", 40)
+			# Scale wave announcement size with progression for building tension
+			var wave_font_size := mini(40 + wave, 50)
+			wave_announce.add_theme_font_size_override("font_size", wave_font_size)
 		wave_announce.scale = Vector2(1.3, 1.3) if is_boss else Vector2(1.0, 1.0)
 		var tw := create_tween()
 		if is_boss:
@@ -1313,6 +1335,7 @@ func _on_leveled_up(level: int) -> void:
 			level_label.text = "LV %d | %d upgrades" % [level, upgrades_count]
 		else:
 			level_label.text = "LV %d" % level
+	_xp_bar_level_pulse()
 	_show_upgrade_choices()
 
 func _show_upgrade_choices() -> void:
@@ -1474,11 +1497,30 @@ func _on_player_died() -> void:
 			for j in mini(sorted_types.size(), 5):
 				parts.append("%s: %d" % [sorted_types[j].capitalize(), sorted_counts[j]])
 			kill_breakdown = "\nKills: " + ", ".join(parts)
+		# Average time per wave for pacing insight
+		var avg_wave_time := GameState.time_survived / maxf(GameState.wave, 1.0)
+		var avg_wave_text := "%.1fs/wave" % avg_wave_time
 		# Show wave reached prominently at top, then detailed stats below
-		stats_label.text = "REACHED WAVE %d — %s\n%d Kills  |  Level %d  |  %d upgrades  |  %d:%02d survived\nDealt: %s  |  Taken: %s  |  Kills/min: %.1f  |  DPS: %s%s\nXP: %s%s%s" % [
-			GameState.wave, rating,
-			GameState.kills, GameState.level, upgrade_count, mins, secs,
-			dmg_text, dmg_taken_text, kpm, _format_damage(avg_dps), streak_text,
+		var dash_text := ""
+		if GameState.total_dashes > 0:
+			dash_text = "  |  Dashes: %d" % GameState.total_dashes
+		# Build power level summary — shows how much the player powered up
+		var power_text := ""
+		if upgrade_count > 0:
+			var power_rating := ""
+			if upgrade_count >= 15:
+				power_rating = "MAXED OUT"
+			elif upgrade_count >= 10:
+				power_rating = "FULLY LOADED"
+			elif upgrade_count >= 6:
+				power_rating = "ARMED UP"
+			else:
+				power_rating = "GEARING UP"
+			power_text = "  [%s — %d upgrades]" % [power_rating, upgrade_count]
+		stats_label.text = "REACHED WAVE %d — %s%s\n%d Kills  |  Level %d  |  %d:%02d survived  |  %s\nDealt: %s  |  Taken: %s  |  Kills/min: %.1f  |  DPS: %s%s%s\nXP: %s%s%s" % [
+			GameState.wave, rating, power_text,
+			GameState.kills, GameState.level, mins, secs, avg_wave_text,
+			dmg_text, dmg_taken_text, kpm, _format_damage(avg_dps), streak_text, dash_text,
 			xp_text, kill_breakdown, upgrades_text]
 
 func _format_damage(amount: float) -> String:
@@ -1523,9 +1565,7 @@ func _update_indicators() -> void:
 		var cd = player.get("ult_cd_timer")
 		if cd != null and cd > 0.0:
 			_ult_was_on_cd = true
-			var max_cd := 12.0 * maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
-			var pct := int((1.0 - cd / maxf(max_cd, 0.01)) * 100.0)
-			ult_indicator.text = "ULT [%d%%]" % pct
+			ult_indicator.text = "ULT [%.1fs]" % cd
 			ult_indicator.add_theme_color_override("font_color", Color(0.4, 0.3, 0.5, 0.5))
 		else:
 			ult_indicator.text = "ULT [Q] READY"
@@ -1752,3 +1792,34 @@ func _update_wave_progress() -> void:
 			_wave_progress_label.visible = false
 	else:
 		_wave_progress_label.visible = false
+func _xp_bar_level_pulse() -> void:
+	if not xp_bar:
+		return
+	var style := xp_bar.get("theme_override_styles/fill")
+	if style and style is StyleBoxFlat:
+		var orig_color: Color = style.bg_color
+		var gold := Color(1.0, 1.0, 0.6, 1.0)
+		style.bg_color = gold
+		var tw := create_tween()
+		tw.tween_property(style, "bg_color", orig_color, 0.5).set_ease(Tween.EASE_OUT)
+
+func _show_wave_milestone(wave: int) -> void:
+	var milestones := {10: "VETERAN", 15: "ELITE", 20: "LEGENDARY", 25: "MYTHIC"}
+	if wave not in milestones:
+		return
+	var title_text := "WAVE %d — %s" % [wave, milestones[wave]]
+	if wave_announce:
+		wave_announce.text = title_text
+		wave_announce.add_theme_color_override("font_color", Color(1.0, 0.85, 0.0))
+		wave_announce.add_theme_font_size_override("font_size", 52)
+		wave_announce.scale = Vector2(1.5, 1.5)
+		wave_announce.modulate.a = 1.0
+		var tw := create_tween()
+		tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		tw.tween_interval(2.5)
+		tw.tween_property(wave_announce, "modulate:a", 0.0, 0.6)
+	# Gold screen flash
+	if _levelup_flash:
+		_levelup_flash.color = Color(1.0, 0.85, 0.0, 0.25)
+		var flash_tw := create_tween()
+		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)

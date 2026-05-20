@@ -15,6 +15,7 @@ var _burst_velocity: Vector3 = Vector3.ZERO
 var _burst_timer: float = 0.0
 
 func _ready() -> void:
+	add_to_group("xp_orbs")
 	xp_value = get_meta("xp_value", 10.0)
 	_time = randf() * TAU
 	_build_visual()

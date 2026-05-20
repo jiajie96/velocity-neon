@@ -27,19 +27,19 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 ### Weapons & Upgrades (22 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Scatter Shot (pellet burst), Chain Arc, Orbital Guard
-- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies)
+- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash)
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (lifesteal)
 - **Utility**: Phase Shift (dash cooldown), Gravity Well
 
 ### Enemies (8 types)
 - **Skeleton Minion** — basic melee rusher
-- **Skeleton Warrior** — tougher, with periodic lunge attacks when in range
-- **Skeleton Mage** — ranged caster with telegraphed fire bolts, speed scales with wave
+- **Skeleton Warrior** — tougher, with periodic lunge attacks that deal contact damage + knockback on impact (lunge frequency increases in later waves, SFX + ground dust VFX on landing)
+- **Skeleton Mage** — ranged caster with telegraphed fire bolts, strafing orbit movement, speed scales with wave, retreat clamped to arena bounds
 - **Skeleton Rogue** — fast with periodic sidestep dodge (dodge frequency increases in later waves)
-- **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave
-- **Exploder** — rushes player, detonates on proximity with chain reaction potential
-- **Teleporter** — blinks to random positions near the player, unpredictable
-- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw (3-rock spread when enraged), charge (with ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP with dramatic gold flash
+- **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave, retreat clamped to arena bounds
+- **Exploder** — rushes player, detonates on proximity with chain reaction potential, lightning arc VFX between chained explosions, and pulsing danger ring showing blast radius (explosion damage scales with wave)
+- **Teleporter** — blinks to random positions near the player, unpredictable (blink frequency scales with wave)
+- **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw with ground target indicator (3-rock spread when enraged, fiery trail particles, distinct throw SFX), charge (with knockback, ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP with dramatic gold flash
 - Non-minion enemies display mini HP bars for target prioritization
 
 ### Audio
@@ -59,28 +59,33 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Ultimate ready audio cue when cooldown finishes
 - Necromancer summon SFX (eerie pulse when minions spawn)
 - Golem charge telegraph SFX (low rumble before charge)
+- Golem rock throw SFX (distinct deep whoosh, separate from slam)
 - Orbital Guard hit SFX (subtle click when orbitals damage enemies)
 - Teleporter blink SFX (high-pitched warp sound on teleport)
 - Player death SFX (dramatic low-pitched explosion on game over)
+- Warrior lunge SFX (impact grunt when warriors charge)
+- Victory sting on wave 10/15/20/25 milestones
 - Wave clear heal SFX (subtle chime when HP recovers between waves)
+- 16-channel SFX pool for rich audio layering
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
+- Floating ambient neon motes drifting across the arena floor
 - Damage vignette (red pulse at low HP), hit flash on damage taken
 - Screen flash on critical hits (orange tint)
 - Speed lines during Phase Dash (radial shader)
 - Directional screen shake with hit-stop on heavy impacts
+- Camera punch on player damage for visceral hit feedback
 - Boss entrance slow-mo with temporary camera zoom-out
+- Boss wave red flash + screenshake on wave announcement
 - Dynamic camera zoom (pulls in for close combat, out for distant threats)
 - Floating damage numbers (color-coded, scaled for big hits)
 - Enemy death VFX (expanding rings + spark bursts, type-colored)
 - Dash afterimages and ready-pulse ring indicator
 - Regeneration heal particles (green sparkles rising from player)
 - Enhanced projectile trails at high speed (denser, longer-lasting)
-- Overclock HP drain warning (pulsing red HP bar border + red HP text)
 - Necromancer bolt telegraph (purple charge glow before firing)
 - Teleporter blink-scatter death effect (ghost copies flash outward)
-- Overclock pulsing player glow (light shifts red/orange during overclock)
 - Gravity Well visible radius ring (purple pulsing ring shows slow field area)
 - Rogue dodge ghost trail (translucent afterimage on sidestep)
 - Orbital Guard hit sparks (green flash when orbitals damage enemies)
@@ -99,39 +104,58 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Ultimate ready screen flash (purple screen-edge pulse when ult comes off cooldown)
 - Title screen neon color cycle (animated title text with shifting neon colors)
 - Enemy projectiles despawn at arena boundaries (prevents stale node buildup)
+- Dash-colored damage numbers (cyan) when hitting enemies during Phase Dash
+- Scatter shot cone flash (brief orange cone showing pellet spread direction)
+- Gravity Well purple tint on slowed enemies (visual feedback for slow field)
+- Warrior lunge ground dust (red particles on landing after lunge)
+- Executioner red flash on low-HP enemy hits (makes the upgrade feel impactful)
+- Warrior lunge emission properly resets after attack completes
+- Exploder chain reaction lightning arcs between chained detonations
+- Golem rock throw fiery trail particles
+- Golem rock throw ground target indicator (red circle showing impact zone)
+- Exploder detonation radius danger ring (pulsing warning as they approach)
+- Damage i-frame visual indicator (cyan ring flash showing invulnerability window)
+- Velocity Rounds visual scaling (faster projectiles have thicker, brighter trails)
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
 - XP bar with level counter and upgrade count
-- Boss HP bar with percentage and enrage warning ("ENRAGED" + pulsing red)
+- Boss HP bar with wave-specific label ("SKELETON GOLEM — WAVE X"), color shift (green → yellow → red), and enrage warning ("ENRAGED" + pulsing red)
 - Boss defeat bonus XP announcement
 - Live DPS meter, enemy count, survival timer
 - Wave announcements with boss wave callouts
 - Kill streak and milestone announcements
 - No-damage wave indicator
 - Pause menu (resume/restart/quit)
-- Game over screen with stats (damage dealt/taken, kills/min, DPS, best kill streak), performance rating, build summary, and restart button
+- Ultimate cooldown shows seconds remaining (e.g. "ULT [3.2s]") for precise timing
+- Wave clear shows XP orb vacuum count (e.g. "WAVE CLEAR +12 ORBS")
+- Game over screen with stats (damage dealt/taken, kills/min, DPS, best kill streak, total dashes, avg time/wave), performance rating, power level summary (GEARING UP/ARMED UP/FULLY LOADED/MAXED OUT), build summary, and restart button
+- Victory sting plays on reaching wave 10, 15, 20, and 25 milestones
+- Victory sting + milestone banner plays on reaching wave 10 (VETERAN), 15 (ELITE), 20 (LEGENDARY), and 25 (MYTHIC)
+- XP bar golden glow pulse on level-up for satisfying visual feedback
 - Title screen with controls reference
 - Wave spawn progress counter (shows enemies spawned vs total)
 - Upgrade stat preview (concrete before/after values on level-up cards, including all weapon upgrades)
 - Wave countdown shows upcoming wave number and boss wave warnings
 - Batched XP pickup text (rapid collection combines into one "+X XP" label)
 - Enhanced death sequence (screen shake, slow-mo, red flash)
-- Overclock burnout has distinct game over title ("OVERCLOCK BURNOUT")
 - Mini HP bars above elite enemies for target prioritization
 
 ### Game Systems
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave)
-- Overclock HP drain no longer ruins perfect wave bonus
+- Warrior lunge cooldown scales with wave for sustained threat in late game
+- Exploder detonation damage scales with wave progression
 - Perfect wave bonus XP (no damage taken)
-- Wave clear heal bonus (small HP recovery + brief invulnerability between waves)
+- Wave clear heal bonus scales with max HP (rewards Fortify investment)
+- Brief invulnerability on wave clear (1s breathing room)
 - XP magnet pulse on level-up, wave clear, kill streaks (3+), boss defeat, and exploder chain reactions
 - XP orbs fade out after 15 seconds to prevent late-game buildup
+- Teleporter blink frequency scales with wave for increased late-game threat
+- All knockback effects properly clamped to arena boundaries
 - Enemy spawn throttle (caps at 100 alive enemies to maintain performance)
 - Post-game performance rating (RECRUIT → LEGENDARY based on waves survived)
 - Game over shows wave reached prominently with performance rating
 - Game over enemy kill breakdown (top enemy types killed, total XP earned)
-- Enemy kills tracked by type for detailed post-game stats
 - Arena boundary walls with neon glow pillars
 
 ## Running the Game
@@ -152,10 +176,10 @@ scripts/
   upgrade_system.gd  — 22 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
-  camera_rig.gd      — Camera follow, shake, zoom
+  camera_rig.gd      — Camera follow, shake, zoom, punch
   autoload/
     game_state.gd    — Global state and signals
-    audio_manager.gd — SFX pool + music system
+    audio_manager.gd — 16-channel SFX pool + music system
 assets/
   audio/sfx/         — Sound effects (OGG)
   audio/music/       — Background music tracks

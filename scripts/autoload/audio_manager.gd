@@ -1,6 +1,6 @@
 extends Node
 
-const MAX_SFX := 12
+const MAX_SFX := 16
 const MUSIC_FADE_TIME := 1.5
 
 var _music_a: AudioStreamPlayer
@@ -160,6 +160,10 @@ func sfx_golem_slam() -> void:
 func sfx_necro_summon() -> void:
 	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -8.0, 1.8)
 
+func sfx_golem_rock_throw() -> void:
+	# Distinct whoosh-thud for rock throw — deeper than slam, with a throw feel
+	play_sfx("res://assets/audio/sfx/shoot_bone_marksman.ogg", -4.0, 0.5)
+
 func sfx_golem_charge() -> void:
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", -2.0, 0.4)
 
@@ -171,6 +175,9 @@ func sfx_mage_bolt() -> void:
 
 func sfx_necro_bolt() -> void:
 	play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -10.0, randf_range(1.3, 1.5))
+
+func sfx_warrior_lunge() -> void:
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -6.0, randf_range(1.1, 1.3))
 
 func sfx_exploder_warn(pitch: float = 1.0) -> void:
 	play_sfx("res://assets/audio/sfx/ui_click.ogg", -14.0, pitch)

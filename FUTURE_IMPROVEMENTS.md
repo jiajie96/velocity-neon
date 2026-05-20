@@ -242,6 +242,46 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] All weapon upgrades show concrete stat previews
 - [x] XP orb batch state properly resets between runs
 - [x] Longer first-wave startup delay (1.2s breathing room)
+- [x] Warrior lunge SFX (impact grunt on charge)
+- [x] Warrior lunge ground dust VFX (red particles on landing)
+- [x] Dash-colored damage numbers (cyan for dash hits)
+- [x] Boss HP bar color shift (green→yellow→red as HP drops)
+- [x] Ultimate cooldown shows seconds remaining instead of percentage
+- [x] Gravity Well purple tint on slowed enemies
+- [x] Scatter shot cone flash VFX (brief orange cone on fire)
+- [x] Average time per wave shown on game over stats
+- [x] Wave clear shows XP orb vacuum count
+- [x] Victory sting on wave 10/15/20/25 milestones
+- [x] Camera punch on player damage (directional camera kick on hit)
+- [x] Warrior lunge cooldown scales with wave (faster lunges in late game)
+- [x] Warrior lunge emission properly resets after attack
+- [x] Executioner red flash on low-HP kills (distinct from crit flash)
+- [x] Floating ambient neon motes across arena floor
+- [x] 16-channel SFX pool (up from 12 for richer audio layering)
+- [x] Dash count shown on game over screen
+- [x] Exploder detonation damage scales with wave progression
+- [x] Wave clear heal scales with max HP (rewards Fortify investment)
+- [x] Mage retreat position clamped to arena bounds (prevents OOB drift)
+- [x] Necromancer retreat position clamped to arena bounds
+- [x] Golem slam knockback clamps player inside arena walls
+- [x] Golem charge knockback with arena boundary clamping
+- [x] Warrior lunge deals contact damage with knockback on hit
+- [x] Teleporter blink frequency scales with wave progression
+- [x] Exploder chain reaction lightning arc VFX between chained explosions
+- [x] Golem rock throw fiery trail particles
+- [x] XP bar golden glow pulse on level-up
+- [x] Wave milestone banners at waves 10/15/20/25 (VETERAN/ELITE/LEGENDARY/MYTHIC)
+- [x] Warrior lunge contact damage with knockback on impact
+- [x] Exploder detonation radius danger ring (pulsing visual telegraph)
+- [x] Mage strafing orbit movement (circles player instead of standing idle)
+- [x] Boss HP bar shows wave-specific label ("SKELETON GOLEM — WAVE X")
+- [x] Boss wave dramatic red flash + screenshake on announcement
+- [x] Velocity Rounds visual scaling (thicker/brighter trails at high speed)
+- [x] Distinct golem rock throw SFX (separate from slam sound)
+- [x] Damage i-frame visual indicator (cyan ring flash on hit)
+- [x] Golem rock throw ground target indicator (red circle where rock is aimed)
+- [x] Wave announcement text scales with wave progression
+- [x] Game over power level summary (GEARING UP/ARMED UP/FULLY LOADED/MAXED OUT)
 
 ---
 

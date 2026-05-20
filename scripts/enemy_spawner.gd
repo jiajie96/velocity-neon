@@ -56,8 +56,8 @@ func _process(delta: float) -> void:
 			_wave_timer = WAVE_INTERVAL
 			# Pull all remaining XP orbs to player on wave clear
 			GameState.xp_magnet_pulse.emit()
-			# Small heal on wave clear to reward survival
-			var wave_heal := minf(5.0 + GameState.wave * 0.5, 15.0)
+			# Heal on wave clear scales with max HP so Fortify stacks stay relevant
+			var wave_heal := maxf(GameState.max_hp * 0.08, minf(5.0 + GameState.wave * 0.5, 15.0))
 			if GameState.hp < GameState.max_hp:
 				GameState.heal(wave_heal)
 				Audio.sfx_wave_heal()
