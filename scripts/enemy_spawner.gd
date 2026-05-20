@@ -29,7 +29,7 @@ func _on_wave_changed(wave: int) -> void:
 		_spawn_boss(wave)
 
 func _process(delta: float) -> void:
-	if GameState.game_over or GameState.paused_for_upgrade:
+	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
 		return
 
 	if not _wave_active:
@@ -182,13 +182,13 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 	if not container:
 		return
 	var warn_colors := {
-		"minion": Color(1.0, 0.0, 0.6),
-		"warrior": Color(0.9, 0.0, 0.3),
-		"mage": Color(0.7, 0.0, 1.0),
-		"rogue": Color(0.0, 1.0, 0.5),
-		"necromancer": Color(0.6, 0.0, 0.9),
-		"exploder": Color(1.0, 0.8, 0.0),
-		"teleporter": Color(0.0, 0.8, 1.0),
+		"minion": Color(0.85, 0.08, 0.35),
+		"warrior": Color(0.9, 0.15, 0.15),
+		"mage": Color(0.55, 0.1, 0.8),
+		"rogue": Color(0.1, 0.75, 0.4),
+		"necromancer": Color(0.45, 0.05, 0.7),
+		"exploder": Color(0.9, 0.6, 0.05),
+		"teleporter": Color(0.1, 0.6, 0.8),
 	}
 	# Dangerous enemies get bigger, brighter warnings so players can react
 	var threat_scale := {
@@ -209,10 +209,10 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 	cyl.height = 0.02
 	ring.mesh = cyl
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(color.r, color.g, color.b, 0.4 + scale_factor * 0.1)
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.25 + scale_factor * 0.08)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 3.0 + scale_factor * 2.0
+	mat.emission_energy_multiplier = 1.5 + scale_factor * 1.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring.material_override = mat
 	ring.position = pos

@@ -47,6 +47,14 @@ var _shield_ring: MeshInstance3D
 var _shield_ring_mat: StandardMaterial3D
 var _shield_pulse_t: float = 0.0
 
+# Procedural animation
+var _anim_bob_t: float = 0.0
+var _anim_prev_pos: Vector3 = Vector3.ZERO
+var _anim_velocity: Vector3 = Vector3.ZERO
+var _anim_tilt_x: float = 0.0
+var _anim_tilt_z: float = 0.0
+var _anim_squash: float = 1.0
+
 func _ready() -> void:
 	add_to_group("player_node")
 	_build_visual()
@@ -119,9 +127,9 @@ func _build_hurtbox() -> void:
 func _build_light() -> void:
 	var light := OmniLight3D.new()
 	light.name = "PlayerGlow"
-	light.light_color = Color(0.0, 0.6, 0.9)
-	light.light_energy = 0.6
-	light.omni_range = 5.0
+	light.light_color = Color(0.0, 0.5, 0.75)
+	light.light_energy = 0.4
+	light.omni_range = 4.0
 	light.omni_attenuation = 2.5
 	light.position.y = 1.5
 	add_child(light)
@@ -199,6 +207,44 @@ func _update_shield_ring(delta: float) -> void:
 		_shield_ring.scale = Vector3(ring_scale, 1.0, ring_scale)
 	else:
 		_shield_ring.visible = false
+
+func _update_procedural_anim(delta: float) -> void:
+	var model: Node3D = get_node_or_null("Model") as Node3D
+	var mesh: Node3D = get_node_or_null("Mesh") as Node3D
+	var target: Node3D = model if model else mesh
+	if not target:
+		return
+	# Compute velocity from position change
+	_anim_velocity = (global_position - _anim_prev_pos) / maxf(delta, 0.001)
+	_anim_prev_pos = global_position
+	var move_speed: float = Vector2(_anim_velocity.x, _anim_velocity.z).length()
+	# Vertical bobbing — faster when moving
+	var bob_rate: float = 6.0 if move_speed < 1.0 else 10.0 + move_speed * 0.3
+	var bob_amp: float = 0.03 if move_speed < 1.0 else 0.06
+	_anim_bob_t += delta * bob_rate
+	var bob_y: float = sin(_anim_bob_t) * bob_amp
+	# Tilt into movement direction (lean forward)
+	var target_tilt_x: float = clampf(_anim_velocity.z * -0.015, -0.2, 0.2)
+	var target_tilt_z: float = clampf(_anim_velocity.x * 0.015, -0.2, 0.2)
+	_anim_tilt_x = lerpf(_anim_tilt_x, target_tilt_x, 8.0 * delta)
+	_anim_tilt_z = lerpf(_anim_tilt_z, target_tilt_z, 8.0 * delta)
+	# Squash & stretch based on speed changes
+	var target_squash: float = 1.0
+	if is_dashing:
+		target_squash = 0.8  # Flatten during dash
+	elif move_speed > 8.0:
+		target_squash = 0.92
+	_anim_squash = lerpf(_anim_squash, target_squash, 10.0 * delta)
+	# Apply to model — offset from base position
+	if model:
+		model.position.y = bob_y
+		# Keep rotation.y from the facing logic, add tilt
+		var base_rot_y: float = model.rotation.y
+		model.rotation = Vector3(_anim_tilt_x, base_rot_y, _anim_tilt_z)
+		model.scale = Vector3(1.0 / _anim_squash, _anim_squash, 1.0 / _anim_squash) * 0.6
+	elif mesh:
+		mesh.position.y = 0.65 + bob_y
+		mesh.rotation = Vector3(_anim_tilt_x, 0.0, _anim_tilt_z)
 
 func _update_gravity_ring() -> void:
 	if not _gravity_ring or not _gravity_ring_mat:
@@ -310,6 +356,7 @@ func _process(delta: float) -> void:
 	_update_regen_vfx(delta)
 	_update_damage_flash(delta)
 	_update_shield_ring(delta)
+	_update_procedural_anim(delta)
 
 func _move(delta: float) -> void:
 	if is_dashing:
@@ -498,10 +545,10 @@ func _spawn_muzzle_flash(dir: Vector3) -> void:
 	sphere.radius = 0.15
 	flash.mesh = sphere
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.3, 0.95, 1.0, 0.9)
+	mat.albedo_color = Color(0.2, 0.7, 0.9, 0.6)
 	mat.emission_enabled = true
-	mat.emission = Color(0.3, 0.9, 1.0)
-	mat.emission_energy_multiplier = 10.0
+	mat.emission = Color(0.2, 0.65, 0.85)
+	mat.emission_energy_multiplier = 4.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	flash.material_override = mat
 	flash.position = global_position + Vector3(0, 0.8, 0) + dir * 0.6

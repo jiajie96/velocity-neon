@@ -19,9 +19,9 @@ var _pierced_enemies: Array[int] = []
 var _bounce_count: int = 0
 
 var _colors := {
-	"pulse": Color(0.3, 0.9, 1.0),
-	"scatter": Color(1.0, 0.5, 0.0),
-	"chain": Color(0.4, 0.9, 1.0),
+	"pulse": Color(0.2, 0.7, 0.9),
+	"scatter": Color(0.9, 0.45, 0.1),
+	"chain": Color(0.3, 0.7, 0.9),
 }
 
 func _ready() -> void:
@@ -69,7 +69,7 @@ func _build_visual() -> void:
 	mat.albedo_color = color
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = 8.0 if weapon_type == "pulse" else 5.0
+	mat.emission_energy_multiplier = 4.0 if weapon_type == "pulse" else 3.0
 	mesh_inst.material_override = mat
 	add_child(mesh_inst)
 
@@ -78,8 +78,8 @@ func _build_visual() -> void:
 		light.light_color = color
 		# Faster projectiles glow brighter for visual feedback on Velocity Rounds
 		var spd_glow := clampf(speed / 38.0, 1.0, 2.0)
-		light.light_energy = (1.2 if weapon_type == "pulse" else 1.5) * spd_glow
-		light.omni_range = 2.5 + (spd_glow - 1.0) * 1.0
+		light.light_energy = (0.6 if weapon_type == "pulse" else 0.8) * spd_glow
+		light.omni_range = 1.8 + (spd_glow - 1.0) * 0.5
 		light.omni_attenuation = 2.0
 		add_child(light)
 
@@ -120,7 +120,7 @@ func _spawn_trail_particle(color: Color) -> void:
 	mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = (4.0 if weapon_type == "pulse" else 3.0) * speed_factor
+	mat.emission_energy_multiplier = (2.5 if weapon_type == "pulse" else 2.0) * speed_factor
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	p.material_override = mat
 	p.position = global_position
@@ -257,10 +257,10 @@ func _spawn_chain_arc(from: Vector3, to: Vector3) -> void:
 	cyl.height = dist
 	arc.mesh = cyl
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.4, 0.9, 1.0, 0.9)
+	mat.albedo_color = Color(0.3, 0.7, 0.9, 0.6)
 	mat.emission_enabled = true
-	mat.emission = Color(0.4, 0.9, 1.0)
-	mat.emission_energy_multiplier = 6.0
+	mat.emission = Color(0.3, 0.7, 0.9)
+	mat.emission_energy_multiplier = 3.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	arc.material_override = mat
 	arc.position = mid
@@ -285,10 +285,10 @@ func _spawn_shatter_fragments() -> void:
 		sphere.radius = 0.08
 		mesh_inst.mesh = sphere
 		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(1.0, 0.6, 0.0, 0.9)
+		mat.albedo_color = Color(0.9, 0.5, 0.1, 0.6)
 		mat.emission_enabled = true
-		mat.emission = Color(1.0, 0.5, 0.0)
-		mat.emission_energy_multiplier = 3.0
+		mat.emission = Color(0.9, 0.4, 0.1)
+		mat.emission_energy_multiplier = 2.0
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mesh_inst.material_override = mat
 		frag.add_child(mesh_inst)
@@ -329,10 +329,10 @@ func _hit_vfx() -> void:
 	cyl.height = 0.02
 	ring.mesh = cyl
 	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(color.r, color.g, color.b, 0.8)
+	ring_mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
 	ring_mat.emission_enabled = true
 	ring_mat.emission = color
-	ring_mat.emission_energy_multiplier = 6.0
+	ring_mat.emission_energy_multiplier = 3.0
 	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring.material_override = ring_mat
 	ring.position = global_position
@@ -352,10 +352,10 @@ func _hit_vfx() -> void:
 		ss.radius = 0.05
 		spark.mesh = ss
 		var smat := StandardMaterial3D.new()
-		smat.albedo_color = Color(color.r, color.g, color.b, 0.9)
+		smat.albedo_color = Color(color.r, color.g, color.b, 0.6)
 		smat.emission_enabled = true
 		smat.emission = color
-		smat.emission_energy_multiplier = 5.0
+		smat.emission_energy_multiplier = 2.5
 		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		spark.material_override = smat
 		spark.position = global_position + Vector3(0, 0.5, 0)

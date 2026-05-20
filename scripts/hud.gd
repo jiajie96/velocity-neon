@@ -687,7 +687,7 @@ func _build_hit_flash() -> void:
 func _trigger_hit_flash() -> void:
 	if not _hit_flash:
 		return
-	_hit_flash.color = Color(1.0, 0.05, 0.05, 0.3)
+	_hit_flash.color = Color(0.9, 0.05, 0.05, 0.15)
 	var tw := create_tween()
 	tw.tween_property(_hit_flash, "color:a", 0.0, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 
@@ -943,25 +943,28 @@ func _on_kill_streak(count: int) -> void:
 	if count < 2:
 		return
 	_streak_label.text = text
-	_streak_label.modulate.a = 1.0
-	var font_size := mini(30 + (count - 2) * 4, 48)
+	_streak_label.modulate.a = 0.0
+	var font_size := mini(22 + (count - 2) * 3, 36)
 	_streak_label.add_theme_font_size_override("font_size", font_size)
+	_streak_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3, 0.9))
 	var tw := create_tween()
-	tw.tween_property(_streak_label, "modulate:a", 1.0, 0.05)
-	tw.tween_interval(0.8)
-	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4)
+	tw.tween_property(_streak_label, "modulate:a", 0.9, 0.1).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.6)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 
 func _on_perfect_wave(bonus_xp: float) -> void:
 	if not wave_announce:
 		return
-	wave_announce.text = "PERFECT WAVE! +%d XP" % int(bonus_xp)
-	wave_announce.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
-	wave_announce.modulate.a = 1.0
-	wave_announce.scale = Vector2(1.2, 1.2)
+	wave_announce.text = "PERFECT WAVE  +%d XP" % int(bonus_xp)
+	wave_announce.add_theme_color_override("font_color", Color(0.2, 0.8, 0.4, 0.9))
+	wave_announce.add_theme_font_size_override("font_size", 28)
+	wave_announce.modulate.a = 0.0
+	wave_announce.scale = Vector2(1.05, 1.05)
 	var tw := create_tween()
-	tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(1.5)
-	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+	tw.tween_property(wave_announce, "modulate:a", 0.9, 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.2)
+	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 
 func _on_wave_cleared() -> void:
 	if not wave_announce:
@@ -972,50 +975,50 @@ func _on_wave_cleared() -> void:
 		wave_announce.text = "WAVE CLEAR  +%d ORBS" % orb_count
 	else:
 		wave_announce.text = "WAVE CLEAR"
-	wave_announce.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
-	wave_announce.add_theme_font_size_override("font_size", 34)
-	wave_announce.modulate.a = 1.0
-	wave_announce.scale = Vector2(1.1, 1.1)
+	wave_announce.add_theme_color_override("font_color", Color(0.3, 0.7, 0.85, 0.85))
+	wave_announce.add_theme_font_size_override("font_size", 26)
+	wave_announce.modulate.a = 0.0
+	wave_announce.scale = Vector2(1.0, 1.0)
 	var tw := create_tween()
-	tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(1.2)
-	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.4)
+	tw.tween_property(wave_announce, "modulate:a", 0.85, 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.0)
+	tw.tween_property(wave_announce, "modulate:a", 0.0, 0.4).set_ease(Tween.EASE_IN)
 
 func _on_kill_milestone(count: int) -> void:
 	if not _streak_label:
 		return
-	_streak_label.text = "%d KILLS!" % count
-	_streak_label.add_theme_font_size_override("font_size", 36)
-	_streak_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2, 1.0))
-	_streak_label.modulate.a = 1.0
+	_streak_label.text = "%d KILLS" % count
+	_streak_label.add_theme_font_size_override("font_size", 26)
+	_streak_label.add_theme_color_override("font_color", Color(0.85, 0.75, 0.2, 0.85))
+	_streak_label.modulate.a = 0.0
 	var tw := create_tween()
-	tw.tween_property(_streak_label, "modulate:a", 1.0, 0.05)
-	tw.tween_interval(1.2)
-	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5)
+	tw.tween_property(_streak_label, "modulate:a", 0.85, 0.12).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(1.0)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 
 func _on_vampire_heal() -> void:
 	# Brief green flash on the player glow area for lifesteal feedback
 	if not _levelup_flash:
 		return
-	_levelup_flash.color = Color(0.1, 1.0, 0.3, 0.15)
+	_levelup_flash.color = Color(0.1, 0.8, 0.3, 0.06)
 	var tw := create_tween()
-	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.2).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_crit_landed() -> void:
 	# Brief orange screen flash for crit feedback
 	if not _levelup_flash:
 		return
-	_levelup_flash.color = Color(1.0, 0.6, 0.0, 0.18)
+	_levelup_flash.color = Color(1.0, 0.6, 0.0, 0.08)
 	var tw := create_tween()
-	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.15).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.12).set_ease(Tween.EASE_OUT)
 
 func _on_golem_enraged() -> void:
 	if not wave_announce:
 		return
 	# Dramatic enrage announcement
-	wave_announce.text = "BOSS ENRAGED!"
-	wave_announce.add_theme_color_override("font_color", Color(1.0, 0.1, 0.0))
-	wave_announce.add_theme_font_size_override("font_size", 38)
+	wave_announce.text = "BOSS ENRAGED"
+	wave_announce.add_theme_color_override("font_color", Color(0.9, 0.15, 0.05, 0.9))
+	wave_announce.add_theme_font_size_override("font_size", 30)
 	wave_announce.modulate.a = 1.0
 	wave_announce.scale = Vector2(1.4, 1.4)
 	# Red screen flash for danger
@@ -1287,42 +1290,39 @@ func _on_wave_changed(wave: int) -> void:
 		wave_label.text = "WAVE %d" % wave
 	# Subtle purple screen pulse on wave start for atmosphere
 	if _levelup_flash and wave > 1:
-		_levelup_flash.color = Color(0.7, 0.0, 1.0, 0.2)
+		_levelup_flash.color = Color(0.5, 0.0, 0.7, 0.1)
 		var pulse_tw := create_tween()
-		pulse_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.35).set_ease(Tween.EASE_OUT)
-	# Victory sting on major wave milestones for extra hype
+		pulse_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.3).set_ease(Tween.EASE_OUT)
+	# Victory sting on major wave milestones
 	if wave in [10, 15, 20, 25]:
 		Audio.play_victory_sting()
 		_show_wave_milestone(wave)
 	if wave_announce:
 		var is_boss := wave % 5 == 0
 		if is_boss:
-			wave_announce.text = ">> BOSS WAVE %d <<" % wave
-			wave_announce.add_theme_color_override("font_color", Color(1.0, 0.3, 0.0))
-			wave_announce.add_theme_font_size_override("font_size", 46)
-			# Dramatic red flash and rumble for boss wave arrival
-			GameState.request_shake(3.0)
+			wave_announce.text = "BOSS WAVE %d" % wave
+			wave_announce.add_theme_color_override("font_color", Color(0.9, 0.25, 0.05, 0.9))
+			wave_announce.add_theme_font_size_override("font_size", 34)
+			GameState.request_shake(2.0)
 			if _levelup_flash:
-				_levelup_flash.color = Color(1.0, 0.1, 0.0, 0.25)
+				_levelup_flash.color = Color(0.9, 0.1, 0.0, 0.12)
 				var boss_flash_tw := create_tween()
-				boss_flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.5).set_ease(Tween.EASE_OUT)
+				boss_flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)
 		else:
 			wave_announce.text = "WAVE %d" % wave
-			wave_announce.add_theme_color_override("font_color", Color(1.0, 0.0, 0.8))
-			# Scale wave announcement size with progression for building tension
-			var wave_font_size := mini(40 + wave, 50)
-			wave_announce.add_theme_font_size_override("font_size", wave_font_size)
-		wave_announce.scale = Vector2(1.3, 1.3) if is_boss else Vector2(1.0, 1.0)
+			wave_announce.add_theme_color_override("font_color", Color(0.7, 0.55, 0.85, 0.85))
+			wave_announce.add_theme_font_size_override("font_size", 28)
+		wave_announce.modulate.a = 0.0
+		wave_announce.scale = Vector2(1.0, 1.0)
 		var tw := create_tween()
 		if is_boss:
-			tw.tween_property(wave_announce, "modulate:a", 1.0, 0.15)
-			tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-			tw.tween_interval(2.0)
-			tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+			tw.tween_property(wave_announce, "modulate:a", 0.9, 0.2).set_ease(Tween.EASE_OUT)
+			tw.tween_interval(1.8)
+			tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 		else:
-			tw.tween_property(wave_announce, "modulate:a", 1.0, 0.3)
-			tw.tween_interval(1.5)
-			tw.tween_property(wave_announce, "modulate:a", 0.0, 0.5)
+			tw.tween_property(wave_announce, "modulate:a", 0.85, 0.2).set_ease(Tween.EASE_OUT)
+			tw.tween_interval(1.2)
+			tw.tween_property(wave_announce, "modulate:a", 0.0, 0.4).set_ease(Tween.EASE_IN)
 
 func _on_kills_changed(kills: int) -> void:
 	if kills_label:
@@ -1810,16 +1810,16 @@ func _show_wave_milestone(wave: int) -> void:
 	var title_text := "WAVE %d — %s" % [wave, milestones[wave]]
 	if wave_announce:
 		wave_announce.text = title_text
-		wave_announce.add_theme_color_override("font_color", Color(1.0, 0.85, 0.0))
-		wave_announce.add_theme_font_size_override("font_size", 52)
-		wave_announce.scale = Vector2(1.5, 1.5)
-		wave_announce.modulate.a = 1.0
+		wave_announce.add_theme_color_override("font_color", Color(0.9, 0.75, 0.1, 0.9))
+		wave_announce.add_theme_font_size_override("font_size", 36)
+		wave_announce.scale = Vector2(1.0, 1.0)
+		wave_announce.modulate.a = 0.0
 		var tw := create_tween()
-		tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-		tw.tween_interval(2.5)
-		tw.tween_property(wave_announce, "modulate:a", 0.0, 0.6)
-	# Gold screen flash
+		tw.tween_property(wave_announce, "modulate:a", 0.9, 0.25).set_ease(Tween.EASE_OUT)
+		tw.tween_interval(2.0)
+		tw.tween_property(wave_announce, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN)
+	# Subtle gold screen flash
 	if _levelup_flash:
-		_levelup_flash.color = Color(1.0, 0.85, 0.0, 0.25)
+		_levelup_flash.color = Color(0.9, 0.75, 0.1, 0.1)
 		var flash_tw := create_tween()
-		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)
+		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.3).set_ease(Tween.EASE_OUT)

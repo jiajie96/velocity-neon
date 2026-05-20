@@ -40,12 +40,12 @@ func _build_visual() -> void:
 
 	# High-value orbs tint toward gold — kept dim to reduce screen flash
 	var value_ratio := clampf((xp_value - 8.0) / 72.0, 0.0, 1.0)
-	var base_color := Color(0.15, 0.7, 0.25).lerp(Color(0.8, 0.7, 0.15), value_ratio)
+	var base_color := Color(0.1, 0.55, 0.25).lerp(Color(0.7, 0.6, 0.15), value_ratio)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = base_color
 	mat.emission_enabled = true
-	mat.emission = base_color * 0.4
-	mat.emission_energy_multiplier = 1.0 + value_ratio * 1.0
+	mat.emission = base_color * 0.3
+	mat.emission_energy_multiplier = 0.8 + value_ratio * 0.8
 	mesh_inst.material_override = mat
 	mesh_inst.position.y = 0.5
 	add_child(mesh_inst)
@@ -54,8 +54,8 @@ func _build_visual() -> void:
 	if value_ratio > 0.5:
 		var light := OmniLight3D.new()
 		light.light_color = base_color
-		light.light_energy = 0.3
-		light.omni_range = 1.5
+		light.light_energy = 0.2
+		light.omni_range = 1.2
 		light.omni_attenuation = 2.0
 		light.position.y = 0.5
 		add_child(light)
@@ -160,10 +160,10 @@ func _spawn_collect_burst() -> void:
 	cyl.height = 0.02
 	ring.mesh = cyl
 	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(0.2, 1.0, 0.3, 0.7)
+	ring_mat.albedo_color = Color(0.15, 0.7, 0.25, 0.4)
 	ring_mat.emission_enabled = true
-	ring_mat.emission = Color(0.1, 1.0, 0.2)
-	ring_mat.emission_energy_multiplier = 5.0
+	ring_mat.emission = Color(0.1, 0.6, 0.2)
+	ring_mat.emission_energy_multiplier = 2.5
 	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring.material_override = ring_mat
 	ring.position = global_position
@@ -182,10 +182,10 @@ func _spawn_collect_burst() -> void:
 		ss.radius = 0.04
 		spark.mesh = ss
 		var smat := StandardMaterial3D.new()
-		smat.albedo_color = Color(0.3, 1.0, 0.4, 0.9)
+		smat.albedo_color = Color(0.2, 0.7, 0.3, 0.5)
 		smat.emission_enabled = true
-		smat.emission = Color(0.2, 1.0, 0.3)
-		smat.emission_energy_multiplier = 4.0
+		smat.emission = Color(0.15, 0.6, 0.25)
+		smat.emission_energy_multiplier = 2.0
 		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		spark.material_override = smat
 		spark.position = global_position + Vector3(0, 0.4, 0)
@@ -224,8 +224,8 @@ func _batch_xp_text() -> void:
 		return
 	var label := Label.new()
 	label.text = "+%d" % int(_batch_xp)
-	label.add_theme_font_size_override("font_size", 16)
-	label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4, 0.9))
+	label.add_theme_font_size_override("font_size", 13)
+	label.add_theme_color_override("font_color", Color(0.25, 0.8, 0.35, 0.7))
 	label.position = screen_pos + Vector2(-15, 0)
 	label.z_index = 90
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -239,9 +239,9 @@ static func _flush_batch_label() -> void:
 		_batch_label = null
 		# Scale up for big pickups
 		if _batch_xp > 30:
-			lbl.add_theme_font_size_override("font_size", 20)
+			lbl.add_theme_font_size_override("font_size", 16)
 		if _batch_xp > 80:
-			lbl.add_theme_font_size_override("font_size", 24)
+			lbl.add_theme_font_size_override("font_size", 19)
 		# Satisfying SFX on big batch collection
 		if _batch_xp > 40:
 			Audio.sfx_big_xp_batch()

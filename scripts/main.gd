@@ -34,19 +34,19 @@ func _build_environment() -> void:
 	we.name = "WorldEnv"
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.02, 0.01, 0.05)
+	env.background_color = Color(0.03, 0.02, 0.06)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.15, 0.1, 0.25)
-	env.ambient_light_energy = 0.4
+	env.ambient_light_color = Color(0.1, 0.08, 0.18)
+	env.ambient_light_energy = 0.35
 	env.glow_enabled = true
-	env.glow_intensity = 1.0
-	env.glow_strength = 1.1
-	env.glow_bloom = 0.25
+	env.glow_intensity = 0.8
+	env.glow_strength = 0.9
+	env.glow_bloom = 0.15
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
-	env.glow_hdr_threshold = 0.7
-	env.glow_hdr_scale = 2.0
+	env.glow_hdr_threshold = 0.9
+	env.glow_hdr_scale = 1.5
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.1
+	env.tonemap_exposure = 1.0
 	we.environment = env
 	add_child(we)
 
@@ -62,9 +62,9 @@ func _build_ground() -> void:
 	if shader:
 		var mat := ShaderMaterial.new()
 		mat.shader = shader
-		mat.set_shader_parameter("grid_color", Color(0.0, 0.7, 1.0, 0.25))
-		mat.set_shader_parameter("accent_color", Color(1.0, 0.0, 0.7, 0.12))
-		mat.set_shader_parameter("bg_color", Color(0.015, 0.008, 0.04, 1.0))
+		mat.set_shader_parameter("grid_color", Color(0.0, 0.55, 0.8, 0.15))
+		mat.set_shader_parameter("accent_color", Color(0.8, 0.0, 0.5, 0.06))
+		mat.set_shader_parameter("bg_color", Color(0.02, 0.012, 0.04, 1.0))
 		mat.set_shader_parameter("grid_spacing", 2.0)
 		ground.material_override = mat
 	else:
@@ -76,10 +76,10 @@ func _build_ground() -> void:
 func _build_arena_walls() -> void:
 	# Neon boundary walls at arena edges so players can see the play area
 	var wall_mat := StandardMaterial3D.new()
-	wall_mat.albedo_color = Color(1.0, 0.0, 0.7, 0.15)
+	wall_mat.albedo_color = Color(0.7, 0.0, 0.5, 0.08)
 	wall_mat.emission_enabled = true
-	wall_mat.emission = Color(1.0, 0.0, 0.6)
-	wall_mat.emission_energy_multiplier = 2.0
+	wall_mat.emission = Color(0.6, 0.0, 0.4)
+	wall_mat.emission_energy_multiplier = 1.2
 	wall_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	wall_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 
@@ -111,20 +111,20 @@ func _build_arena_walls() -> void:
 		cyl.height = 4.0
 		pillar.mesh = cyl
 		var pmat := StandardMaterial3D.new()
-		pmat.albedo_color = Color(0.0, 0.9, 1.0, 0.7)
+		pmat.albedo_color = Color(0.0, 0.6, 0.8, 0.5)
 		pmat.emission_enabled = true
-		pmat.emission = Color(0.0, 0.8, 1.0)
-		pmat.emission_energy_multiplier = 4.0
+		pmat.emission = Color(0.0, 0.5, 0.7)
+		pmat.emission_energy_multiplier = 2.0
 		pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		pillar.material_override = pmat
 		pillar.position = c + Vector3(0, 2, 0)
 		add_child(pillar)
 		# Corner light
 		var light := OmniLight3D.new()
-		light.light_color = Color(0.0, 0.8, 1.0)
-		light.light_energy = 1.5
-		light.omni_range = 5.0
-		light.omni_attenuation = 1.5
+		light.light_color = Color(0.0, 0.5, 0.7)
+		light.light_energy = 0.8
+		light.omni_range = 4.0
+		light.omni_attenuation = 2.0
 		light.position = c + Vector3(0, 2, 0)
 		add_child(light)
 
@@ -206,12 +206,13 @@ func _spawn_ambient_mote() -> void:
 	sphere.radius = 0.03
 	mote.mesh = sphere
 	var mat := StandardMaterial3D.new()
-	var hue := randf()
-	var mote_color := Color.from_hsv(hue, 0.8, 1.0, 0.4)
+	# Restrict motes to the two accent hues (cyan/magenta) for cohesion
+	var hue := 0.52 + randf() * 0.08 if randf() > 0.5 else 0.85 + randf() * 0.06
+	var mote_color := Color.from_hsv(hue, 0.5, 0.7, 0.25)
 	mat.albedo_color = mote_color
 	mat.emission_enabled = true
 	mat.emission = mote_color
-	mat.emission_energy_multiplier = 2.0
+	mat.emission_energy_multiplier = 1.2
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mote.material_override = mat
 	mote.position = mote_pos

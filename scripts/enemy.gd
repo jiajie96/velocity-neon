@@ -88,11 +88,22 @@ var _hp_bar: MeshInstance3D
 var _hp_bar_mat: StandardMaterial3D
 var _hp_bar_bg: MeshInstance3D
 
+# Procedural animation
+var _anim_bob_t: float = 0.0
+var _anim_prev_pos: Vector3 = Vector3.ZERO
+var _anim_velocity: Vector3 = Vector3.ZERO
+var _anim_tilt_x: float = 0.0
+var _anim_tilt_z: float = 0.0
+var _anim_squash: float = 1.0
+var _anim_base_scale: float = 0.5
+
 func _ready() -> void:
 	add_to_group("enemies")
 	var meta_type: String = get_meta("_enemy_type", "minion")
 	var meta_wave: int = get_meta("_enemy_wave", 1)
 	setup(meta_type, meta_wave)
+	_anim_prev_pos = global_position
+	_anim_bob_t = randf() * TAU  # Randomize phase so enemies don't bob in sync
 	_build_visual()
 	_build_hitbox()
 	# Mini HP bars above non-minion enemies for target prioritization
@@ -111,14 +122,14 @@ func _build_visual() -> void:
 		"golem": "res://assets/models/Skeleton_Golem.glb",
 	}
 	var neon_colors := {
-		"minion": Color(1.0, 0.0, 0.6),
-		"warrior": Color(0.9, 0.0, 0.3),
-		"mage": Color(0.7, 0.0, 1.0),
-		"rogue": Color(0.0, 1.0, 0.5),
-		"necromancer": Color(0.6, 0.0, 0.9),
-		"exploder": Color(1.0, 0.8, 0.0),
-		"teleporter": Color(0.0, 0.8, 1.0),
-		"golem": Color(1.0, 0.3, 0.0),
+		"minion": Color(0.85, 0.08, 0.35),
+		"warrior": Color(0.9, 0.15, 0.15),
+		"mage": Color(0.55, 0.1, 0.8),
+		"rogue": Color(0.1, 0.75, 0.4),
+		"necromancer": Color(0.45, 0.05, 0.7),
+		"exploder": Color(0.9, 0.6, 0.05),
+		"teleporter": Color(0.1, 0.6, 0.8),
+		"golem": Color(0.9, 0.25, 0.05),
 	}
 	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
 	var model_path: String = model_map.get(enemy_type, "")
@@ -129,6 +140,7 @@ func _build_visual() -> void:
 			var inst := scene.instantiate()
 			inst.name = "Model"
 			var s := 0.5 if not is_boss else 1.0
+			_anim_base_scale = s
 			inst.scale = Vector3(s, s, s)
 			add_child(inst)
 			_apply_neon(inst, neon_color)
@@ -166,9 +178,10 @@ func _apply_neon(node: Node, color: Color) -> void:
 			var base_mat = mi.mesh.surface_get_material(i) if mi.mesh else null
 			if base_mat and base_mat is StandardMaterial3D:
 				var m: StandardMaterial3D = base_mat.duplicate()
+				m.albedo_color = m.albedo_color.darkened(0.2)
 				m.emission_enabled = true
-				m.emission = color * 0.4
-				m.emission_energy_multiplier = 1.8
+				m.emission = color * 0.25
+				m.emission_energy_multiplier = 1.2
 				mi.set_surface_override_material(i, m)
 				if _mat == null:
 					_mat = m
@@ -180,9 +193,9 @@ func _add_glow_light(color: Color) -> void:
 	var light := OmniLight3D.new()
 	light.name = "EnemyGlow"
 	light.light_color = color
-	light.light_energy = 1.0 if not is_boss else 3.0
-	light.omni_range = 3.0 if not is_boss else 6.0
-	light.omni_attenuation = 2.0
+	light.light_energy = 0.5 if not is_boss else 1.5
+	light.omni_range = 2.0 if not is_boss else 4.5
+	light.omni_attenuation = 2.5
 	light.position.y = 1.0
 	add_child(light)
 
@@ -216,6 +229,51 @@ func _build_hp_bar() -> void:
 	_hp_bar.material_override = _hp_bar_mat
 	_hp_bar.position = Vector3(0, 1.8 if not is_boss else 3.2, 0)
 	add_child(_hp_bar)
+
+func _update_procedural_anim(delta: float) -> void:
+	var model: Node3D = get_node_or_null("Model") as Node3D
+	var mesh: Node3D = get_node_or_null("Mesh") as Node3D
+	var target: Node3D = model if model else mesh
+	if not target:
+		return
+	# Compute velocity from position change
+	_anim_velocity = (global_position - _anim_prev_pos) / maxf(delta, 0.001)
+	_anim_prev_pos = global_position
+	var move_speed: float = Vector2(_anim_velocity.x, _anim_velocity.z).length()
+	# Vertical bob — speed-dependent
+	var bob_rate: float = 5.0 + move_speed * 0.6
+	var bob_amp: float = 0.04 + minf(move_speed * 0.005, 0.04)
+	# Boss has heavier, slower bob
+	if is_boss:
+		bob_rate *= 0.6
+		bob_amp *= 1.5
+	_anim_bob_t += delta * bob_rate
+	var bob_y: float = sin(_anim_bob_t) * bob_amp
+	# Tilt into movement direction
+	var tilt_strength: float = 0.018 if not is_boss else 0.01
+	var target_tilt_x: float = clampf(_anim_velocity.z * -tilt_strength, -0.25, 0.25)
+	var target_tilt_z: float = clampf(_anim_velocity.x * tilt_strength, -0.25, 0.25)
+	_anim_tilt_x = lerpf(_anim_tilt_x, target_tilt_x, 6.0 * delta)
+	_anim_tilt_z = lerpf(_anim_tilt_z, target_tilt_z, 6.0 * delta)
+	# Squash & stretch
+	var target_squash: float = 1.0
+	if move_speed > 6.0:
+		target_squash = lerpf(1.0, 0.88, minf((move_speed - 6.0) / 12.0, 1.0))
+	# Warrior lunge squash
+	if _warrior_lunging:
+		target_squash = 0.8
+	_anim_squash = lerpf(_anim_squash, target_squash, 8.0 * delta)
+	# Apply transforms
+	if model:
+		model.position.y = bob_y
+		var base_rot_y: float = model.rotation.y
+		model.rotation = Vector3(_anim_tilt_x, base_rot_y, _anim_tilt_z)
+		var s: float = _anim_base_scale
+		model.scale = Vector3(s / _anim_squash, s * _anim_squash, s / _anim_squash)
+	elif mesh:
+		var base_y: float = 0.5 if not is_boss else 1.25
+		mesh.position.y = base_y + bob_y
+		mesh.rotation = Vector3(_anim_tilt_x, 0.0, _anim_tilt_z)
 
 func _update_hp_bar() -> void:
 	if not _hp_bar or not _hp_bar_mat:
@@ -454,6 +512,7 @@ func _process(delta: float) -> void:
 			var target_angle := atan2(dir.x, dir.z)
 			model.rotation.y = lerp_angle(model.rotation.y, target_angle, 8.0 * delta)
 	position.y = 0.0
+	_update_procedural_anim(delta)
 
 	if _flash_timer > 0.0:
 		_flash_timer -= delta
