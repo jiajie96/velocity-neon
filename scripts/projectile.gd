@@ -321,7 +321,7 @@ func _hit_vfx() -> void:
 	if not container:
 		return
 	var color: Color = _colors.get(weapon_type, Color(1.0, 1.0, 0.5))
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	# Shader-driven expanding shockwave ring
 	VFX.spawn_shockwave(container, global_position, Color(color.r, color.g, color.b, 0.5), 1.5, 0.18, 0.4)
 	# GPU particle spark burst

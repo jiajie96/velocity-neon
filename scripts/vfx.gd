@@ -1,6 +1,6 @@
 extends Node
 ## VFX factory — reusable particle and shader-based effects that replace flat mesh rings.
-## Call these static-style functions from anywhere via:  load("res://scripts/vfx.gd").new().spawn_*(...)
+## Call via:  var VFX := preload("res://scripts/vfx.gd")  then  VFX.spawn_*(...)
 
 # ── Shockwave Ring (shader-driven expanding ring) ──────────────────────
 static func spawn_shockwave(container: Node, pos: Vector3, color: Color, radius: float = 3.0, duration: float = 0.3, height: float = 0.05) -> void:

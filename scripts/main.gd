@@ -184,45 +184,49 @@ func _build_spawner() -> void:
 	spawner.set_script(load("res://scripts/enemy_spawner.gd"))
 	add_child(spawner)
 
-var _ambient_timer: float = 0.0
-const AMBIENT_INTERVAL := 0.4
+var _ambient_particles: GPUParticles3D
 
 func _build_ambient_particles() -> void:
-	# Timer-driven to avoid upfront cost — spawns floating neon motes around the player
-	pass
-
-func _spawn_ambient_mote() -> void:
-	if not player or GameState.game_over:
-		return
-	var container := get_node_or_null("Projectiles")
-	if not container:
-		return
-	var offset := Vector3(randf_range(-20, 20), randf_range(0.1, 0.5), randf_range(-20, 20))
-	var mote_pos := player.global_position + offset
-	mote_pos.x = clampf(mote_pos.x, -48.0, 48.0)
-	mote_pos.z = clampf(mote_pos.z, -48.0, 48.0)
-	var mote := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radius = 0.03
-	mote.mesh = sphere
-	var mat := StandardMaterial3D.new()
-	# Restrict motes to the two accent hues (cyan/magenta) for cohesion
-	var hue := 0.52 + randf() * 0.08 if randf() > 0.5 else 0.85 + randf() * 0.06
-	var mote_color := Color.from_hsv(hue, 0.5, 0.7, 0.25)
-	mat.albedo_color = mote_color
-	mat.emission_enabled = true
-	mat.emission = mote_color
-	mat.emission_energy_multiplier = 1.2
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mote.material_override = mat
-	mote.position = mote_pos
-	container.add_child(mote)
-	var tw := mote.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(mote, "position:y", mote_pos.y + randf_range(1.5, 3.0), 3.0).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 3.0).set_ease(Tween.EASE_IN)
-	tw.set_parallel(false)
-	tw.tween_callback(mote.queue_free)
+	# Single GPUParticles3D replaces per-frame mesh spawning (~150 allocations/min → 0)
+	_ambient_particles = GPUParticles3D.new()
+	_ambient_particles.name = "AmbientMotes"
+	_ambient_particles.amount = 40
+	_ambient_particles.lifetime = 4.0
+	_ambient_particles.explosiveness = 0.0
+	_ambient_particles.emitting = false
+	var pmat := ParticleProcessMaterial.new()
+	pmat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pmat.emission_box_extents = Vector3(20.0, 0.2, 20.0)
+	pmat.direction = Vector3(0, 1, 0)
+	pmat.spread = 15.0
+	pmat.initial_velocity_min = 0.3
+	pmat.initial_velocity_max = 0.8
+	pmat.gravity = Vector3.ZERO
+	pmat.damping_min = 0.5
+	pmat.damping_max = 1.0
+	pmat.scale_min = 0.5
+	pmat.scale_max = 1.0
+	pmat.color = Color(0.15, 0.6, 0.8, 0.25)
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.15, 0.6, 0.8, 0.25))
+	grad.add_point(0.5, Color(0.6, 0.1, 0.5, 0.2))
+	grad.set_color(1, Color(0.15, 0.6, 0.8, 0.0))
+	var tex := GradientTexture1D.new()
+	tex.gradient = grad
+	pmat.color_ramp = tex
+	_ambient_particles.process_material = pmat
+	var draw_mesh := SphereMesh.new()
+	draw_mesh.radius = 0.03
+	draw_mesh.height = 0.06
+	var draw_mat := StandardMaterial3D.new()
+	draw_mat.albedo_color = Color(0.15, 0.6, 0.8, 0.25)
+	draw_mat.emission_enabled = true
+	draw_mat.emission = Color(0.15, 0.6, 0.8)
+	draw_mat.emission_energy_multiplier = 1.2
+	draw_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	draw_mesh.material = draw_mat
+	_ambient_particles.draw_pass_1 = draw_mesh
+	add_child(_ambient_particles)
 
 func _wait_for_start() -> void:
 	while not GameState.game_started:
@@ -238,12 +242,11 @@ func _process(delta: float) -> void:
 		GameState.heal(GameState.hp_regen * delta)
 	if GameState.overclock_active:
 		GameState.take_damage(2.0 * delta, true)
-	# Ambient floating neon motes for atmosphere
-	if GameState.game_started:
-		_ambient_timer -= delta
-		if _ambient_timer <= 0.0:
-			_ambient_timer = AMBIENT_INTERVAL
-			_spawn_ambient_mote()
+	# Ambient motes follow player position
+	if GameState.game_started and _ambient_particles:
+		if not _ambient_particles.emitting:
+			_ambient_particles.emitting = true
+		_ambient_particles.global_position = player.global_position if player else Vector3.ZERO
 
 func _on_leveled_up(_level: int) -> void:
 	get_tree().paused = true

@@ -314,7 +314,7 @@ func _dash_ready_pulse() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	VFX.spawn_shockwave(container, position, Color(0.3, 0.8, 0.95, 0.4), 1.8, 0.25, 0.05)
 
 func _process(delta: float) -> void:
@@ -722,7 +722,7 @@ func _spawn_orbital_hit_spark(hit_pos: Vector3) -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	VFX.spawn_spark_burst(container, Vector3(hit_pos.x, 0.6, hit_pos.z), Color(0.1, 0.8, 0.5), 6, 2.5, 0.15)
 	VFX.spawn_impact_flash(container, Vector3(hit_pos.x, 0.6, hit_pos.z), Color(0.1, 0.8, 0.5), 1.0, 0.08)
 
@@ -760,7 +760,7 @@ func _spawn_ult_vfx() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	var ult_color := Color(0.1, 0.8, 0.9)
 	# Staggered shockwave rings expanding outward
 	for ring_i in 3:
@@ -888,7 +888,7 @@ func _on_iframes_started() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	VFX.spawn_shockwave(container, position, Color(0.2, 0.7, 0.9, 0.35), 1.2, 0.15, 0.05)
 
 func _apply_flash_recursive(node: Node, flash_on: bool) -> void:

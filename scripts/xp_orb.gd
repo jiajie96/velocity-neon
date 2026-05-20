@@ -152,7 +152,7 @@ func _spawn_collect_burst() -> void:
 	var container := get_parent()
 	if not container:
 		return
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	var collect_color := Color(0.15, 0.65, 0.3)
 	# Shader shockwave ring instead of flat cylinder
 	VFX.spawn_shockwave(container, global_position, Color(collect_color.r, collect_color.g, collect_color.b, 0.35), 1.0, 0.2, 0.3)

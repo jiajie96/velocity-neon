@@ -202,7 +202,7 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 	}
 	var color: Color = warn_colors.get(type, Color(0.85, 0.08, 0.35))
 	var scale_factor: float = threat_scale.get(type, 1.0)
-	var VFX := load("res://scripts/vfx.gd")
+	var VFX := preload("res://scripts/vfx.gd")
 	VFX.spawn_warning_pulse(container, pos, color, scale_factor)
 
 func _create_enemy(type: String, pos: Vector3) -> Node3D:
