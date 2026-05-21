@@ -1144,6 +1144,7 @@ func _explode() -> void:
 	_dead = true
 	GameState.add_kill(enemy_type)
 	_spawn_xp()
+	_maybe_drop_health()
 	queue_free()
 
 func _spawn_explosion_vfx() -> void:
@@ -1235,6 +1236,8 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	# Critical hit check
 	var is_crit := randf() < GameState.crit_chance
 	var final_amount := amount * (2.0 if is_crit else 1.0)
+	# Kill-streak combo bonus — sustained streaks ramp up damage
+	final_amount *= GameState.get_combo_damage_mult()
 	# Executioner bonus — extra damage to enemies below 30% HP
 	var _execute_proc := false
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:
@@ -1458,6 +1461,7 @@ func _die() -> void:
 	GameState.add_kill(enemy_type)
 	Audio.sfx_enemy_death_typed(enemy_type)
 	_spawn_xp()
+	_maybe_drop_health()
 	# Necromancer death kills its summoned minions
 	if enemy_type == "necromancer":
 		for ref in _necro_minions:
@@ -1477,18 +1481,34 @@ func _die() -> void:
 		GameState.boss_defeated.emit()
 		# Pull all XP orbs to player after boss kill for satisfying collection
 		GameState.xp_magnet_pulse.emit()
-		# Brief victory moment before resuming normal music
+		# Brief victory moment before resuming wave-appropriate music.
+		# Resolve the track now — this node is freed before the timer fires.
+		var resume_track := _wave_tier_music(GameState.wave)
 		var tree := get_tree()
 		if tree:
 			tree.create_timer(3.0).timeout.connect(func():
 				if not GameState.game_over:
-					Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -6.0)
+					Audio.play_music(resume_track, -5.0)
 			)
 	else:
 		GameState.request_shake(1.0)
 	if enemy_type == "teleporter":
 		_teleporter_death_vfx()
 	_death_vfx()
+
+# Returns the gameplay music track that matches the current wave tier, so the
+# post-boss resume keeps late-game intensity instead of always dropping to the
+# early track. Mirrors the rotation in GameState.next_wave().
+func _wave_tier_music(wave: int) -> String:
+	if wave >= 25:
+		return "res://assets/audio/music/cavern_ambient.ogg"
+	elif wave >= 20:
+		return "res://assets/audio/music/synthwave_hostile_territory.ogg"
+	elif wave >= 15:
+		return "res://assets/audio/music/neon_runner.mp3"
+	elif wave >= 12:
+		return "res://assets/audio/music/synthwave_deadly_contracts.ogg"
+	return "res://assets/audio/music/determined_pursuit.ogg"
 
 func _spawn_xp() -> void:
 	var orb_container := get_parent().get_parent().get_node_or_null("XPOrbs")
@@ -1503,6 +1523,33 @@ func _spawn_xp() -> void:
 		var offset := Vector3(randf_range(-0.5, 0.5), 0, randf_range(-0.5, 0.5))
 		orb.position = global_position + offset
 		orb.set_meta("xp_value", xp_value)
+		orb_container.add_child(orb)
+
+func _maybe_drop_health() -> void:
+	# Small chance for enemies to drop a heal orb; elites are likelier, bosses
+	# always drop a couple. Heal scales with max HP so it stays relevant late.
+	var orb_container := get_parent().get_parent().get_node_or_null("XPOrbs")
+	if not orb_container:
+		return
+	var drop_count := 0
+	if is_boss:
+		drop_count = 2
+	else:
+		var chance := 0.04
+		if enemy_type in ["warrior", "mage", "rogue", "necromancer", "teleporter"]:
+			chance = 0.08
+		if randf() < chance:
+			drop_count = 1
+	if drop_count <= 0:
+		return
+	var heal_amt := maxf(8.0, GameState.max_hp * 0.12)
+	for i in drop_count:
+		var orb := Node3D.new()
+		orb.name = "HealthOrb"
+		orb.set_script(load("res://scripts/health_orb.gd"))
+		var offset := Vector3(randf_range(-0.7, 0.7), 0, randf_range(-0.7, 0.7))
+		orb.position = global_position + offset
+		orb.set_meta("heal_amount", heal_amt)
 		orb_container.add_child(orb)
 
 func _death_vfx() -> void:

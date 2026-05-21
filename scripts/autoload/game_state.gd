@@ -58,6 +58,7 @@ var ricochet_level: int = 0
 var xp: float = 0.0
 var level: int = 1
 var xp_to_next: float = 80.0
+var pending_levelups: int = 0  # Queued upgrades when one XP gain crosses multiple levels
 
 # Session
 var wave: int = 0
@@ -137,15 +138,20 @@ func heal(amount: float) -> void:
 func add_xp(amount: float) -> void:
 	xp += amount
 	total_xp_earned += amount
-	xp_changed.emit(xp, xp_to_next)
-	if xp >= xp_to_next:
+	# Loop so a single large XP gain (boss bonus, batched orbs) awards every level
+	# it crosses, not just one. Each pending level-up offers its own upgrade choice.
+	var gained_level := false
+	while xp >= xp_to_next:
 		xp -= xp_to_next
 		level += 1
 		xp_to_next = 60.0 + 30.0 * level + 5.0 * sqrt(level)
+		pending_levelups += 1
+		gained_level = true
+	xp_changed.emit(xp, xp_to_next)
+	if gained_level:
 		Audio.sfx_level_up()
 		xp_magnet_pulse.emit()
 		leveled_up.emit(level)
-		xp_changed.emit(xp, xp_to_next)
 
 func next_wave() -> void:
 	# Award bonus XP for surviving previous wave without taking damage
@@ -204,6 +210,16 @@ func add_kill(enemy_type: String = "") -> void:
 func add_damage_dealt(amount: float) -> void:
 	total_damage_dealt += amount
 
+# Active kill streaks grant an escalating damage bonus (up to +24%), making the
+# combo system mechanically meaningful instead of just a banner.
+func get_combo_damage_mult() -> float:
+	if _streak_count < 3:
+		return 1.0
+	return 1.0 + minf(float(_streak_count - 2) * 0.03, 0.24)
+
+func get_combo_bonus_pct() -> int:
+	return int(round((get_combo_damage_mult() - 1.0) * 100.0))
+
 func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
 	# Gentle shake — scaled down from original values for subtlety
 	var scaled := intensity * 0.4
@@ -243,6 +259,7 @@ func reset() -> void:
 	xp = 0.0
 	level = 1
 	xp_to_next = 80.0
+	pending_levelups = 0
 	wave = 0
 	kills = 0
 	game_over = false
