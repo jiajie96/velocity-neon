@@ -67,6 +67,7 @@ func _ready() -> void:
 	_build_gravity_ring()
 	_build_shield_ring()
 	_build_target_reticle()
+	_build_contact_shadow()
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.damage_iframes_started.connect(_on_iframes_started)
 
@@ -104,11 +105,12 @@ func _apply_neon_tint(node: Node, color: Color) -> void:
 			var base_mat = mi.mesh.surface_get_material(i) if mi.mesh else null
 			if base_mat and base_mat is StandardMaterial3D:
 				var new_mat: StandardMaterial3D = base_mat.duplicate()
-				# Darken the base albedo so the model reads as a solid dark figure
-				new_mat.albedo_color = new_mat.albedo_color.darkened(0.35)
+				# Keep the figure dark but give it a clear cyan rim glow so the hero
+				# reads against the dark neon floor.
+				new_mat.albedo_color = new_mat.albedo_color.darkened(0.2)
 				new_mat.emission_enabled = true
-				new_mat.emission = color * 0.08
-				new_mat.emission_energy_multiplier = 0.5
+				new_mat.emission = Color(0.0, 0.5, 0.8)
+				new_mat.emission_energy_multiplier = 0.7
 				mi.set_surface_override_material(i, new_mat)
 	for child in node.get_children():
 		_apply_neon_tint(child, color)
@@ -195,6 +197,26 @@ func _build_shield_ring() -> void:
 	_shield_ring.position.y = 0.04
 	_shield_ring.visible = false
 	add_child(_shield_ring)
+
+func _build_contact_shadow() -> void:
+	# A flat dark disc under the unit mutes the busy grid directly beneath it,
+	# separating the silhouette from the floor for readability.
+	var shadow := MeshInstance3D.new()
+	shadow.name = "ContactShadow"
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.6
+	disc.bottom_radius = 0.6
+	disc.height = 0.01
+	disc.radial_segments = 16
+	shadow.mesh = disc
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.0, 0.0, 0.0, 0.42)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	shadow.material_override = mat
+	shadow.position.y = 0.03
+	add_child(shadow)
 
 func _build_target_reticle() -> void:
 	# A spinning cyan bracket frame that marks the enemy the primary weapon is

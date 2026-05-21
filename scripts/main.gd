@@ -62,8 +62,8 @@ func _build_ground() -> void:
 	if shader:
 		var mat := ShaderMaterial.new()
 		mat.shader = shader
-		mat.set_shader_parameter("grid_color", Color(0.0, 0.55, 0.8, 0.15))
-		mat.set_shader_parameter("accent_color", Color(0.8, 0.0, 0.5, 0.06))
+		mat.set_shader_parameter("grid_color", Color(0.0, 0.55, 0.8, 0.11))
+		mat.set_shader_parameter("accent_color", Color(0.8, 0.0, 0.5, 0.045))
 		mat.set_shader_parameter("bg_color", Color(0.02, 0.012, 0.04, 1.0))
 		mat.set_shader_parameter("grid_spacing", 2.0)
 		ground.material_override = mat
