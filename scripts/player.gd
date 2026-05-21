@@ -49,6 +49,8 @@ var _shield_pulse_t: float = 0.0
 var _target_reticle: Node3D
 var _reticle_mats: Array[StandardMaterial3D] = []
 var _reticle_pulse_t: float = 0.0
+var _beacon: MeshInstance3D
+var _beacon_t: float = 0.0
 
 # Procedural animation
 var _anim_bob_t: float = 0.0
@@ -68,6 +70,7 @@ func _ready() -> void:
 	_build_shield_ring()
 	_build_target_reticle()
 	_build_contact_shadow()
+	_build_player_beacon()
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.damage_iframes_started.connect(_on_iframes_started)
 
@@ -197,6 +200,34 @@ func _build_shield_ring() -> void:
 	_shield_ring.position.y = 0.04
 	_shield_ring.visible = false
 	add_child(_shield_ring)
+
+func _build_player_beacon() -> void:
+	# A small warm-gold chevron hovering over the hero so it's always findable in a
+	# swarm — gold contrasts with the cool cyan/red/purple neon palette.
+	_beacon = MeshInstance3D.new()
+	_beacon.name = "PlayerBeacon"
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 0.18
+	cone.height = 0.32
+	cone.radial_segments = 4
+	_beacon.mesh = cone
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.85, 0.2, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.8, 0.1)
+	mat.emission_energy_multiplier = 4.5
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_beacon.material_override = mat
+	_beacon.rotation.x = PI  # point the chevron downward toward the player
+	_beacon.position.y = 2.2
+	add_child(_beacon)
+
+func _update_player_beacon(delta: float) -> void:
+	if not _beacon:
+		return
+	_beacon_t += delta * 3.0
+	_beacon.position.y = 2.2 + sin(_beacon_t) * 0.12
 
 func _build_contact_shadow() -> void:
 	# A flat dark disc under the unit mutes the busy grid directly beneath it,
@@ -416,6 +447,7 @@ func _process(delta: float) -> void:
 	_update_damage_flash(delta)
 	_update_shield_ring(delta)
 	_update_target_reticle(delta)
+	_update_player_beacon(delta)
 	_update_procedural_anim(delta)
 
 func _move(delta: float) -> void:
@@ -502,6 +534,11 @@ func _dash(delta: float) -> void:
 		_dash_hit_enemies.clear()
 		Audio.sfx_dash()
 		_spawn_dash_trail()
+		# Launch shockwave at the dash origin for extra oomph
+		var dash_container := get_parent().get_node_or_null("Projectiles")
+		if dash_container:
+			var VFX := preload("res://scripts/vfx.gd")
+			VFX.spawn_shockwave(dash_container, position, Color(0.3, 0.8, 1.0, 0.4), 2.0, 0.25, 0.05)
 
 func _spawn_dash_trail() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
@@ -892,6 +929,11 @@ func _check_contact_damage(delta: float) -> void:
 		kb_dir.y = 0.0
 		position += kb_dir * 1.5
 		GameState.request_shake(1.5, kb_dir)
+		# Spark at the point of contact so melee hits read as real impacts
+		var spark_container := get_parent().get_node_or_null("Projectiles")
+		if spark_container:
+			var VFX := preload("res://scripts/vfx.gd")
+			VFX.spawn_spark_burst(spark_container, global_position + Vector3(0, 0.7, 0), Color(1.0, 0.35, 0.2), 8, 3.0, 0.2)
 
 func _update_weapon_glow() -> void:
 	var glow := get_node_or_null("PlayerGlow") as OmniLight3D
