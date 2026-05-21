@@ -4,8 +4,9 @@ const COLLECT_DISTANCE := 0.8
 const MAGNET_SPEED := 12.0
 const BOB_SPEED := 3.0
 const BOB_HEIGHT := 0.2
-const LIFETIME := 15.0
+const LIFETIME := 20.0
 const FADE_TIME := 3.0
+const AUTO_MAGNET_DELAY := 6.0  # Orbs drift to the player after this long so XP isn't lost in chaos
 
 var xp_value: float = 10.0
 var _magnetized: bool = false
@@ -108,6 +109,9 @@ func _process(delta: float) -> void:
 	var dist: float = global_position.distance_to(player.global_position)
 
 	if dist < GameState.magnet_range:
+		_magnetized = true
+	# Auto-magnetize older orbs so earned XP isn't stranded across the arena
+	if _time > AUTO_MAGNET_DELAY:
 		_magnetized = true
 
 	if _magnetized and _burst_timer <= 0.0:

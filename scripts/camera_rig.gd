@@ -109,11 +109,13 @@ var _pre_boss_zoom: float = -1.0
 
 func boss_zoom_out() -> void:
 	_pre_boss_zoom = _target_zoom
-	_target_zoom = minf(_target_zoom + 6.0, ZOOM_MAX)
-	# Return to player's zoom after 3 seconds
+	_target_zoom = minf(_player_zoom + 6.0, ZOOM_MAX)
+	# Return to the player's current preferred zoom after 3 seconds — respects any
+	# scroll-wheel adjustment made during the boss entrance instead of snapping back
+	# to a stale value.
 	get_tree().create_timer(3.0).timeout.connect(func():
 		if _pre_boss_zoom > 0:
-			_target_zoom = _pre_boss_zoom
+			_target_zoom = _player_zoom
 			_pre_boss_zoom = -1.0
 	)
 

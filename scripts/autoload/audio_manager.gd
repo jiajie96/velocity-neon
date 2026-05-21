@@ -231,6 +231,11 @@ func play_defeat_music() -> void:
 func sfx_wave_heal() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.6)
 
+func sfx_health_pickup() -> void:
+	# Bright, satisfying chime when grabbing a dropped health orb
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -5.0, 1.4)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -10.0, 1.5)
+
 func sfx_big_xp_batch() -> void:
 	# Satisfying chime when a big batch of XP orbs finishes collecting
 	play_sfx("res://assets/audio/sfx/ui_select.ogg", -6.0, 1.0)

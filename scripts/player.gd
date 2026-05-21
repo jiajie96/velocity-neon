@@ -46,6 +46,9 @@ var _damage_flash_timer: float = 0.0
 var _shield_ring: MeshInstance3D
 var _shield_ring_mat: StandardMaterial3D
 var _shield_pulse_t: float = 0.0
+var _target_reticle: Node3D
+var _reticle_mats: Array[StandardMaterial3D] = []
+var _reticle_pulse_t: float = 0.0
 
 # Procedural animation
 var _anim_bob_t: float = 0.0
@@ -63,6 +66,7 @@ func _ready() -> void:
 	_build_dash_ring()
 	_build_gravity_ring()
 	_build_shield_ring()
+	_build_target_reticle()
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.damage_iframes_started.connect(_on_iframes_started)
 
@@ -191,6 +195,59 @@ func _build_shield_ring() -> void:
 	_shield_ring.position.y = 0.04
 	_shield_ring.visible = false
 	add_child(_shield_ring)
+
+func _build_target_reticle() -> void:
+	# A spinning cyan bracket frame that marks the enemy the primary weapon is
+	# auto-aiming at, so the player can read who they're shooting.
+	_target_reticle = Node3D.new()
+	_target_reticle.name = "TargetReticle"
+	_target_reticle.visible = false
+	add_child(_target_reticle)
+	var cyan := Color(0.2, 0.85, 1.0)
+	var edges := [
+		Vector3(0, 0, -0.5), Vector3(0, 0, 0.5),
+		Vector3(-0.5, 0, 0), Vector3(0.5, 0, 0),
+	]
+	var sizes := [
+		Vector3(0.95, 0.03, 0.1), Vector3(0.95, 0.03, 0.1),
+		Vector3(0.1, 0.03, 0.95), Vector3(0.1, 0.03, 0.95),
+	]
+	for i in edges.size():
+		var bar := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = sizes[i]
+		bar.mesh = box
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(cyan.r, cyan.g, cyan.b, 0.5)
+		mat.emission_enabled = true
+		mat.emission = cyan
+		mat.emission_energy_multiplier = 3.0
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		bar.material_override = mat
+		bar.position = edges[i]
+		_target_reticle.add_child(bar)
+		_reticle_mats.append(mat)
+
+func _update_target_reticle(delta: float) -> void:
+	if not _target_reticle:
+		return
+	var target := _find_nearest_enemy()
+	if not target:
+		_target_reticle.visible = false
+		return
+	_target_reticle.visible = true
+	var rscale := 1.0
+	if target.get("is_boss"):
+		rscale = 2.6
+	_target_reticle.scale = Vector3(rscale, 1.0, rscale)
+	_target_reticle.global_position = Vector3(target.global_position.x, 0.12, target.global_position.z)
+	_target_reticle.rotation.y += delta * 1.2
+	_reticle_pulse_t += delta * 4.0
+	var pulse := (sin(_reticle_pulse_t) + 1.0) * 0.5
+	var a := lerpf(0.3, 0.7, pulse)
+	for mat in _reticle_mats:
+		mat.albedo_color.a = a
+		mat.emission_energy_multiplier = lerpf(2.0, 4.0, pulse)
 
 func _update_shield_ring(delta: float) -> void:
 	if not _shield_ring or not _shield_ring_mat:
@@ -336,6 +393,7 @@ func _process(delta: float) -> void:
 	_update_regen_vfx(delta)
 	_update_damage_flash(delta)
 	_update_shield_ring(delta)
+	_update_target_reticle(delta)
 	_update_procedural_anim(delta)
 
 func _move(delta: float) -> void:
@@ -895,23 +953,25 @@ func _apply_flash_recursive(node: Node, flash_on: bool) -> void:
 	if node is MeshInstance3D:
 		var mi: MeshInstance3D = node
 		var mat := mi.material_override as StandardMaterial3D
-		if not mat:
-			# Try to get surface material
+		if mat:
+			_flash_material(mat, flash_on)
+		else:
 			for i in mi.get_surface_override_material_count():
 				var smat := mi.get_surface_override_material(i) as StandardMaterial3D
 				if smat:
-					if flash_on:
-						smat.emission = Color.WHITE
-						smat.emission_energy_multiplier = 8.0
-					else:
-						smat.emission = smat.albedo_color * 0.4
-						smat.emission_energy_multiplier = 1.8
-		else:
-			if flash_on:
-				mat.emission = Color.WHITE
-				mat.emission_energy_multiplier = 8.0
-			else:
-				mat.emission = Color(0.0, 0.4, 0.6)
-				mat.emission_energy_multiplier = 1.0
+					_flash_material(smat, flash_on)
 	for child in node.get_children():
 		_apply_flash_recursive(child, flash_on)
+
+func _flash_material(mat: StandardMaterial3D, flash_on: bool) -> void:
+	if flash_on:
+		# Cache the original emission once so the model's neon look is restored
+		# exactly after the flash, instead of being permanently recolored.
+		if not mat.has_meta("_orig_emission"):
+			mat.set_meta("_orig_emission", mat.emission)
+			mat.set_meta("_orig_emission_energy", mat.emission_energy_multiplier)
+		mat.emission = Color.WHITE
+		mat.emission_energy_multiplier = 8.0
+	elif mat.has_meta("_orig_emission"):
+		mat.emission = mat.get_meta("_orig_emission")
+		mat.emission_energy_multiplier = mat.get_meta("_orig_emission_energy")
