@@ -18,13 +18,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 ## Features
 
 ### Combat
-- Auto-aim primary weapon with laser bolt visuals and trail effects
+- Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto
 - Critical hits (10% base chance, orange CRIT text, screen flash)
-- Kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
+- Kill streaks grant an escalating combo damage bonus (up to +24%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
 - Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
 - Ultimate ability with screen-clearing AoE, multi-ring VFX, and damage scaling with upgrades
 
-### Weapons & Upgrades (22 upgrades)
+### Weapons & Upgrades (21 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Scatter Shot (pellet burst), Chain Arc, Orbital Guard
 - **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash)
@@ -66,10 +66,12 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Warrior lunge SFX (impact grunt when warriors charge)
 - Victory sting on wave 10/15/20/25 milestones
 - Wave clear heal SFX (subtle chime when HP recovers between waves)
+- Health pickup chime (bright two-layer chime when grabbing a dropped heal orb)
 - 16-channel SFX pool for rich audio layering
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
+- Auto-aim target reticle (spinning cyan bracket marks the locked-on enemy; scales up for bosses)
 - Floating ambient neon motes drifting across the arena floor
 - Damage vignette (red pulse at low HP), hit flash on damage taken
 - Screen flash on critical hits (orange tint)
@@ -119,7 +121,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
-- XP bar with level counter and upgrade count
+- XP bar with level counter, upgrade count, and a numeric current/next-XP readout so progress to the next upgrade is visible
 - Boss HP bar with wave-specific label ("SKELETON GOLEM — WAVE X"), color shift (green → yellow → red), and enrage warning ("ENRAGED" + pulsing red)
 - Boss defeat bonus XP announcement
 - Live DPS meter, enemy count, survival timer
@@ -143,6 +145,10 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Game Systems
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave)
+- Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime
+- Multi-level-up: large XP gains (boss bonus, batched orbs) award every level crossed, offering each upgrade in turn instead of banking the overflow
+- Kill-streak combo damage bonus that ramps with the streak and decays when it ends
+- XP orbs auto-magnetize toward the player after a few seconds (and live a little longer) so earned XP isn't lost in chaotic waves
 - Warrior lunge cooldown scales with wave for sustained threat in late game
 - Exploder detonation damage scales with wave progression
 - Perfect wave bonus XP (no damage taken)
@@ -173,7 +179,7 @@ scripts/
   enemy_spawner.gd   — Wave logic and spawn system
   main.gd            — Scene setup
   hud.gd             — All UI rendering
-  upgrade_system.gd  — 22 upgrade definitions
+  upgrade_system.gd  — 21 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
   camera_rig.gd      — Camera follow, shake, zoom, punch

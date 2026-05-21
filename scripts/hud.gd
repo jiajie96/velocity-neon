@@ -3,6 +3,7 @@ extends Control
 var hp_bar: ProgressBar
 var hp_label: Label
 var xp_bar: ProgressBar
+var xp_value_label: Label
 var wave_label: Label
 var kills_label: Label
 var level_label: Label
@@ -182,6 +183,8 @@ func _build_title_screen() -> void:
 		["AUTO-AIM", "Shoot nearest"],
 		["SPACE", "Phase Dash"],
 		["Q", "Ultimate"],
+		["1 / 2 / 3", "Pick upgrade"],
+		["SCROLL", "Zoom camera"],
 		["ESC", "Pause"],
 	]
 	for b in bindings:
@@ -213,6 +216,13 @@ func _build_title_screen() -> void:
 	tagline.add_theme_font_size_override("font_size", 13)
 	tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	center.add_child(tagline)
+
+	var version := Label.new()
+	version.text = "v0.3"
+	version.add_theme_color_override("font_color", Color(0.4, 0.35, 0.55, 0.4))
+	version.add_theme_font_size_override("font_size", 11)
+	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	center.add_child(version)
 
 	var gap5 := Control.new()
 	gap5.custom_minimum_size.y = 36
@@ -348,6 +358,12 @@ func _build_top_bar() -> void:
 	xp_bg.corner_radius_bottom_right = 2
 	xp_bar.add_theme_stylebox_override("background", xp_bg)
 	xp_vbox.add_child(xp_bar)
+
+	xp_value_label = Label.new()
+	xp_value_label.text = "0 / 80 XP"
+	xp_value_label.add_theme_font_size_override("font_size", 11)
+	xp_value_label.add_theme_color_override("font_color", Color(0.85, 0.75, 0.35, 0.7))
+	xp_vbox.add_child(xp_value_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -940,6 +956,10 @@ func _on_kill_streak(count: int) -> void:
 	var text: String = streak_names.get(count, "UNSTOPPABLE x%d" % count) if count <= 6 else "UNSTOPPABLE x%d" % count
 	if count < 2:
 		return
+	# Surface the active combo damage bonus so the streak feels mechanical, not cosmetic
+	var bonus := GameState.get_combo_bonus_pct()
+	if bonus > 0:
+		text += "  +%d%% DMG" % bonus
 	_streak_label.text = text
 	_streak_label.modulate.a = 0.0
 	var font_size := mini(22 + (count - 2) * 3, 36)
@@ -1284,6 +1304,8 @@ func _on_xp_changed(current: float, needed: float) -> void:
 	if xp_bar:
 		xp_bar.max_value = needed
 		xp_bar.value = current
+	if xp_value_label:
+		xp_value_label.text = "%d / %d XP" % [int(current), int(needed)]
 
 func _on_wave_changed(wave: int) -> void:
 	if wave_label:
@@ -1339,8 +1361,14 @@ func _on_leveled_up(level: int) -> void:
 	_show_upgrade_choices()
 
 func _show_upgrade_choices() -> void:
-	Audio.sfx_dice_roll()
 	_current_choices = UpgradeSystem.get_random_choices(3)
+	# If every upgrade is maxed there's nothing to offer — resume instead of
+	# showing an empty, unclickable panel (which would soft-lock the run).
+	if _current_choices.is_empty():
+		GameState.pending_levelups = 0
+		_finish_upgrade_selection()
+		return
+	Audio.sfx_dice_roll()
 	for i in 3:
 		if i < _current_choices.size():
 			var u = _current_choices[i]
@@ -1369,12 +1397,22 @@ func _on_upgrade_chosen(index: int) -> void:
 		return
 	Audio.sfx_upgrade()
 	UpgradeSystem.apply_upgrade(_current_choices[index])
-	upgrade_panel.visible = false
 	_trigger_levelup_flash()
+	if GameState.pending_levelups > 0:
+		GameState.pending_levelups -= 1
 	# Update level label to reflect new upgrade count
 	if level_label:
 		var upgrades_count := GameState.acquired_upgrades.size()
 		level_label.text = "LV %d | %d upgrades" % [GameState.level, upgrades_count]
+	# If more level-ups are queued (one big XP gain crossed several levels),
+	# immediately offer the next upgrade and stay paused.
+	if GameState.pending_levelups > 0:
+		_show_upgrade_choices()
+		return
+	_finish_upgrade_selection()
+
+func _finish_upgrade_selection() -> void:
+	upgrade_panel.visible = false
 	# Brief invincibility so player doesn't die instantly after picking
 	GameState.invincible = true
 	_spawn_invincibility_ring()

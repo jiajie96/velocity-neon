@@ -63,7 +63,7 @@
 ### Combat
 - **Weapon types**: Swap between weapon archetypes (railgun, shotgun, laser beam, homing missiles) each with different auto-aim behavior
 - ~~**Critical hits**: Random chance for 2x damage with distinct VFX~~ DONE — 10% crit chance, 2x damage, orange CRIT text
-- ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ PARTIAL — kill streak announcements (DOUBLE KILL through UNSTOPPABLE)
+- ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ DONE — kill streaks grant an escalating damage bonus (up to +24%) shown live on the streak banner
 - ~~**Ricochet upgrade**: Projectiles bounce off arena boundaries~~ DONE — stackable upgrade (2 levels), bounces off arena walls and can re-hit enemies
 - ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
@@ -282,6 +282,17 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Golem rock throw ground target indicator (red circle where rock is aimed)
 - [x] Wave announcement text scales with wave progression
 - [x] Game over power level summary (GEARING UP/ARMED UP/FULLY LOADED/MAXED OUT)
+- [x] Health pickup drops (enemies can drop heal orbs; elites likelier, bosses guaranteed; heal scales with max HP)
+- [x] Auto-aim target reticle (spinning cyan bracket on the locked-on enemy, scales up for bosses)
+- [x] Kill-streak combo damage bonus (escalating, shown on the streak banner)
+- [x] Multi-level-up from big XP gains now grants every earned upgrade instead of banking the overflow
+- [x] XP orbs auto-magnetize after a few seconds + longer lifetime so XP isn't lost in chaos
+- [x] Post-boss music resumes the wave-appropriate track instead of always the early track
+- [x] Boss entrance zoom-out now returns to the player's current zoom (respects scroll during the intro)
+- [x] Player damage-flash restores the model's original emission instead of permanently recoloring it
+- [x] XP bar numeric current/next-XP readout on the HUD
+- [x] Title screen controls completeness (Scroll = Zoom, 1/2/3 = Pick upgrade) + version tag
+- [x] Empty-upgrade-pool guard (resumes instead of soft-locking when every upgrade is maxed)
 
 ---
 
