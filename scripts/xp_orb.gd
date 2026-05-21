@@ -33,10 +33,9 @@ func _on_magnet_pulse() -> void:
 func _build_visual() -> void:
 	var mesh_inst := MeshInstance3D.new()
 	mesh_inst.name = "Mesh"
-	# Scale orb size by value — boss drops are noticeably larger
-	var size_scale := clampf(xp_value / 10.0, 0.8, 2.5)
+	# Uniform orb size for every drop — value is conveyed by colour, not size
 	var prism := PrismMesh.new()
-	prism.size = Vector3(0.3, 0.4, 0.3) * size_scale
+	prism.size = Vector3(0.32, 0.46, 0.32)
 	mesh_inst.mesh = prism
 
 	# High-value orbs tint toward gold — kept dim to reduce screen flash

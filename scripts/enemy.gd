@@ -105,6 +105,7 @@ func _ready() -> void:
 	_anim_prev_pos = global_position
 	_anim_bob_t = randf() * TAU  # Randomize phase so enemies don't bob in sync
 	_build_visual()
+	_build_contact_shadow()
 	_build_hitbox()
 	# Mini HP bars above non-minion enemies for target prioritization
 	if enemy_type != "minion":
@@ -300,6 +301,26 @@ func _update_hp_bar() -> void:
 			var angle := atan2(cam_dir.x, cam_dir.z)
 			_hp_bar.rotation.y = angle
 			_hp_bar_bg.rotation.y = angle
+
+func _build_contact_shadow() -> void:
+	# Flat dark disc under the enemy so it reads against the neon grid floor.
+	var shadow := MeshInstance3D.new()
+	shadow.name = "ContactShadow"
+	var r := 0.55 if not is_boss else 1.6
+	var disc := CylinderMesh.new()
+	disc.top_radius = r
+	disc.bottom_radius = r
+	disc.height = 0.01
+	disc.radial_segments = 16
+	shadow.mesh = disc
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.0, 0.0, 0.0, 0.4)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	shadow.material_override = mat
+	shadow.position.y = 0.03
+	add_child(shadow)
 
 func _build_hitbox() -> void:
 	var area := Area3D.new()
@@ -678,10 +699,46 @@ func _teleport_blink(player: Node3D) -> void:
 		atw.set_parallel(false)
 		atw.tween_callback(appear.queue_free)
 
+# Bright muzzle burst at the caster's hand when a ranged attack is released —
+# gives ranged attacks a sense of "firing" rather than spheres just appearing.
+func _spawn_cast_flash(pos: Vector3, color: Color) -> void:
+	var container := get_parent().get_parent().get_node_or_null("Projectiles")
+	if not container:
+		container = get_parent()
+	if not container:
+		return
+	var flash := MeshInstance3D.new()
+	var s := SphereMesh.new()
+	s.radius = 0.3
+	flash.mesh = s
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.85)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 9.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash.material_override = mat
+	flash.position = pos
+	container.add_child(flash)
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = 3.5
+	light.omni_range = 4.5
+	light.omni_attenuation = 2.0
+	flash.add_child(light)
+	var tw := flash.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(flash, "scale", Vector3(2.0, 2.0, 2.0), 0.18).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.18)
+	tw.tween_property(light, "light_energy", 0.0, 0.18)
+	tw.set_parallel(false)
+	tw.tween_callback(flash.queue_free)
+
 func _fire_mage_bolt(dir: Vector3) -> void:
 	var container := get_parent().get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
+	_spawn_cast_flash(global_position + Vector3(0, 1.0, 0) + dir * 0.6, Color(1.0, 0.4, 0.05))
 	var bolt := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.2
@@ -719,10 +776,16 @@ func _fire_mage_bolt(dir: Vector3) -> void:
 	var bolt_spd := MAGE_PROJ_SPEED + minf(GameState.wave, 20) * 0.3
 	# Cap damage scaling so mage bolts don't one-shot in late waves
 	var bolt_dmg := MAGE_PROJ_DAMAGE * (1.0 + minf(GameState.wave, 18) * 0.08)
-	var bolt_alive := 0.0
+	var VFX := preload("res://scripts/vfx.gd")
+	var impact_color := Color(1.0, 0.4, 0.05)
 	area.area_entered.connect(func(_a: Area3D):
 		if not GameState.invincible:
 			GameState.take_damage(bolt_dmg)
+			GameState.request_shake(1.5, bolt_dir)
+		# Visible impact burst so the hit reads as a real projectile strike
+		var ip := bolt.position
+		VFX.spawn_spark_burst(container, ip, impact_color, 10, 3.5, 0.24)
+		VFX.spawn_impact_flash(container, ip, impact_color, 2.5, 0.14)
 		bolt.queue_free()
 	)
 	# Trail particles for readability
@@ -739,6 +802,7 @@ func _fire_necro_bolt(dir: Vector3) -> void:
 	if not container:
 		return
 	Audio.sfx_necro_bolt()
+	_spawn_cast_flash(global_position + Vector3(0, 1.0, 0) + dir * 0.6, Color(0.7, 0.1, 1.0))
 	var bolt := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.22
@@ -773,9 +837,15 @@ func _fire_necro_bolt(dir: Vector3) -> void:
 	var bolt_spd := MAGE_PROJ_SPEED + minf(GameState.wave, 20) * 0.3
 	# Cap damage scaling so necro bolts don't one-shot in late waves
 	var bolt_dmg := NECRO_BOLT_DAMAGE * (1.0 + minf(GameState.wave, 18) * 0.08)
+	var VFX := preload("res://scripts/vfx.gd")
+	var impact_color := Color(0.7, 0.1, 1.0)
 	area.area_entered.connect(func(_a: Area3D):
 		if not GameState.invincible:
 			GameState.take_damage(bolt_dmg)
+			GameState.request_shake(1.5, dir)
+		var ip := bolt.position
+		VFX.spawn_spark_burst(container, ip, impact_color, 10, 3.5, 0.24)
+		VFX.spawn_impact_flash(container, ip, impact_color, 2.5, 0.14)
 		bolt.queue_free()
 	)
 	# Trail particles for readability
@@ -957,6 +1027,7 @@ func _golem_throw_rock(dir: Vector3) -> void:
 		container = get_parent()
 	# Telegraph — brief glow at hands
 	Audio.sfx_golem_rock_throw()
+	_spawn_cast_flash(global_position + Vector3(0, 2.0, 0) + dir * 1.0, Color(1.0, 0.45, 0.0))
 	# Ground target indicator showing where the rock is headed
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player and get_parent():
@@ -1014,10 +1085,13 @@ func _golem_throw_rock(dir: Vector3) -> void:
 	col.shape = shape
 	area.add_child(col)
 	rock.add_child(area)
+	var VFX := preload("res://scripts/vfx.gd")
 	area.area_entered.connect(func(_a: Area3D):
 		if not GameState.invincible:
 			GameState.take_damage(GOLEM_THROW_DAMAGE)
 			GameState.request_shake(2.5, dir)
+		# Debris spark burst plus the explosion flash for a weighty impact
+		VFX.spawn_spark_burst(container, rock.position, Color(1.0, 0.45, 0.0), 14, 4.5, 0.3)
 		# Explosion VFX on impact
 		var flash := MeshInstance3D.new()
 		var fs := SphereMesh.new()
