@@ -97,6 +97,14 @@ func sfx_shoot_scatter() -> void:
 func sfx_shoot_chain() -> void:
 	play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -5.0, randf_range(0.9, 1.1))
 
+func sfx_signal_arrow() -> void:
+	# Whistling Yaka-arrow launch — high, zippy two-layer tone
+	play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -5.0, 1.7)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -10.0, 1.9)
+
+func sfx_signal_hit() -> void:
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -12.0, randf_range(1.6, 2.0))
+
 func sfx_enemy_death() -> void:
 	var paths := ["res://assets/audio/sfx/enemy_death_01.ogg", "res://assets/audio/sfx/enemy_death_02.ogg"]
 	play_sfx(paths[randi() % paths.size()], -4.0, randf_range(0.85, 1.15))

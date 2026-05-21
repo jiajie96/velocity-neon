@@ -8,7 +8,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 - **WASD / Arrows** — Move
 - **Auto-Aim** — Shoots nearest enemy automatically
-- **SPACE** — Phase Dash (invincible + damage trail)
+- **SPACE** — Phase Dash (invincible + damage trail; banks multiple charges with the Phase Charge upgrade)
 - **Q** — Ultimate Ability (area damage burst)
 - **Scroll Wheel** — Zoom camera in/out
 - **ESC** — Pause menu
@@ -26,10 +26,10 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Weapons & Upgrades (21 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
-- **Weapons**: Railgun (piercing beam), Scatter Shot (pellet burst), Chain Arc, Orbital Guard
+- **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
 - **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash)
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (lifesteal)
-- **Utility**: Phase Shift (dash cooldown), Gravity Well
+- **Utility**: Phase Charge (banks an extra dash — stack to hold and chain multiple dashes), Gravity Well
 
 ### Enemies (8 types)
 - **Skeleton Minion** — basic melee rusher

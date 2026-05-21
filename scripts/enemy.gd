@@ -1396,6 +1396,7 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 		"chain": Color(0.35, 0.7, 0.85),
 		"orbital": Color(0.15, 0.8, 0.5),
 		"dash": Color(0.25, 0.7, 0.9),
+		"signal": Color(0.95, 0.3, 0.2),
 	}
 	# All sizes much smaller — crits only slightly bigger than normal hits
 	if is_crit:

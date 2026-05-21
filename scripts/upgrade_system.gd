@@ -39,10 +39,10 @@ static func _ensure_init() -> void:
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		# Overclock removed — too punishing without guaranteed healing upgrade
-		Upgrade.new("phase_shift", "PHASE SHIFT", "Dash cooldown -25%", Color(0.3, 0.9, 1.0), "<<", 3),
+		Upgrade.new("dash_charge", "PHASE CHARGE", "+1 dash charge (bank an extra dash)", Color(0.3, 0.9, 1.0), ">>", 3),
 		# Weapon upgrades
 		Upgrade.new("railgun", "RAILGUN", "Piercing beam every 2s", Color(0.3, 0.5, 1.0), "==", 3),
-		Upgrade.new("scatter", "SCATTER SHOT", "5-pellet burst every 1.5s", Color(1.0, 0.5, 0.0), ".:"),
+		Upgrade.new("signal_arrow", "SIGNAL ARROW", "Homing arrow darts enemy to enemy", Color(0.95, 0.15, 0.12), "}>"),
 		Upgrade.new("chain", "CHAIN ARC", "Shots chain to nearby foes", Color(0.4, 0.9, 1.0), "//", 3),
 		Upgrade.new("orbital", "ORBITAL GUARD", "Orbiting damage orbs", Color(0.0, 1.0, 0.6), "@@", 3),
 		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
@@ -90,9 +90,8 @@ static func _stat_preview(u: Upgrade) -> String:
 		"regen":
 			var cur := GameState.hp_regen
 			return "+0.5 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.5]
-		"phase_shift":
-			var cur := GameState.dash_cooldown
-			return "Dash cooldown -25%% (%.2fs -> %.2fs)" % [cur, cur * 0.75]
+		"dash_charge":
+			return "+1 dash charge (%d -> %d)" % [GameState.dash_max_charges, GameState.dash_max_charges + 1]
 		"crit_surge":
 			var cur := GameState.crit_chance * 100.0
 			return "+5%% crit chance (%d%% -> %d%%)" % [int(cur), int(cur + 5)]
@@ -109,10 +108,10 @@ static func _stat_preview(u: Upgrade) -> String:
 			var cur := GameState.railgun_level
 			var dmg_mult := 1.5 + 0.5 * (cur + 1)
 			return "Piercing beam (Lv %d -> %d, %.1fx base dmg)" % [cur, cur + 1, dmg_mult]
-		"scatter":
-			var cur := GameState.scatter_level
-			var pellets := 4 + (cur + 1) * 2
-			return "Pellet burst (Lv %d -> %d, %d pellets)" % [cur, cur + 1, pellets]
+		"signal_arrow":
+			var cur := GameState.signal_arrow_level
+			var tgts := 4 + (cur + 1) * 2
+			return "Yaka arrow (Lv %d -> %d, faster, %d targets)" % [cur, cur + 1, tgts]
 		"chain":
 			var cur := GameState.chain_level
 			return "Chain bounces (Lv %d -> %d targets)" % [cur, cur + 1]
@@ -160,12 +159,13 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"gravity_well":
 			GameState.gravity_well_strength += 0.35
 		# "overclock" removed from upgrade pool
-		"phase_shift":
-			GameState.dash_cooldown *= 0.75
+		"dash_charge":
+			GameState.dash_max_charges += 1
+			GameState.dash_charges += 1
 		"railgun":
 			GameState.railgun_level += 1
-		"scatter":
-			GameState.scatter_level += 1
+		"signal_arrow":
+			GameState.signal_arrow_level += 1
 		"chain":
 			GameState.chain_level += 1
 		"orbital":

@@ -1593,12 +1593,20 @@ func _update_indicators() -> void:
 		return
 	if dash_indicator:
 		var cd = player.get("dash_cd_timer")
-		if cd != null and cd > 0.0:
-			dash_indicator.text = "DASH [%.1fs]" % cd
-			dash_indicator.add_theme_color_override("font_color", Color(0.4, 0.4, 0.5, 0.5))
-		else:
-			dash_indicator.text = "DASH [SPACE]"
+		var ch := GameState.dash_charges
+		var mx := GameState.dash_max_charges
+		if ch >= 1:
+			# At least one dash banked
+			if mx > 1 and ch < mx and cd != null and cd > 0.0:
+				dash_indicator.text = "DASH x%d  (+%.1fs)" % [ch, cd]
+			elif mx > 1:
+				dash_indicator.text = "DASH x%d  [SPACE]" % ch
+			else:
+				dash_indicator.text = "DASH [SPACE]"
 			dash_indicator.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0, 0.8))
+		else:
+			dash_indicator.text = "DASH [%.1fs]" % (cd if cd != null else 0.0)
+			dash_indicator.add_theme_color_override("font_color", Color(0.4, 0.4, 0.5, 0.5))
 	if ult_indicator:
 		var cd = player.get("ult_cd_timer")
 		if cd != null and cd > 0.0:

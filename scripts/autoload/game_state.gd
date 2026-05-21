@@ -35,6 +35,8 @@ var magnet_range: float = 3.5
 var hp_regen: float = 0.0
 var dash_cooldown: float = 2.0
 var dash_speed: float = 25.0
+var dash_max_charges: int = 1   # how many dashes can be banked
+var dash_charges: int = 1       # currently available dashes
 var invincible: bool = false
 
 # Special upgrades
@@ -48,7 +50,7 @@ var execute_bonus: float = 0.0  # Bonus damage multiplier vs low-HP enemies
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
-var scatter_level: int = 0
+var signal_arrow_level: int = 0
 var chain_level: int = 0
 var orbital_level: int = 0
 var piercing_level: int = 0
@@ -242,6 +244,8 @@ func reset() -> void:
 	hp_regen = 0.0
 	dash_cooldown = 2.0
 	dash_speed = 25.0
+	dash_max_charges = 1
+	dash_charges = 1
 	invincible = false
 	has_shatter = false
 	gravity_well_strength = 0.0
@@ -251,7 +255,7 @@ func reset() -> void:
 	damage_reduction = 0.0
 	execute_bonus = 0.0
 	railgun_level = 0
-	scatter_level = 0
+	signal_arrow_level = 0
 	chain_level = 0
 	orbital_level = 0
 	piercing_level = 0

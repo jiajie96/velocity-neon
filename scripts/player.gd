@@ -8,7 +8,7 @@ const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
 const CONTACT_COOLDOWN := 0.8
 const RAILGUN_COOLDOWN := 2.0
-const SCATTER_COOLDOWN := 1.5
+const SIGNAL_ARROW_COOLDOWN := 1.6
 const ORBITAL_RADIUS := 2.5
 const ORBITAL_SPEED := 3.0
 const ORBITAL_DAMAGE := 8.0
@@ -27,7 +27,7 @@ var ult_cd_timer: float = 0.0
 var contact_cd: float = 0.0
 var last_move_dir: Vector3 = Vector3(0, 0, -1)
 var railgun_timer: float = 0.0
-var scatter_timer: float = 0.0
+var signal_arrow_timer: float = 0.0
 var _orbital_nodes: Array[MeshInstance3D] = []
 var _orbital_angle: float = 0.0
 var _orbital_hit_timers: Dictionary = {}
@@ -397,28 +397,27 @@ func _update_heartbeat(delta: float) -> void:
 func _update_dash_ring() -> void:
 	if not _dash_ring or not _dash_ring_mat:
 		return
-	var cd_ratio := dash_cd_timer / maxf(GameState.dash_cooldown, 0.01)
-	if cd_ratio > 0.01:
-		# On cooldown — show shrinking ring filling back up
-		_dash_was_on_cd = true
-		_dash_ring.visible = true
-		var ring_scale := 1.0 - cd_ratio
-		_dash_ring.scale = Vector3(ring_scale, 1.0, ring_scale)
-		_dash_ring_mat.albedo_color = Color(0.4, 0.5, 0.6, 0.25)
-		_dash_ring_mat.emission = Color(0.3, 0.4, 0.5)
-		_dash_ring_mat.emission_energy_multiplier = 1.5
-	else:
-		# Ready — full bright ring
+	if GameState.dash_charges >= 1:
+		# Ready — at least one dash is banked
 		_dash_ring.visible = true
 		_dash_ring.scale = Vector3(1.0, 1.0, 1.0)
 		_dash_ring_mat.albedo_color = Color(0.4, 0.9, 1.0, 0.4)
 		_dash_ring_mat.emission = Color(0.3, 0.85, 1.0)
 		_dash_ring_mat.emission_energy_multiplier = 3.0
-		# Pulse flash and audio cue when dash just became ready
-		if _dash_was_on_cd:
-			_dash_was_on_cd = false
-			_dash_ready_pulse()
-			Audio.sfx_dash_ready()
+	else:
+		# No charges left — show the next one recharging
+		_dash_ring.visible = true
+		var cd_ratio := dash_cd_timer / maxf(GameState.dash_cooldown, 0.01)
+		var ring_scale := 1.0 - clampf(cd_ratio, 0.0, 1.0)
+		_dash_ring.scale = Vector3(ring_scale, 1.0, ring_scale)
+		_dash_ring_mat.albedo_color = Color(0.4, 0.5, 0.6, 0.25)
+		_dash_ring_mat.emission = Color(0.3, 0.4, 0.5)
+		_dash_ring_mat.emission_energy_multiplier = 1.5
+
+func _dash_recharged() -> void:
+	# A banked dash charge just refilled
+	_dash_ready_pulse()
+	Audio.sfx_dash_ready()
 
 func _dash_ready_pulse() -> void:
 	var container := get_parent().get_node_or_null("Projectiles")
@@ -434,7 +433,7 @@ func _process(delta: float) -> void:
 	_dash(delta)
 	_shoot(delta)
 	_shoot_railgun(delta)
-	_shoot_scatter(delta)
+	_shoot_signal_arrow(delta)
 	_update_orbitals(delta)
 	_ultimate(delta)
 	_check_contact_damage(delta)
@@ -488,7 +487,16 @@ func _move(delta: float) -> void:
 	position.z = clampf(position.z, -48.0, 48.0)
 
 func _dash(delta: float) -> void:
-	dash_cd_timer = maxf(dash_cd_timer - delta, 0.0)
+	# Recharge banked dash charges one at a time
+	if GameState.dash_charges < GameState.dash_max_charges:
+		dash_cd_timer = maxf(dash_cd_timer - delta, 0.0)
+		if dash_cd_timer <= 0.0:
+			GameState.dash_charges += 1
+			_dash_recharged()
+			if GameState.dash_charges < GameState.dash_max_charges:
+				dash_cd_timer = GameState.dash_cooldown
+	else:
+		dash_cd_timer = 0.0
 	if is_dashing:
 		dash_timer -= delta
 		_afterimage_timer -= delta
@@ -513,7 +521,7 @@ func _dash(delta: float) -> void:
 			is_dashing = false
 			GameState.invincible = false
 		return
-	if Input.is_action_just_pressed("dash") and dash_cd_timer <= 0.0:
+	if Input.is_action_just_pressed("dash") and GameState.dash_charges >= 1:
 		var dir := Vector3.ZERO
 		if Input.is_action_pressed("move_up"):
 			dir.z -= 1.0
@@ -528,7 +536,10 @@ func _dash(delta: float) -> void:
 		dash_dir = dir.normalized()
 		is_dashing = true
 		dash_timer = DASH_DURATION
-		dash_cd_timer = GameState.dash_cooldown
+		GameState.dash_charges -= 1
+		# Begin recharging the spent charge if a recharge isn't already running
+		if dash_cd_timer <= 0.0:
+			dash_cd_timer = GameState.dash_cooldown
 		GameState.invincible = true
 		GameState.total_dashes += 1
 		_dash_hit_enemies.clear()
@@ -719,74 +730,35 @@ func _spawn_railgun_beam(origin: Vector3, dir: Vector3) -> void:
 
 # === SCATTER SHOT ===
 
-func _shoot_scatter(delta: float) -> void:
-	if GameState.scatter_level <= 0:
+func _shoot_signal_arrow(delta: float) -> void:
+	if GameState.signal_arrow_level <= 0:
 		return
-	scatter_timer -= delta
-	if scatter_timer > 0.0:
+	signal_arrow_timer -= delta
+	if signal_arrow_timer > 0.0:
 		return
 	var target := _find_nearest_enemy()
 	if not target:
 		return
-	scatter_timer = SCATTER_COOLDOWN
+	signal_arrow_timer = SIGNAL_ARROW_COOLDOWN
 	var dir: Vector3 = (target.global_position - global_position)
 	dir.y = 0.0
 	dir = dir.normalized()
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var pellets := 4 + GameState.scatter_level * 2
-	var spread_angle := deg_to_rad(40.0)
-	for i in pellets:
-		var angle := spread_angle * (float(i) / float(pellets - 1) - 0.5)
-		var shot_dir := dir.rotated(Vector3.UP, angle)
-		var proj := Node3D.new()
-		proj.name = "ScatterPellet"
-		proj.set_script(load("res://scripts/projectile.gd"))
-		proj.position = global_position + Vector3(0, 0.8, 0) + shot_dir * 0.4
-		proj.set_meta("direction", shot_dir)
-		proj.set_meta("speed", GameState.projectile_speed * 1.3)
-		proj.set_meta("damage", GameState.damage * 0.5)
-		proj.set_meta("shatter", false)
-		proj.set_meta("weapon_type", "scatter")
-		proj.set_meta("chain_level", GameState.chain_level)
-		proj.set_meta("piercing", GameState.piercing_level)
-		proj.set_meta("ricochet", GameState.ricochet_level)
-		proj.set_meta("lifetime", 1.0)
-		container.add_child(proj)
-	Audio.sfx_shoot_scatter()
+	var lvl := GameState.signal_arrow_level
+	# Yaka-style homing arrow: faster + more damage + more targets per level
+	var arrow := Node3D.new()
+	arrow.name = "SignalArrow"
+	arrow.set_script(load("res://scripts/signal_arrow.gd"))
+	arrow.position = global_position + Vector3(0, 0.8, 0) + dir * 0.5
+	arrow.set_meta("direction", dir)
+	arrow.set_meta("speed", 22.0 + lvl * 6.0)
+	arrow.set_meta("damage", GameState.damage * (0.8 + 0.4 * lvl))
+	arrow.set_meta("max_targets", 4 + lvl * 2)
+	container.add_child(arrow)
+	Audio.sfx_signal_arrow()
 	_spawn_muzzle_flash(dir)
-	_spawn_scatter_cone(dir)
-	GameState.request_shake(1.5, -dir)
-
-func _spawn_scatter_cone(dir: Vector3) -> void:
-	var container := get_parent().get_node_or_null("Projectiles")
-	if not container:
-		return
-	# Brief cone flash showing the scatter spread
-	var cone := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 2.5
-	cyl.bottom_radius = 0.2
-	cyl.height = 3.0
-	cone.mesh = cyl
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.5, 0.0, 0.2)
-	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.4, 0.0)
-	mat.emission_energy_multiplier = 3.0
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	cone.material_override = mat
-	cone.position = global_position + dir * 2.0
-	cone.position.y = 0.5
-	# Rotate cone to point in the firing direction
-	cone.rotation.x = PI / 2.0
-	cone.rotation.y = atan2(dir.x, dir.z)
-	container.add_child(cone)
-	var tw := cone.create_tween()
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.15)
-	tw.tween_callback(cone.queue_free)
 
 # === ORBITAL GUARD ===
 
