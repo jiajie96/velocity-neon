@@ -13,6 +13,7 @@ var is_boss: bool = false
 
 var _flash_timer: float = 0.0
 var _original_color: Color = Color.WHITE
+var _neon: Color = Color(1.0, 0.0, 0.6)
 var _mat: StandardMaterial3D
 var _dead: bool = false
 var _mage_shoot_timer: float = 2.0
@@ -107,6 +108,7 @@ func _ready() -> void:
 	_build_visual()
 	_build_contact_shadow()
 	_build_hitbox()
+	_spawn_materialize()
 	# Mini HP bars above non-minion enemies for target prioritization
 	if enemy_type != "minion":
 		_build_hp_bar()
@@ -133,6 +135,7 @@ func _build_visual() -> void:
 		"golem": Color(0.9, 0.25, 0.05),
 	}
 	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
+	_neon = neon_color
 	var model_path: String = model_map.get(enemy_type, "")
 
 	if model_path != "" and ResourceLoader.exists(model_path):
@@ -181,8 +184,8 @@ func _apply_neon(node: Node, color: Color) -> void:
 				var m: StandardMaterial3D = base_mat.duplicate()
 				m.albedo_color = m.albedo_color.darkened(0.2)
 				m.emission_enabled = true
-				m.emission = color * 0.25
-				m.emission_energy_multiplier = 1.2
+				m.emission = color * 0.32
+				m.emission_energy_multiplier = 1.6
 				mi.set_surface_override_material(i, m)
 				if _mat == null:
 					_mat = m
@@ -301,6 +304,34 @@ func _update_hp_bar() -> void:
 			var angle := atan2(cam_dir.x, cam_dir.z)
 			_hp_bar.rotation.y = angle
 			_hp_bar_bg.rotation.y = angle
+
+func _spawn_materialize() -> void:
+	# Brief expanding flash when the enemy appears so it materializes in rather
+	# than popping in abruptly. Lightweight (single mesh + tween) for big waves.
+	var container := get_parent()
+	if not container:
+		return
+	var rr := 0.5 if not is_boss else 1.4
+	var flash := MeshInstance3D.new()
+	var s := SphereMesh.new()
+	s.radius = rr
+	flash.mesh = s
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(_neon.r, _neon.g, _neon.b, 0.6)
+	mat.emission_enabled = true
+	mat.emission = _neon
+	mat.emission_energy_multiplier = 6.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash.material_override = mat
+	flash.position = global_position + Vector3(0, rr, 0)
+	flash.scale = Vector3(0.4, 0.4, 0.4)
+	container.add_child(flash)
+	var tw := flash.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(flash, "scale", Vector3(2.2, 2.2, 2.2), 0.3).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.3)
+	tw.set_parallel(false)
+	tw.tween_callback(flash.queue_free)
 
 func _build_contact_shadow() -> void:
 	# Flat dark disc under the enemy so it reads against the neon grid floor.
