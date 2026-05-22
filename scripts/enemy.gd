@@ -13,8 +13,11 @@ var is_boss: bool = false
 
 var _flash_timer: float = 0.0
 var _original_color: Color = Color.WHITE
+var _original_energy: float = 2.0
 var _neon: Color = Color(1.0, 0.0, 0.6)
 var _mat: StandardMaterial3D
+var _glow_light: OmniLight3D
+var _glow_base_energy: float = 0.5
 var _dead: bool = false
 var _mage_shoot_timer: float = 2.0
 const MAGE_SHOOT_CD := 1.8
@@ -171,6 +174,7 @@ func _build_visual() -> void:
 	_mat.emission = neon_color
 	_mat.emission_energy_multiplier = 2.0
 	_original_color = neon_color
+	_original_energy = 2.0
 	mesh_inst.material_override = _mat
 	add_child(mesh_inst)
 	_add_glow_light(neon_color)
@@ -189,7 +193,8 @@ func _apply_neon(node: Node, color: Color) -> void:
 				mi.set_surface_override_material(i, m)
 				if _mat == null:
 					_mat = m
-					_original_color = m.albedo_color
+					_original_color = m.emission
+					_original_energy = m.emission_energy_multiplier
 	for child in node.get_children():
 		_apply_neon(child, color)
 
@@ -202,6 +207,8 @@ func _add_glow_light(color: Color) -> void:
 	light.omni_attenuation = 2.5
 	light.position.y = 1.0
 	add_child(light)
+	_glow_light = light
+	_glow_base_energy = light.light_energy
 
 func _build_hp_bar() -> void:
 	# Background bar (dark)
@@ -392,7 +399,7 @@ func _process(delta: float) -> void:
 	elif not _gravity_slowed and _flash_timer <= 0.0 and _mat and not is_boss:
 		if enemy_type != "exploder":
 			_mat.emission = _original_color
-			_mat.emission_energy_multiplier = 2.0
+			_mat.emission_energy_multiplier = _original_energy
 
 	var dir := (player.global_position - global_position)
 	dir.y = 0.0
@@ -542,7 +549,7 @@ func _process(delta: float) -> void:
 					# Reset emission after lunge — otherwise stays red from telegraph
 					if _mat:
 						_mat.emission = _original_color
-						_mat.emission_energy_multiplier = 2.0
+						_mat.emission_energy_multiplier = _original_energy
 			else:
 				position += dir * spd * delta
 				# Lunge cooldown decreases with wave so warriors stay threatening
@@ -568,9 +575,14 @@ func _process(delta: float) -> void:
 
 	if _flash_timer > 0.0:
 		_flash_timer -= delta
-		if _flash_timer <= 0.0 and _mat:
-			_mat.emission = _original_color
-			_mat.emission_energy_multiplier = 2.0
+		if _flash_timer <= 0.0:
+			if _mat:
+				_mat.emission = _original_color
+				_mat.emission_energy_multiplier = _original_energy
+			# Restore the glow light after the white hit-pop
+			if _glow_light:
+				_glow_light.light_color = _neon
+				_glow_light.light_energy = _glow_base_energy
 
 	# Exploder warning glow and beep — intensifies as they approach detonation range
 	if enemy_type == "exploder" and not _exploder_fuse_lit:
@@ -1352,17 +1364,26 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	GameState.add_damage_dealt(final_amount)
 	if is_crit:
 		GameState.crit_landed.emit()
+		# Crisp audio + a touch more freeze/shake so the 10% crit moments land
+		Audio.sfx_crit()
+		GameState.request_hit_stop(0.05)
+		GameState.request_shake(1.2)
 	_flash_timer = FLASH_DURATION
+	var flash_col := Color.WHITE
+	var flash_energy := 6.0
+	if _execute_proc:
+		flash_col = Color(0.9, 0.0, 0.15)
+		flash_energy = 12.0
+	elif is_crit:
+		flash_col = Color(1.0, 0.6, 0.0)
+		flash_energy = 10.0
 	if _mat:
-		if _execute_proc:
-			_mat.emission = Color(0.9, 0.0, 0.15)
-			_mat.emission_energy_multiplier = 12.0
-		elif is_crit:
-			_mat.emission = Color(1.0, 0.6, 0.0)
-			_mat.emission_energy_multiplier = 10.0
-		else:
-			_mat.emission = Color.WHITE
-			_mat.emission_energy_multiplier = 6.0
+		_mat.emission = flash_col
+		_mat.emission_energy_multiplier = flash_energy
+	# Pop the glow light so the whole enemy reads the hit (even multi-surface models)
+	if _glow_light:
+		_glow_light.light_color = flash_col
+		_glow_light.light_energy = _glow_base_energy * (4.0 if (is_crit or _execute_proc) else 3.0)
 	# Knockback — crits knock back harder
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:

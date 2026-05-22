@@ -19,6 +19,7 @@ signal vampire_heal
 signal crit_landed
 signal boss_bonus_xp(amount: float)
 signal wave_heal(amount: float)
+signal health_pickup(amount: float)
 signal golem_enraged
 signal death_by_overclock
 signal damage_iframes_started
@@ -33,7 +34,7 @@ var projectile_count: int = 1
 var projectile_speed: float = 38.0
 var magnet_range: float = 3.5
 var hp_regen: float = 0.0
-var dash_cooldown: float = 2.0
+var dash_cooldown: float = 1.75
 var dash_speed: float = 25.0
 var dash_max_charges: int = 1   # how many dashes can be banked
 var dash_charges: int = 1       # currently available dashes
@@ -105,7 +106,7 @@ func _process(delta: float) -> void:
 var _wave_damage_taken: bool = false
 
 var _damage_immunity_timer: float = 0.0
-const DAMAGE_IMMUNITY_DURATION := 0.15
+const DAMAGE_IMMUNITY_DURATION := 0.2
 
 func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	if invincible or game_over:
@@ -201,6 +202,10 @@ func add_kill(enemy_type: String = "") -> void:
 	# Brief slow-mo on big kill streaks for dramatic impact
 	if _streak_count == 5 or _streak_count == 8:
 		request_hit_stop(0.06)
+	# Escalating audio sting at streak milestones — pitch climbs as the streak grows
+	if _streak_count in [3, 5, 8, 12, 16, 20, 25]:
+		var streak_pitch := 1.0 + minf(float(_streak_count) * 0.04, 1.0)
+		Audio.sfx_streak(streak_pitch)
 	if lifesteal > 0.0 and hp < max_hp:
 		heal(lifesteal)
 		vampire_heal.emit()
@@ -242,7 +247,7 @@ func reset() -> void:
 	projectile_speed = 38.0
 	magnet_range = 3.5
 	hp_regen = 0.0
-	dash_cooldown = 2.0
+	dash_cooldown = 1.75
 	dash_speed = 25.0
 	dash_max_charges = 1
 	dash_charges = 1

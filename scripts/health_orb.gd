@@ -24,25 +24,22 @@ func _ready() -> void:
 func _on_magnet_pulse() -> void:
 	_magnetized = true
 
+const HEART_SCENE := preload("res://assets/models/pickups/heart.glb")
+
 func _build_visual() -> void:
-	# A green neon "plus" sign so it reads clearly as a health pickup
-	var holder := Node3D.new()
+	# Heart glb tinted neon green so it still reads as a health pickup
+	var holder := HEART_SCENE.instantiate() as Node3D
 	holder.name = "Mesh"
 	holder.position.y = 0.55
+	holder.scale = Vector3.ONE * 0.6
 	add_child(holder)
 	var green := Color(0.2, 1.0, 0.45)
-	for dims in [Vector3(0.5, 0.14, 0.16), Vector3(0.16, 0.14, 0.5)]:
-		var bar := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = dims
-		bar.mesh = box
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = green
-		mat.emission_enabled = true
-		mat.emission = green
-		mat.emission_energy_multiplier = 2.5
-		bar.material_override = mat
-		holder.add_child(bar)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = green
+	mat.emission_enabled = true
+	mat.emission = green
+	mat.emission_energy_multiplier = 2.5
+	_tint_glb(holder, mat)
 	var light := OmniLight3D.new()
 	light.light_color = green
 	light.light_energy = 0.6
@@ -50,6 +47,12 @@ func _build_visual() -> void:
 	light.omni_attenuation = 2.0
 	light.position.y = 0.55
 	add_child(light)
+
+func _tint_glb(root: Node, mat: StandardMaterial3D) -> void:
+	for child in root.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).material_override = mat
+		_tint_glb(child, mat)
 
 func _process(delta: float) -> void:
 	if _collected:
@@ -64,15 +67,18 @@ func _process(delta: float) -> void:
 	if mesh:
 		mesh.position.y = 0.55 + sin(_time * BOB_SPEED) * BOB_HEIGHT
 		mesh.rotation.y += delta * 1.5
-		# Fade out near end of lifetime
 		if _time > LIFETIME:
 			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME
-			for child in mesh.get_children():
-				if child is MeshInstance3D:
-					var mat := child.material_override as StandardMaterial3D
-					if mat:
-						mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-						mat.albedo_color.a = fade_ratio
+			_fade_glb(mesh, fade_ratio)
+
+func _fade_glb(root: Node, alpha: float) -> void:
+	for child in root.get_children():
+		if child is MeshInstance3D:
+			var mat := (child as MeshInstance3D).material_override as StandardMaterial3D
+			if mat:
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				mat.albedo_color.a = alpha
+		_fade_glb(child, alpha)
 
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if not player:
@@ -94,6 +100,7 @@ func _collect() -> void:
 	_collected = true
 	# Only heal if it actually helps — but still consume the orb for feedback
 	GameState.heal(heal_amount)
+	GameState.health_pickup.emit(heal_amount)
 	Audio.sfx_health_pickup()
 	_spawn_collect_vfx()
 	_spawn_heal_text()

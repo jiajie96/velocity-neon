@@ -86,6 +86,7 @@ func _ready() -> void:
 	GameState.crit_landed.connect(_on_crit_landed)
 	GameState.boss_bonus_xp.connect(_on_boss_bonus_xp)
 	GameState.wave_heal.connect(_on_wave_heal)
+	GameState.health_pickup.connect(_on_health_pickup)
 	GameState.golem_enraged.connect(_on_golem_enraged)
 	GameState.death_by_overclock.connect(_on_death_by_overclock)
 
@@ -1029,6 +1030,14 @@ func _on_crit_landed() -> void:
 	_levelup_flash.color = Color(1.0, 0.6, 0.0, 0.08)
 	var tw := create_tween()
 	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.12).set_ease(Tween.EASE_OUT)
+
+func _on_health_pickup(_amount: float) -> void:
+	# Brief green screen-edge pulse so grabbing a heal orb feels rewarding
+	if not _levelup_flash:
+		return
+	_levelup_flash.color = Color(0.15, 0.9, 0.4, 0.1)
+	var tw := create_tween()
+	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.2).set_ease(Tween.EASE_OUT)
 
 func _on_golem_enraged() -> void:
 	if not wave_announce:

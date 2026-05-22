@@ -197,6 +197,16 @@ func sfx_exploder_boom() -> void:
 func sfx_kill_milestone() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -1.0, 1.2)
 
+func sfx_crit() -> void:
+	# Bright, crisp two-layer ping so crits cut through the mix
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -7.0, 2.0)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -11.0, 2.3)
+
+func sfx_streak(pitch: float = 1.0) -> void:
+	# Rising chime that climbs as a kill streak escalates
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -8.0, pitch)
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -14.0, pitch * 0.9)
+
 func sfx_enemy_death_typed(enemy_type: String) -> void:
 	# Different pitch per enemy type for audio variety
 	var paths := ["res://assets/audio/sfx/enemy_death_01.ogg", "res://assets/audio/sfx/enemy_death_02.ogg"]

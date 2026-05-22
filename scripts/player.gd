@@ -16,10 +16,12 @@ const ORBITAL_HIT_CD := 0.5
 const DASH_AFTERIMAGE_INTERVAL := 0.04
 const DASH_DAMAGE := 15.0
 const DASH_HIT_RADIUS := 1.5
+const DASH_IFRAME_GRACE := 0.1
 
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_cd_timer: float = 0.0
+var _dash_grace_timer: float = 0.0
 var _dash_was_on_cd: bool = false
 var is_dashing: bool = false
 var dash_dir: Vector3 = Vector3.ZERO
@@ -487,12 +489,21 @@ func _move(delta: float) -> void:
 	position.z = clampf(position.z, -48.0, 48.0)
 
 func _dash(delta: float) -> void:
+	# Brief i-frame grace right after a dash ends so the final frame of phasing
+	# through a pack doesn't immediately eat a hit
+	if _dash_grace_timer > 0.0:
+		_dash_grace_timer -= delta
+		if _dash_grace_timer <= 0.0:
+			GameState.invincible = false
 	# Recharge banked dash charges one at a time
 	if GameState.dash_charges < GameState.dash_max_charges:
 		dash_cd_timer = maxf(dash_cd_timer - delta, 0.0)
 		if dash_cd_timer <= 0.0:
+			var was_empty := GameState.dash_charges == 0
 			GameState.dash_charges += 1
-			_dash_recharged()
+			# Only flash + chime on 0->1 so refilling extra charges isn't noisy
+			if was_empty:
+				_dash_recharged()
 			if GameState.dash_charges < GameState.dash_max_charges:
 				dash_cd_timer = GameState.dash_cooldown
 	else:
@@ -519,7 +530,8 @@ func _dash(delta: float) -> void:
 						_dash_hit_enemies.append(eid)
 		if dash_timer <= 0.0:
 			is_dashing = false
-			GameState.invincible = false
+			# Keep invincibility briefly past the dash for a forgiving escape window
+			_dash_grace_timer = DASH_IFRAME_GRACE
 		return
 	if Input.is_action_just_pressed("dash") and GameState.dash_charges >= 1:
 		var dir := Vector3.ZERO
@@ -536,6 +548,7 @@ func _dash(delta: float) -> void:
 		dash_dir = dir.normalized()
 		is_dashing = true
 		dash_timer = DASH_DURATION
+		_dash_grace_timer = 0.0
 		GameState.dash_charges -= 1
 		# Begin recharging the spent charge if a recharge isn't already running
 		if dash_cd_timer <= 0.0:
@@ -562,9 +575,9 @@ func _spawn_dash_trail() -> void:
 		sphere.height = 0.5
 		p.mesh = sphere
 		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(1.0, 0.4, 0.0, 0.8)
+		mat.albedo_color = Color(0.2, 0.8, 1.0, 0.8)
 		mat.emission_enabled = true
-		mat.emission = Color(1.0, 0.5, 0.0)
+		mat.emission = Color(0.1, 0.7, 1.0)
 		mat.emission_energy_multiplier = 4.0
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		p.material_override = mat
@@ -650,19 +663,24 @@ func _spawn_muzzle_flash(dir: Vector3) -> void:
 		return
 	var flash := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
-	sphere.radius = 0.15
+	sphere.radius = 0.22
 	flash.mesh = sphere
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.2, 0.7, 0.9, 0.6)
+	mat.albedo_color = Color(0.3, 0.8, 1.0, 0.75)
 	mat.emission_enabled = true
-	mat.emission = Color(0.2, 0.65, 0.85)
-	mat.emission_energy_multiplier = 4.0
+	mat.emission = Color(0.25, 0.75, 0.95)
+	mat.emission_energy_multiplier = 6.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	flash.material_override = mat
 	flash.position = global_position + Vector3(0, 0.8, 0) + dir * 0.6
+	flash.scale = Vector3(1.3, 1.3, 1.3)
 	container.add_child(flash)
+	# Quick bright pop that snaps inward as it fades — snappier shooting feel
 	var tw := flash.create_tween()
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.08)
+	tw.set_parallel(true)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.1).set_ease(Tween.EASE_OUT)
+	tw.tween_property(flash, "scale", Vector3(0.4, 0.4, 0.4), 0.1).set_ease(Tween.EASE_OUT)
+	tw.set_parallel(false)
 	tw.tween_callback(flash.queue_free)
 
 # === RAILGUN ===
@@ -728,7 +746,7 @@ func _spawn_railgun_beam(origin: Vector3, dir: Vector3) -> void:
 	tw.set_parallel(false)
 	tw.tween_callback(beam.queue_free)
 
-# === SCATTER SHOT ===
+# === SIGNAL ARROW ===
 
 func _shoot_signal_arrow(delta: float) -> void:
 	if GameState.signal_arrow_level <= 0:

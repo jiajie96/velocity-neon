@@ -48,7 +48,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
 		Upgrade.new("ricochet", "RICOCHET", "Shots bounce off arena walls", Color(0.8, 1.0, 0.3), "<>", 2),
 		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% critical hit chance", Color(1.0, 0.5, 0.0), "!!", 4),
-		Upgrade.new("vampire", "VAMPIRE", "Heal 1.5 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 2),
+		Upgrade.new("vampire", "VAMPIRE", "Heal 2.5 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 		Upgrade.new("velocity_rounds", "VELOCITY ROUNDS", "+20% projectile speed", Color(0.9, 1.0, 0.3), "=>", 3),
 		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to low-HP enemies", Color(0.9, 0.1, 0.2), "XX", 3),
@@ -97,7 +97,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+5%% crit chance (%d%% -> %d%%)" % [int(cur), int(cur + 5)]
 		"vampire":
 			var cur := GameState.lifesteal
-			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 1.5]
+			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 2.5]
 		"nano_shield":
 			var cur := GameState.damage_reduction * 100.0
 			return "-12%% incoming damage (%d%% -> %d%%)" % [int(cur), mini(int(cur + 12), 48)]
@@ -177,7 +177,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"crit_surge":
 			GameState.crit_chance += 0.05
 		"vampire":
-			GameState.lifesteal += 1.5
+			GameState.lifesteal += 2.5
 		"nano_shield":
 			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.48)
 		"velocity_rounds":
