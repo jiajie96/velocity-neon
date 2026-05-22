@@ -8,7 +8,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 - **WASD / Arrows** — Move
 - **Auto-Aim** — Shoots nearest enemy automatically
-- **SPACE** — Phase Dash (invincible + damage trail; banks multiple charges with the Phase Charge upgrade)
+- **SPACE** — Phase Dash (invincible + brief escape grace + damage trail; banks multiple charges with the Phase Charge upgrade)
 - **Q** — Ultimate Ability (area damage burst)
 - **Scroll Wheel** — Zoom camera in/out
 - **ESC** — Pause menu
@@ -19,7 +19,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Combat
 - Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto
-- Critical hits (10% base chance, orange CRIT text, screen flash)
+- Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra hit-stop/shake so they land hard)
 - Kill streaks grant an escalating combo damage bonus (up to +24%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
 - Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
 - Ultimate ability with screen-clearing AoE, multi-ring VFX, and damage scaling with upgrades
@@ -28,7 +28,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
 - **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash)
-- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (lifesteal)
+- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (2.5 HP lifesteal per kill, up to 3 stacks)
 - **Utility**: Phase Charge (banks an extra dash — stack to hold and chain multiple dashes), Gravity Well
 
 ### Enemies (8 types)
@@ -51,6 +51,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Enemy death SFX varies by type (unique pitch ranges per enemy for audio variety)
 - Ambient neon hum that shifts pitch based on HP
 - Low HP heartbeat pulse (rhythmic thump below 25% HP, increases urgency)
+- Critical hit ping (bright two-layer chime when a crit lands)
+- Escalating kill-streak chime that climbs in pitch at streak milestones (3/5/8/12/16/20/25)
 - Kill milestone celebratory SFX (distinct sound at 100/250/500/1000 kills)
 - Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
 - XP pickup pitch scaling (pentatonic climb on rapid collection)
@@ -75,6 +77,10 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Floating ambient neon motes drifting across the arena floor
 - Damage vignette (red pulse at low HP), hit flash on damage taken
 - Screen flash on critical hits (orange tint)
+- Green screen-edge pulse when grabbing a health pickup
+- Punchy muzzle flash on every shot (brighter, snaps inward as it fades)
+- Enemy hit-pop flares the whole model's glow white on hit (reads clearly even on multi-surface skeletons), then restores to its true resting neon glow
+- Cyan Phase Dash trail unified with the dash afterimages, ring, and shockwave
 - Speed lines during Phase Dash (radial shader)
 - Directional screen shake with hit-stop on heavy impacts
 - Camera punch on player damage for visceral hit feedback
@@ -154,6 +160,9 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Perfect wave bonus XP (no damage taken)
 - Wave clear heal bonus scales with max HP (rewards Fortify investment)
 - Brief invulnerability on wave clear (1s breathing room)
+- Phase Dash keeps a short i-frame grace after the dash ends, so phasing through a pack is a reliable escape
+- Snappier Phase Dash cooldown (1.75s) for more responsive mobility
+- Multi-source damage i-frame window (0.2s) so simultaneous hits in dense waves are fairer
 - XP magnet pulse on level-up, wave clear, kill streaks (3+), boss defeat, and exploder chain reactions
 - XP orbs fade out after 15 seconds to prevent late-game buildup
 - Teleporter blink frequency scales with wave for increased late-game threat

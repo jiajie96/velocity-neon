@@ -293,6 +293,17 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] XP bar numeric current/next-XP readout on the HUD
 - [x] Title screen controls completeness (Scroll = Zoom, 1/2/3 = Pick upgrade) + version tag
 - [x] Empty-upgrade-pool guard (resumes instead of soft-locking when every upgrade is maxed)
+- [x] Critical-hit audio ping + extra hit-stop/shake so the 10% crit moments land hard
+- [x] Escalating kill-streak chime (pitch climbs at streak milestones 3/5/8/12/16/20/25)
+- [x] Green screen-edge flash on health pickup (matches the crit/vampire flash language)
+- [x] Phase Dash i-frame grace window — stays invincible briefly past the dash for a reliable escape
+- [x] Enemy hit-pop flares the whole model's glow light white on hit (reads on multi-surface skeletons)
+- [x] Fixed enemy emission/energy restore so hit and gravity-slowed enemies keep their true resting neon glow (no permanent brightening)
+- [x] Punchier muzzle flash (brighter, snaps inward as it fades)
+- [x] Unified cyan Phase Dash trail (was clashing orange) to match afterimages, ring, and shockwave
+- [x] Wider multi-source damage i-frame window (0.15s -> 0.2s) for fairer hits in dense waves
+- [x] Snappier Phase Dash cooldown (2.0s -> 1.75s) for more responsive core mobility
+- [x] Vampire lifesteal tuned for late game (1.5 -> 2.5 HP/kill, max 2 -> 3 stacks)
 
 ---
 
