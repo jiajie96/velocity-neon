@@ -14,6 +14,7 @@ var _time: float = 0.0
 var _collected: bool = false
 var _burst_velocity: Vector3 = Vector3.ZERO
 var _burst_timer: float = 0.0
+var _shared_mat: StandardMaterial3D = null
 
 func _ready() -> void:
 	add_to_group("xp_orbs")
@@ -30,27 +31,25 @@ func _ready() -> void:
 func _on_magnet_pulse() -> void:
 	_magnetized = true
 
-func _build_visual() -> void:
-	var mesh_inst := MeshInstance3D.new()
-	mesh_inst.name = "Mesh"
-	# Uniform orb size for every drop — value is conveyed by colour, not size
-	var prism := PrismMesh.new()
-	prism.size = Vector3(0.32, 0.46, 0.32)
-	mesh_inst.mesh = prism
+const STAR_SCENE := preload("res://assets/models/pickups/star.glb")
 
-	# High-value orbs tint toward gold — kept dim to reduce screen flash
+func _build_visual() -> void:
+	var holder := STAR_SCENE.instantiate() as Node3D
+	holder.name = "Mesh"
+	holder.position.y = 0.5
+	holder.scale = Vector3.ONE * 0.55
+	add_child(holder)
+
 	var value_ratio := clampf((xp_value - 8.0) / 72.0, 0.0, 1.0)
 	var base_color := Color(0.1, 0.55, 0.25).lerp(Color(0.7, 0.6, 0.15), value_ratio)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = base_color
 	mat.emission_enabled = true
-	mat.emission = base_color * 0.3
-	mat.emission_energy_multiplier = 0.8 + value_ratio * 0.8
-	mesh_inst.material_override = mat
-	mesh_inst.position.y = 0.5
-	add_child(mesh_inst)
+	mat.emission = base_color * 0.5
+	mat.emission_energy_multiplier = 1.0 + value_ratio * 1.0
+	_shared_mat = mat
+	_tint_glb(holder, mat)
 
-	# Only add light to boss-tier orbs to keep screen readable
 	if value_ratio > 0.5:
 		var light := OmniLight3D.new()
 		light.light_color = base_color
@@ -59,6 +58,12 @@ func _build_visual() -> void:
 		light.omni_attenuation = 2.0
 		light.position.y = 0.5
 		add_child(light)
+
+func _tint_glb(root: Node, mat: StandardMaterial3D) -> void:
+	for child in root.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).material_override = mat
+		_tint_glb(child, mat)
 
 func _process(delta: float) -> void:
 	if _collected:
@@ -77,20 +82,17 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 
-	var mesh := get_node_or_null("Mesh")
+	var mesh := get_node_or_null("Mesh") as Node3D
 	if mesh:
 		mesh.position.y = 0.5 + sin(_time * BOB_SPEED) * BOB_HEIGHT
 		mesh.rotation.y += delta * 2.0
-		# Subtle emission pulse for visual appeal
-		var mat := mesh.material_override as StandardMaterial3D
-		if mat and _time <= LIFETIME:
+		if _shared_mat and _time <= LIFETIME:
 			var pulse := (sin(_time * 4.0) + 1.0) * 0.5
-			mat.emission_energy_multiplier = lerpf(0.6, 2.0, pulse)
-		# Fade out near end of lifetime
-		if _time > LIFETIME and mat:
+			_shared_mat.emission_energy_multiplier = lerpf(0.8, 2.2, pulse)
+		if _time > LIFETIME and _shared_mat:
 			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME
-			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			mat.albedo_color.a = fade_ratio
+			_shared_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			_shared_mat.albedo_color.a = fade_ratio
 
 	# Apply initial burst outward (decays quickly)
 	if _burst_timer > 0.0:
@@ -118,11 +120,8 @@ func _process(delta: float) -> void:
 		dir.y = 0.0
 		position += dir * MAGNET_SPEED * delta
 		position.y = 0.0
-		# Glow brighter when being pulled for satisfying visual feedback
-		if mesh:
-			var mat2 := mesh.material_override as StandardMaterial3D
-			if mat2:
-				mat2.emission_energy_multiplier = lerpf(mat2.emission_energy_multiplier, 4.0, 8.0 * delta)
+		if _shared_mat:
+			_shared_mat.emission_energy_multiplier = lerpf(_shared_mat.emission_energy_multiplier, 4.5, 8.0 * delta)
 
 	if dist < COLLECT_DISTANCE:
 		_collect()
