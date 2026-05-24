@@ -12,6 +12,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Q** — Ultimate Ability (area damage burst)
 - **Scroll Wheel** — Zoom camera in/out
 - **ESC** — Pause menu
+- **M** — Mute / unmute all audio
 - **R** — Restart (game over)
 - **1/2/3** — Quick-select upgrades on level-up
 
@@ -22,12 +23,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra hit-stop/shake so they land hard)
 - Kill streaks grant an escalating combo damage bonus (up to +24%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
 - Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
-- Ultimate ability with screen-clearing AoE, multi-ring VFX, and damage scaling with upgrades
+- Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push)
+- Sustained-fire feel: primary-weapon hit-stop now only triggers on kills, so high fire rate + multi-shot no longer drags the game into constant slow-motion (crits and boss kills still freeze-frame)
 
-### Weapons & Upgrades (21 upgrades)
+### Weapons & Upgrades (22 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
-- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash)
+- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (2.5 HP lifesteal per kill, up to 3 stacks)
 - **Utility**: Phase Charge (banks an extra dash — stack to hold and chain multiple dashes), Gravity Well
 
@@ -65,6 +67,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Orbital Guard hit SFX (subtle click when orbitals damage enemies)
 - Teleporter blink SFX (high-pitched warp sound on teleport)
 - Player death SFX (dramatic low-pitched explosion on game over)
+- Master mute toggle — press M (or use the pause-menu MUTE button) to silence/restore all audio via the master bus, with an on-screen indicator
 - Warrior lunge SFX (impact grunt when warriors charge)
 - Victory sting on wave 10/15/20/25 milestones
 - Wave clear heal SFX (subtle chime when HP recovers between waves)
@@ -132,9 +135,10 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Boss defeat bonus XP announcement
 - Live DPS meter, enemy count, survival timer
 - Wave announcements with boss wave callouts
-- Kill streak and milestone announcements
+- Kill streak and milestone announcements, plus a draining combo-streak timer bar under the banner that shows how long the kill-streak window (and its damage bonus) has left
 - No-damage wave indicator
-- Pause menu (resume/restart/quit)
+- Pause menu (resume/restart/mute/quit) with a live MUTE/UNMUTE toggle button
+- Level-up "powered up" world burst — a golden shockwave + spark flare at the player when an upgrade is confirmed
 - Ultimate cooldown shows seconds remaining (e.g. "ULT [3.2s]") for precise timing
 - Wave clear shows XP orb vacuum count (e.g. "WAVE CLEAR +12 ORBS")
 - Game over screen with stats (damage dealt/taken, kills/min, DPS, best kill streak, total dashes, avg time/wave), performance rating, power level summary (GEARING UP/ARMED UP/FULLY LOADED/MAXED OUT), build summary, and restart button
@@ -150,7 +154,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Mini HP bars above elite enemies for target prioritization
 
 ### Game Systems
-- Wave-based progression with aggressive scaling (enemy contact damage scales with wave)
+- Wave-based progression with aggressive scaling (enemy contact damage scales with wave); late-game wave sizes use a softened quadratic curve so the highest waves stay intense without becoming a slog
 - Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime
 - Multi-level-up: large XP gains (boss bonus, batched orbs) award every level crossed, offering each upgrade in turn instead of banking the overflow
 - Kill-streak combo damage bonus that ramps with the streak and decays when it ends
@@ -188,7 +192,7 @@ scripts/
   enemy_spawner.gd   — Wave logic and spawn system
   main.gd            — Scene setup
   hud.gd             — All UI rendering
-  upgrade_system.gd  — 21 upgrade definitions
+  upgrade_system.gd  — 22 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
   camera_rig.gd      — Camera follow, shake, zoom, punch

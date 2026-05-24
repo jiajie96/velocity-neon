@@ -112,7 +112,7 @@
 
 ### Quality of Life
 - ~~**Pause menu**: Full pause with resume/restart/settings/quit~~ DONE
-- **Settings screen**: Volume sliders, resolution, fullscreen toggle, VFX quality, camera sensitivity
+- **Settings screen**: Volume sliders, resolution, fullscreen toggle, VFX quality, camera sensitivity — PARTIAL: master mute toggle (M key, plus a MUTE button in the pause menu) is implemented; full settings still pending
 - **Save system**: Save best run stats, unlocked upgrades, settings
 - **Run statistics**: ~~Post-run summary (DPS over time, damage taken, upgrades chosen, XP graph)~~ PARTIAL — game over screen shows kills/min, avg DPS, total damage, time survived, performance rating (RECRUIT→LEGENDARY), and full upgrade build summary
 - **Minimap**: Optional corner minimap showing enemy positions
@@ -304,6 +304,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Wider multi-source damage i-frame window (0.15s -> 0.2s) for fairer hits in dense waves
 - [x] Snappier Phase Dash cooldown (2.0s -> 1.75s) for more responsive core mobility
 - [x] Vampire lifesteal tuned for late game (1.5 -> 2.5 HP/kill, max 2 -> 3 stacks)
+- [x] Master mute toggle (M key) with on-screen indicator + title-screen control hint
+- [x] Pause-menu MUTE / UNMUTE button (mouse access to audio toggle)
+- [x] Level-up "powered up" world burst (golden shockwave + sparks at the player on upgrade)
+- [x] ADRENALINE upgrade — outgoing damage rises as the player's HP falls (up to +30% near death)
+- [x] Ultimate now knocks enemies outward (panic-button "clear space" feel; bosses resist)
+- [x] Combo streak timer bar under the streak banner (shows the kill-streak window draining)
+- [x] Smoother sustained fire — primary-fire hit-stop now only triggers on kills, not every bullet (no more high-fire-rate slow-motion stutter)
+- [x] Hit-stop no longer leaks into the upgrade/pause screen (resets time scale on pause, so upgrade-card animations no longer crawl)
+- [x] Health-orb pickup fix — heal orbs now magnetize and heal on contact (were only collectible during their fade-out)
+- [x] Softer late-game wave-size scaling for better pacing (quadratic term 0.8 -> 0.6)
 
 ---
 
