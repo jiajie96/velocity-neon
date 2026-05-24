@@ -273,7 +273,11 @@ func _update_procedural_anim(delta: float) -> void:
 	# Warrior lunge squash
 	if _warrior_lunging:
 		target_squash = 0.8
-	_anim_squash = lerpf(_anim_squash, target_squash, 8.0 * delta)
+	# Clamp the lerp weight so a large-delta frame hitch can't overshoot, and clamp
+	# the result so the divisions below can never produce an inf/NaN scale (a
+	# non-finite Transform3D crashes the renderer with no GDScript error).
+	_anim_squash = lerpf(_anim_squash, target_squash, clampf(8.0 * delta, 0.0, 1.0))
+	_anim_squash = clampf(_anim_squash, 0.6, 1.4)
 	# Apply transforms
 	if model:
 		model.position.y = bob_y
