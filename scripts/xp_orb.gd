@@ -169,10 +169,10 @@ func _batch_xp_text() -> void:
 		# Update existing batch label
 		_batch_label.text = "+%d" % int(_batch_xp)
 		# Reset its fade timer
-		var cam := get_viewport().get_camera_3d()
-		if cam:
-			var screen_pos := cam.unproject_position(global_position + Vector3(0, 1.2, 0))
-			_batch_label.position = screen_pos + Vector2(-15, 0)
+		var existing_cam := get_viewport().get_camera_3d()
+		if existing_cam:
+			var existing_pos := existing_cam.unproject_position(global_position + Vector3(0, 1.2, 0))
+			_batch_label.position = existing_pos + Vector2(-15, 0)
 		return
 	# Spawn a new batch label
 	var cam := get_viewport().get_camera_3d()

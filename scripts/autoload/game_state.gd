@@ -6,20 +6,29 @@ signal leveled_up(level: int)
 signal wave_changed(wave: int)
 signal kills_changed(kills: int)
 signal player_died
+# These signals are an autoload event bus — they're emitted/connected from other
+# scripts, which the per-class unused-signal check can't see, so silence it here.
+@warning_ignore("unused_signal")
 signal upgrade_selected
 signal hit_stop_requested(duration: float)
-signal enemy_killed_at(pos: Vector3)
+@warning_ignore("unused_signal")
 signal boss_defeated
 signal kill_streak(count: int)
 signal xp_magnet_pulse
 signal perfect_wave(bonus_xp: float)
+@warning_ignore("unused_signal")
 signal wave_cleared
 signal kill_milestone(count: int)
 signal vampire_heal
+@warning_ignore("unused_signal")
 signal crit_landed
+@warning_ignore("unused_signal")
 signal boss_bonus_xp(amount: float)
+@warning_ignore("unused_signal")
 signal wave_heal(amount: float)
+@warning_ignore("unused_signal")
 signal health_pickup(amount: float)
+@warning_ignore("unused_signal")
 signal golem_enraged
 signal death_by_overclock
 signal damage_iframes_started

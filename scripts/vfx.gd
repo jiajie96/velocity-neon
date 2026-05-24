@@ -89,7 +89,7 @@ static func spawn_impact_flash(container: Node, pos: Vector3, color: Color, ener
 	tw.tween_callback(light.queue_free)
 
 # ── Particle Trail (for dashes, movement effects) ──
-static func spawn_particle_trail(container: Node, pos: Vector3, direction: Vector3, color: Color, count: int = 16, spread_radius: float = 0.5) -> void:
+static func spawn_particle_trail(container: Node, pos: Vector3, direction: Vector3, color: Color, count: int = 16, _spread_radius: float = 0.5) -> void:
 	var particles := GPUParticles3D.new()
 	particles.amount = count
 	particles.lifetime = 0.4

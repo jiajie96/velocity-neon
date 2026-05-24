@@ -1578,7 +1578,6 @@ func _on_player_died() -> void:
 		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 1.0).set_ease(Tween.EASE_OUT)
 	game_over_panel.visible = true
 	# Customize title for overclock burnout
-	var title_node := game_over_panel.find_child("*", true, false)
 	for child in game_over_panel.get_child(0).get_children():
 		if child is Label and child.text == "SYSTEM FAILURE":
 			if _overclock_death:
@@ -1587,7 +1586,7 @@ func _on_player_died() -> void:
 			break
 	var stats_label := game_over_panel.find_child("StatsLabel") as Label
 	if stats_label:
-		var mins := int(GameState.time_survived) / 60
+		var mins := int(GameState.time_survived / 60.0)
 		var secs := int(GameState.time_survived) % 60
 		var dmg_text := _format_damage(GameState.total_damage_dealt)
 		var kpm := GameState.kills / maxf(GameState.time_survived / 60.0, 0.01)
@@ -1931,7 +1930,7 @@ func _update_time_label() -> void:
 		_time_label.visible = false
 		return
 	_time_label.visible = true
-	var mins := int(GameState.time_survived) / 60
+	var mins := int(GameState.time_survived / 60.0)
 	var secs := int(GameState.time_survived) % 60
 	_time_label.text = "%d:%02d" % [mins, secs]
 

@@ -22,7 +22,6 @@ var fire_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_cd_timer: float = 0.0
 var _dash_grace_timer: float = 0.0
-var _dash_was_on_cd: bool = false
 var is_dashing: bool = false
 var dash_dir: Vector3 = Vector3.ZERO
 var ult_cd_timer: float = 0.0
