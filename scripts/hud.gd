@@ -39,6 +39,10 @@ var _no_damage_label: Label
 var _hit_flash: ColorRect
 var _time_label: Label
 var _wave_progress_label: Label
+var _mute_label: Label
+var _mute_button: Button
+var _streak_bar: ColorRect
+var _streak_bar_bg: ColorRect
 
 var _current_choices: Array = []
 var _prev_hp: float = -1.0
@@ -70,6 +74,8 @@ func _ready() -> void:
 	_build_hit_flash()
 	_build_wave_progress_label()
 	_build_pause_menu()
+	_build_mute_indicator()
+	_build_streak_bar()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -187,6 +193,7 @@ func _build_title_screen() -> void:
 		["1 / 2 / 3", "Pick upgrade"],
 		["SCROLL", "Zoom camera"],
 		["ESC", "Pause"],
+		["M", "Mute audio"],
 	]
 	for b in bindings:
 		var row := HBoxContainer.new()
@@ -744,6 +751,49 @@ func _build_streak_label() -> void:
 	_streak_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_streak_label)
 
+func _build_streak_bar() -> void:
+	# A thin draining bar just below the streak banner so players can see how much
+	# of the kill-streak window is left before the combo (and its damage bonus) resets.
+	_streak_bar_bg = ColorRect.new()
+	_streak_bar_bg.anchor_left = 0.5
+	_streak_bar_bg.anchor_right = 0.5
+	_streak_bar_bg.anchor_top = 0.5
+	_streak_bar_bg.anchor_bottom = 0.5
+	_streak_bar_bg.offset_left = -55
+	_streak_bar_bg.offset_right = 55
+	_streak_bar_bg.offset_top = 100
+	_streak_bar_bg.offset_bottom = 104
+	_streak_bar_bg.color = Color(0.15, 0.1, 0.05, 0.5)
+	_streak_bar_bg.clip_contents = true
+	_streak_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_streak_bar_bg.visible = false
+	add_child(_streak_bar_bg)
+
+	_streak_bar = ColorRect.new()
+	_streak_bar.anchor_left = 0.0
+	_streak_bar.anchor_right = 0.0
+	_streak_bar.anchor_top = 0.0
+	_streak_bar.anchor_bottom = 1.0
+	_streak_bar.offset_left = 0
+	_streak_bar.offset_top = 0
+	_streak_bar.offset_bottom = 0
+	_streak_bar.offset_right = 110
+	_streak_bar.color = Color(1.0, 0.8, 0.2, 0.85)
+	_streak_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_streak_bar_bg.add_child(_streak_bar)
+
+func _update_streak_bar() -> void:
+	if not _streak_bar_bg or not _streak_bar:
+		return
+	var progress := GameState.get_streak_progress()
+	if GameState.get_streak_count() >= 2 and progress > 0.0 and not GameState.game_over:
+		_streak_bar_bg.visible = true
+		_streak_bar.offset_right = 110.0 * progress
+		# Shift toward red as the window runs out for an at-a-glance urgency read
+		_streak_bar.color = Color(1.0, 0.35, 0.1).lerp(Color(1.0, 0.85, 0.25), progress)
+	else:
+		_streak_bar_bg.visible = false
+
 func _build_wave_timer_label() -> void:
 	_wave_timer_label = Label.new()
 	_wave_timer_label.text = ""
@@ -834,8 +884,8 @@ func _build_wave_progress_label() -> void:
 func _build_pause_menu() -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_pause_panel.custom_minimum_size = Vector2(320, 220)
-	_pause_panel.position = Vector2(-160, -110)
+	_pause_panel.custom_minimum_size = Vector2(320, 264)
+	_pause_panel.position = Vector2(-160, -132)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.02, 0.01, 0.06, 0.95)
 	style.border_color = Color(0.0, 0.8, 1.0, 0.5)
@@ -879,7 +929,7 @@ func _build_pause_menu() -> void:
 	btn_style_hover.content_margin_top = 8
 	btn_style_hover.content_margin_bottom = 8
 
-	for item in [["RESUME", "_on_pause_resume"], ["RESTART", "_on_pause_restart"], ["QUIT", "_on_pause_quit"]]:
+	for item in [["RESUME", "_on_pause_resume"], ["RESTART", "_on_pause_restart"], ["MUTE", "_on_pause_mute"], ["QUIT", "_on_pause_quit"]]:
 		var btn := Button.new()
 		btn.text = item[0]
 		btn.add_theme_font_size_override("font_size", 16)
@@ -892,6 +942,9 @@ func _build_pause_menu() -> void:
 		btn.pressed.connect(Callable(self, item[1]))
 		btn.mouse_entered.connect(func(): Audio.sfx_ui_hover())
 		vbox.add_child(btn)
+		if item[1] == "_on_pause_mute":
+			_mute_button = btn
+	_update_mute_button_label()
 
 	_pause_panel.visible = false
 	_pause_panel.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -910,6 +963,10 @@ func _on_pause_restart() -> void:
 	GameState.reset()
 	get_tree().reload_current_scene()
 
+func _on_pause_mute() -> void:
+	# _toggle_mute handles the audio bus, the HUD indicator, and the button label.
+	_toggle_mute()
+
 func _on_pause_quit() -> void:
 	get_tree().quit()
 
@@ -920,8 +977,51 @@ func toggle_pause() -> void:
 		_on_pause_resume()
 	else:
 		Audio.sfx_ui_click()
+		# Clear any active hit-stop so the pause menu isn't entered in slow-motion
+		Engine.time_scale = 1.0
+		_update_mute_button_label()
 		_pause_panel.visible = true
 		get_tree().paused = true
+
+# === AUDIO MUTE ===
+
+func _build_mute_indicator() -> void:
+	_mute_label = Label.new()
+	_mute_label.text = ""
+	_mute_label.add_theme_font_size_override("font_size", 14)
+	_mute_label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.5, 0.0))
+	_mute_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_mute_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mute_label.position = Vector2(-100, 86)
+	_mute_label.custom_minimum_size = Vector2(200, 20)
+	_mute_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_mute_label)
+
+func _toggle_mute() -> void:
+	var muted := Audio.toggle_mute()
+	_show_mute_indicator(muted)
+	_update_mute_button_label()
+
+func _show_mute_indicator(muted: bool) -> void:
+	if not _mute_label:
+		return
+	if muted:
+		_mute_label.text = "AUDIO MUTED  [M]"
+		_mute_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4, 0.9))
+	else:
+		_mute_label.text = "AUDIO ON  [M]"
+		_mute_label.add_theme_color_override("font_color", Color(0.4, 0.95, 0.6, 0.9))
+	# Muted stays visible as a persistent reminder; "AUDIO ON" fades out.
+	var tw := create_tween()
+	if muted:
+		tw.tween_property(_mute_label, "theme_override_colors/font_color:a", 0.55, 0.3)
+	else:
+		tw.tween_interval(0.8)
+		tw.tween_property(_mute_label, "theme_override_colors/font_color:a", 0.0, 0.5)
+
+func _update_mute_button_label() -> void:
+	if _mute_button:
+		_mute_button.text = "UNMUTE" if Audio.is_muted() else "MUTE"
 
 func _on_boss_defeated() -> void:
 	if not _levelup_flash:
@@ -1594,6 +1694,7 @@ func _process(delta: float) -> void:
 	_update_no_damage_indicator()
 	_update_time_label()
 	_update_wave_progress()
+	_update_streak_bar()
 	Audio.update_hum_pitch()
 
 func _update_indicators() -> void:
@@ -1727,6 +1828,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_dismiss_title()
 		return
 	if event is InputEventKey and event.pressed:
+		# Master mute toggle — works any time once past the title screen
+		if event.physical_keycode == KEY_M and not event.echo:
+			_toggle_mute()
+			return
 		# Keyboard upgrade selection (1/2/3) during level-up
 		if upgrade_panel and upgrade_panel.visible and GameState.paused_for_upgrade:
 			if event.physical_keycode == KEY_1:

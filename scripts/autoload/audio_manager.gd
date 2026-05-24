@@ -34,6 +34,17 @@ func _ready() -> void:
 		add_child(p)
 		_sfx_pool.append(p)
 
+var _muted: bool = false
+
+# Toggle all game audio by muting the master bus. Returns the new muted state.
+func toggle_mute() -> bool:
+	_muted = not _muted
+	AudioServer.set_bus_mute(AudioServer.get_bus_index("Master"), _muted)
+	return _muted
+
+func is_muted() -> bool:
+	return _muted
+
 func _load(path: String) -> AudioStream:
 	if path in _cache:
 		return _cache[path]
