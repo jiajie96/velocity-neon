@@ -71,15 +71,6 @@ func _process(delta: float) -> void:
 			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME
 			_fade_glb(mesh, fade_ratio)
 
-func _fade_glb(root: Node, alpha: float) -> void:
-	for child in root.get_children():
-		if child is MeshInstance3D:
-			var mat := (child as MeshInstance3D).material_override as StandardMaterial3D
-			if mat:
-				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-				mat.albedo_color.a = alpha
-		_fade_glb(child, alpha)
-
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if not player:
 		return
@@ -95,6 +86,15 @@ func _fade_glb(root: Node, alpha: float) -> void:
 
 	if dist < COLLECT_DISTANCE:
 		_collect()
+
+func _fade_glb(root: Node, alpha: float) -> void:
+	for child in root.get_children():
+		if child is MeshInstance3D:
+			var mat := (child as MeshInstance3D).material_override as StandardMaterial3D
+			if mat:
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				mat.albedo_color.a = alpha
+		_fade_glb(child, alpha)
 
 func _collect() -> void:
 	_collected = true

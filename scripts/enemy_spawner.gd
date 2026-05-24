@@ -18,9 +18,10 @@ func _ready() -> void:
 func _on_wave_changed(wave: int) -> void:
 	_wave_active = true
 	_spawned_this_wave = 0
-	# Aggressive scaling: swarm the player harder each wave
-	# Wave 1: 20, Wave 5: 62, Wave 10: 142, Wave 15: 252, Wave 20: 392
-	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.8)
+	# Aggressive scaling: swarm the player harder each wave, but with a softer
+	# quadratic so very late waves don't balloon into a slog of hundreds of kills.
+	# Wave 1: 20, Wave 5: 67, Wave 10: 152, Wave 15: 267, Wave 20: 412
+	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.6)
 	_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
 	_spawn_timer = 0.1
 	_wave_timer = 0.0

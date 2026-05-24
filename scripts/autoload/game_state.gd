@@ -48,6 +48,7 @@ var crit_chance: float = 0.10
 var lifesteal: float = 0.0
 var damage_reduction: float = 0.0
 var execute_bonus: float = 0.0  # Bonus damage multiplier vs low-HP enemies
+var adrenaline: bool = false    # Deal more damage the lower the player's HP gets
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -227,6 +228,23 @@ func get_combo_damage_mult() -> float:
 func get_combo_bonus_pct() -> int:
 	return int(round((get_combo_damage_mult() - 1.0) * 100.0))
 
+func get_streak_count() -> int:
+	return _streak_count
+
+# Fraction of the kill-streak window remaining (0..1), or 0 when no streak is active.
+func get_streak_progress() -> float:
+	if _streak_count < 2:
+		return 0.0
+	return clampf(_streak_timer / STREAK_WINDOW, 0.0, 1.0)
+
+# Adrenaline: outgoing damage scales up as the player's HP drops, rewarding
+# risky low-health play. Ranges from +0% at full HP to +30% near death.
+func get_adrenaline_mult() -> float:
+	if not adrenaline:
+		return 1.0
+	var missing := 1.0 - (hp / maxf(max_hp, 1.0))
+	return 1.0 + 0.30 * clampf(missing, 0.0, 1.0)
+
 func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
 	# Gentle shake — scaled down from original values for subtlety
 	var scaled := intensity * 0.4
@@ -259,6 +277,7 @@ func reset() -> void:
 	lifesteal = 0.0
 	damage_reduction = 0.0
 	execute_bonus = 0.0
+	adrenaline = false
 	railgun_level = 0
 	signal_arrow_level = 0
 	chain_level = 0

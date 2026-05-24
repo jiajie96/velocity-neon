@@ -75,6 +75,9 @@ func _ready() -> void:
 	_build_player_beacon()
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.damage_iframes_started.connect(_on_iframes_started)
+	# Burst plays once the upgrade is confirmed (and the game un-pauses), so it
+	# animates in real time instead of being frozen behind the upgrade screen.
+	GameState.upgrade_selected.connect(_on_upgrade_burst)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -861,6 +864,18 @@ func _do_ultimate() -> void:
 			if dist < ULTIMATE_RADIUS:
 				if enemy.has_method("take_damage"):
 					enemy.take_damage(ult_dmg)
+				# Shove survivors outward so the ultimate doubles as a panic-button
+				# that clears breathing room. Bosses resist most of the push.
+				var push_dir := enemy.global_position - global_position
+				push_dir.y = 0.0
+				if push_dir.length_squared() < 0.01:
+					push_dir = Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
+				push_dir = push_dir.normalized()
+				var falloff := 1.0 - clampf(dist / ULTIMATE_RADIUS, 0.0, 1.0)
+				var push_force := (2.0 if enemy.get("is_boss") else 5.5) * (0.4 + falloff)
+				enemy.position += push_dir * push_force
+				enemy.position.x = clampf(enemy.position.x, -47.0, 47.0)
+				enemy.position.z = clampf(enemy.position.z, -47.0, 47.0)
 	_spawn_ult_vfx()
 
 func _spawn_ult_vfx() -> void:
@@ -994,6 +1009,18 @@ func _set_model_flash(flash_on: bool) -> void:
 	if not target:
 		return
 	_apply_flash_recursive(target, flash_on)
+
+func _on_upgrade_burst() -> void:
+	# Golden "powered up" burst at the player on level-up — a tactile world-space
+	# reward to complement the HUD flash and the cyan i-frame ring.
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var VFX := preload("res://scripts/vfx.gd")
+	var gold := Color(1.0, 0.85, 0.2)
+	VFX.spawn_shockwave(container, position, Color(gold.r, gold.g, gold.b, 0.55), 2.8, 0.45, 0.05)
+	VFX.spawn_spark_burst(container, position + Vector3(0, 0.7, 0), gold, 20, 5.0, 0.45)
+	VFX.spawn_impact_flash(container, position + Vector3(0, 0.9, 0), gold, 2.8, 0.28)
 
 func _on_iframes_started() -> void:
 	# Brief cyan shockwave to show i-frames after a hit

@@ -1355,6 +1355,8 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	var final_amount := amount * (2.0 if is_crit else 1.0)
 	# Kill-streak combo bonus — sustained streaks ramp up damage
 	final_amount *= GameState.get_combo_damage_mult()
+	# Adrenaline — outgoing damage rises as the player's own HP falls
+	final_amount *= GameState.get_adrenaline_mult()
 	# Executioner bonus — extra damage to enemies below 30% HP
 	var _execute_proc := false
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:

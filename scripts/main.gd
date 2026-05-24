@@ -249,6 +249,10 @@ func _process(delta: float) -> void:
 		_ambient_particles.global_position = player.global_position if player else Vector3.ZERO
 
 func _on_leveled_up(_level: int) -> void:
+	# Clear any active hit-stop freeze before pausing — otherwise a level-up that
+	# lands during a hit-stop leaves time_scale at 0.04, making the upgrade-card
+	# animations crawl and the first moment after resume run in slow-motion.
+	Engine.time_scale = 1.0
 	get_tree().paused = true
 	GameState.paused_for_upgrade = true
 

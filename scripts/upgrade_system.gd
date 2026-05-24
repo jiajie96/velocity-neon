@@ -52,6 +52,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 		Upgrade.new("velocity_rounds", "VELOCITY ROUNDS", "+20% projectile speed", Color(0.9, 1.0, 0.3), "=>", 3),
 		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to low-HP enemies", Color(0.9, 0.1, 0.2), "XX", 3),
+		Upgrade.new("adrenaline", "ADRENALINE", "More damage the lower your HP", Color(1.0, 0.25, 0.1), "AD", 1),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -132,6 +133,8 @@ static func _stat_preview(u: Upgrade) -> String:
 		"executioner":
 			var cur := GameState.execute_bonus
 			return "+25%% dmg to low HP enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
+		"adrenaline":
+			return "Up to +30%% damage as your HP drops (scales with missing HP)"
 		_:
 			return u.description
 
@@ -184,6 +187,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.projectile_speed *= 1.20
 		"executioner":
 			GameState.execute_bonus += 0.25
+		"adrenaline":
+			GameState.adrenaline = true
 
 static func reset_all() -> void:
 	_initialized = false

@@ -204,7 +204,12 @@ func _on_hit(area: Area3D) -> void:
 	enemy.take_damage(damage, weapon_type)
 	if chain_level > 0 and weapon_type in ["pulse", "scatter"]:
 		_do_chain(enemy, chain_level)
-	GameState.request_hit_stop(0.025)
+	# Only freeze-frame on kills. Firing many bullets per second (high fire rate +
+	# multi-shot) used to trigger a hit-stop on every single impact, which stacked
+	# into near-constant slow-motion and made sustained fire feel choppy. Crits
+	# still freeze via the enemy's own take_damage, so impactful moments still land.
+	if is_instance_valid(enemy) and enemy.get("_dead"):
+		GameState.request_hit_stop(0.04)
 	Audio.sfx_hit_impact(weapon_type)
 	_hit_vfx()
 
