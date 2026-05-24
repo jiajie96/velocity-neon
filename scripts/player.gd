@@ -860,22 +860,23 @@ func _do_ultimate() -> void:
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if enemy is Node3D:
-			var dist := global_position.distance_to(enemy.global_position)
+			var e: Node3D = enemy
+			var dist := global_position.distance_to(e.global_position)
 			if dist < ULTIMATE_RADIUS:
-				if enemy.has_method("take_damage"):
-					enemy.take_damage(ult_dmg)
+				if e.has_method("take_damage"):
+					e.take_damage(ult_dmg)
 				# Shove survivors outward so the ultimate doubles as a panic-button
 				# that clears breathing room. Bosses resist most of the push.
-				var push_dir := enemy.global_position - global_position
+				var push_dir: Vector3 = e.global_position - global_position
 				push_dir.y = 0.0
 				if push_dir.length_squared() < 0.01:
 					push_dir = Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
 				push_dir = push_dir.normalized()
 				var falloff := 1.0 - clampf(dist / ULTIMATE_RADIUS, 0.0, 1.0)
-				var push_force := (2.0 if enemy.get("is_boss") else 5.5) * (0.4 + falloff)
-				enemy.position += push_dir * push_force
-				enemy.position.x = clampf(enemy.position.x, -47.0, 47.0)
-				enemy.position.z = clampf(enemy.position.z, -47.0, 47.0)
+				var push_force: float = (2.0 if e.get("is_boss") else 5.5) * (0.4 + falloff)
+				e.position += push_dir * push_force
+				e.position.x = clampf(e.position.x, -47.0, 47.0)
+				e.position.z = clampf(e.position.z, -47.0, 47.0)
 	_spawn_ult_vfx()
 
 func _spawn_ult_vfx() -> void:
