@@ -35,7 +35,7 @@
 - **Particle system upgrade**: Replace MeshInstance3D death VFX with GPUParticles3D for higher fidelity — sparks, embers, neon dust clouds
 - **Enemy dissolve shader**: On death, enemies dissolve in a scan-line pattern (top-to-bottom) with emissive edge glow before disappearing
 - **Ground grid reactive pulse**: Grid lines brighten/ripple outward from impact points (projectile hits, explosions, dash origin)
-- ~~**Boss entrance cinematic**: Brief camera zoom-out + slow-mo + screen flash when boss spawns~~ DONE — camera zooms out temporarily on boss spawn with slow-mo
+- ~~**Boss entrance cinematic**: Brief camera zoom-out + slow-mo + screen flash when boss spawns~~ DONE — camera zooms out + ominous entrance sting on boss spawn (slow-mo dropped to keep frame pacing smooth)
 
 ### Screen Effects
 - ~~**Screen shake refinement**: Implement directional shake (bias toward damage source direction)~~ DONE — gentle 40% intensity directional shake
@@ -153,7 +153,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - **Slow-motion**: Brief 0.1s slow-mo on kill streaks (every 10th kill) or big explosions
 
 ### Juice Checklist
-- [x] Hit-stop (freeze frame 1-2 frames on heavy hits)
+- [~] Hit-stop (freeze frame on heavy hits) — later disabled to keep frame pacing smooth in big waves; bounded screen shake now carries impact
 - [x] Enemy knockback on hit
 - [x] Player weapon flash/muzzle on fire
 - [x] XP orb collection burst particles
@@ -194,7 +194,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Rogue dodge ghost trail (translucent afterimage)
 - [x] Scatter + Chain Arc synergy (pellets now chain)
 - [x] Dash damage scales with player speed (Swift upgrade reward)
-- [x] Orbital Guard hit spark VFX (green flash on hit)
+- [x] Orbital Guard hit feedback (allocation-free emission/scale pop; was a per-hit particle spark)
 - [x] Enemy death SFX varies by type (unique pitch per enemy)
 - [x] Low HP heartbeat audio pulse (rhythmic thump below 25%)
 - [x] Mage/Necro bolt trail particles (fading spheres behind enemy projectiles)
@@ -202,7 +202,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Player model damage flash (white flash on hit)
 - [x] XP orb spawn burst (pop outward before settling)
 - [x] Boss enrage arena red pulse (screen edges throb)
-- [x] Kill streak slow-mo (brief time-slow on 5+ streaks)
+- [~] Kill streak slow-mo (brief time-slow on 5+ streaks) — removed when hit-stop was disabled for frame pacing
 - [x] Threat-scaled spawn warnings (bigger rings for dangerous types)
 - [x] Wave spawn progress HUD counter
 - [x] Upgrade stat preview (concrete before/after values)
@@ -210,7 +210,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Nano Shield visual ring (blue pulse around player when damage reduction active)
 - [x] Batched XP pickup text (rapid collection shows combined "+X XP")
 - [x] Wave number shown in countdown ("WAVE X IN 2.1s")
-- [x] Enhanced death VFX (bigger shake, slow-mo, red flash on death)
+- [x] Enhanced death VFX (bigger shake, red flash on death; slow-mo dropped for frame pacing)
 - [x] Overclock burnout death message (distinct game over title)
 - [x] Golem charge end impact VFX (ground slam ring when charge stops)
 - [x] Boss speed scales with wave (late-game golems are faster)
@@ -252,7 +252,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Average time per wave shown on game over stats
 - [x] Wave clear shows XP orb vacuum count
 - [x] Victory sting on wave 10/15/20/25 milestones
-- [x] Camera punch on player damage (directional camera kick on hit)
+- [~] Camera punch on player damage — superseded by the bounded directional screen shake on hit
 - [x] Warrior lunge cooldown scales with wave (faster lunges in late game)
 - [x] Warrior lunge emission properly resets after attack
 - [x] Executioner red flash on low-HP kills (distinct from crit flash)
@@ -293,7 +293,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] XP bar numeric current/next-XP readout on the HUD
 - [x] Title screen controls completeness (Scroll = Zoom, 1/2/3 = Pick upgrade) + version tag
 - [x] Empty-upgrade-pool guard (resumes instead of soft-locking when every upgrade is maxed)
-- [x] Critical-hit audio ping + extra hit-stop/shake so the 10% crit moments land hard
+- [x] Critical-hit audio ping + extra screen shake so the 10% crit moments land hard (hit-stop dropped for frame pacing)
 - [x] Escalating kill-streak chime (pitch climbs at streak milestones 3/5/8/12/16/20/25)
 - [x] Green screen-edge flash on health pickup (matches the crit/vampire flash language)
 - [x] Phase Dash i-frame grace window — stays invincible briefly past the dash for a reliable escape
@@ -302,8 +302,8 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Punchier muzzle flash (brighter, snaps inward as it fades)
 - [x] Unified cyan Phase Dash trail (was clashing orange) to match afterimages, ring, and shockwave
 - [x] Wider multi-source damage i-frame window (0.15s -> 0.2s) for fairer hits in dense waves
-- [x] Snappier Phase Dash cooldown (2.0s -> 1.75s) for more responsive core mobility
-- [x] Vampire lifesteal tuned for late game (1.5 -> 2.5 HP/kill, max 2 -> 3 stacks)
+- [x] Snappier Phase Dash cooldown (2.0s -> 1.75s -> 1.5s) for more responsive core mobility
+- [x] Vampire lifesteal tuned (1.5 -> 2.5 -> 1.0 -> 1.75 HP/kill, max 3 stacks)
 - [x] Master mute toggle (M key) with on-screen indicator + title-screen control hint
 - [x] Pause-menu MUTE / UNMUTE button (mouse access to audio toggle)
 - [x] Level-up "powered up" world burst (golden shockwave + sparks at the player on upgrade)
@@ -314,6 +314,17 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Hit-stop no longer leaks into the upgrade/pause screen (resets time scale on pause, so upgrade-card animations no longer crawl)
 - [x] Health-orb pickup fix — heal orbs now magnetize and heal on contact (were only collectible during their fade-out)
 - [x] Softer late-game wave-size scaling for better pacing (quadratic term 0.8 -> 0.6)
+- [x] Solo boss duels — boss waves clear the swarm and lock the fight into a shrunken walled arena (faster golem to compensate)
+- [x] Tiered per-hit projectile VFX — kills get the full shockwave + spark burst, chip hits get just a cheap light flash (cuts the heaviest per-frame allocation in dense waves)
+- [x] Restored bounded directional screen shake (hard-capped) + camera kick when the player takes a hit; hit-stop stays off for frame pacing
+- [x] Projectile ricochet/despawn respects the active arena radius (Ricochet now bounces off the boss-fight walls instead of passing through)
+- [x] Heavy Multi-Shot volleys (3+ projectiles) fire a chunky scatter SFX instead of the single-bolt pulse
+- [x] Orbital Guard hit feedback restored as an allocation-free emission/scale pop (no per-hit particle alloc)
+- [x] Boss entrance warning sting before the boss music swaps in
+- [x] Build-tinted pulse bolts (Piercing → white-cyan, Ricochet → lime-green, both → blended) for at-a-glance build readability
+- [x] Snappier Phase Dash cooldown (1.75s -> 1.5s)
+- [x] Vampire lifesteal rebalanced (1.0 -> 1.75 HP/kill)
+- [x] Slightly more generous health-orb drops (4%/8% -> 5%/10%)
 
 ---
 

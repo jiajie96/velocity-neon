@@ -1,7 +1,7 @@
 extends Node3D
 
 const DASH_DURATION := 0.2
-const DASH_TRAIL_COUNT := 6
+const DASH_TRAIL_COUNT := 3
 const ULTIMATE_COOLDOWN := 12.0
 const ULTIMATE_RADIUS := 8.0
 const ULTIMATE_DAMAGE := 50.0
@@ -13,7 +13,7 @@ const ORBITAL_RADIUS := 2.5
 const ORBITAL_SPEED := 3.0
 const ORBITAL_DAMAGE := 8.0
 const ORBITAL_HIT_CD := 0.5
-const DASH_AFTERIMAGE_INTERVAL := 0.04
+const DASH_AFTERIMAGE_INTERVAL := 0.09
 const DASH_DAMAGE := 15.0
 const DASH_HIT_RADIUS := 1.5
 const DASH_IFRAME_GRACE := 0.1
@@ -66,7 +66,7 @@ func _ready() -> void:
 	_build_visual()
 	_build_hurtbox()
 	_build_light()
-	_build_dash_ring()
+	# Dash CD ring under the player removed — the HUD already shows charge state.
 	_build_gravity_ring()
 	_build_shield_ring()
 	_build_target_reticle()
@@ -491,8 +491,8 @@ func _move(delta: float) -> void:
 						model.rotation.y = lerp_angle(model.rotation.y, target_angle, 8.0 * delta)
 	position += dir * GameState.speed * delta
 	position.y = 0.0
-	position.x = clampf(position.x, -48.0, 48.0)
-	position.z = clampf(position.z, -48.0, 48.0)
+	position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
+	position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 
 func _dash(delta: float) -> void:
 	# Brief i-frame grace right after a dash ends so the final frame of phasing
@@ -522,8 +522,8 @@ func _dash(delta: float) -> void:
 			_spawn_afterimage()
 		position += dash_dir * GameState.dash_speed * delta
 		position.y = 0.0
-		position.x = clampf(position.x, -48.0, 48.0)
-		position.z = clampf(position.z, -48.0, 48.0)
+		position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
+		position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 		# Dash damage — hit enemies we pass through (scales with speed)
 		var scaled_dash_dmg := DASH_DAMAGE * (GameState.speed / 6.5)
 		var enemies := get_tree().get_nodes_in_group("enemies")
@@ -645,7 +645,12 @@ func _shoot(delta: float) -> void:
 			spread = deg_to_rad(12.0) * (float(i) - float(count - 1) * 0.5)
 		var shot_dir := dir_to_target.rotated(Vector3.UP, spread)
 		_fire_projectile(container, shot_dir, "pulse")
-	Audio.sfx_shoot()
+	# Heavy multi-shot volleys get the chunkier scatter report instead of the
+	# single-bolt pulse sound, so a stacked Multi-Shot build actually sounds like one.
+	if count >= 3:
+		Audio.sfx_shoot_scatter()
+	else:
+		Audio.sfx_shoot()
 	_spawn_muzzle_flash(dir_to_target)
 
 func _fire_projectile(container: Node, dir: Vector3, weapon_type: String) -> void:
@@ -811,6 +816,17 @@ func _update_orbitals(delta: float) -> void:
 		var angle := _orbital_angle + (TAU / float(wanted)) * float(i)
 		var orb: MeshInstance3D = _orbital_nodes[i]
 		orb.position = Vector3(cos(angle) * ORBITAL_RADIUS, 0.6, sin(angle) * ORBITAL_RADIUS)
+		# Allocation-free hit feedback: pop emission + scale for a moment after a
+		# hit, settling back over ~0.18s. Replaces the old per-hit particle spark.
+		var fl: float = orb.get_meta("hit_flash", 0.0)
+		if fl > 0.0:
+			fl = maxf(fl - delta, 0.0)
+			orb.set_meta("hit_flash", fl)
+			var m := orb.material_override as StandardMaterial3D
+			if m:
+				m.emission_energy_multiplier = 4.0 + fl * 55.0
+			var s := 1.0 + fl * 1.4
+			orb.scale = Vector3(s, s, s)
 	var orb_world_positions: Array[Vector3] = []
 	for orb in _orbital_nodes:
 		orb_world_positions.append(orb.global_position)
@@ -821,23 +837,21 @@ func _update_orbitals(delta: float) -> void:
 			_orbital_hit_timers.erase(key)
 	for e in enemies:
 		if e is Node3D and e.has_method("take_damage"):
-			for orb_pos in orb_world_positions:
-				if orb_pos.distance_to(e.global_position) < 1.2:
+			for j in orb_world_positions.size():
+				if orb_world_positions[j].distance_to(e.global_position) < 1.2:
 					var eid := e.get_instance_id()
 					if eid not in _orbital_hit_timers:
 						e.take_damage(ORBITAL_DAMAGE * (1.0 + GameState.orbital_level * 0.3), "orbital")
 						_orbital_hit_timers[eid] = ORBITAL_HIT_CD
 						Audio.sfx_orbital_hit()
-						_spawn_orbital_hit_spark(orb_pos)
+						if j < _orbital_nodes.size():
+							_orbital_nodes[j].set_meta("hit_flash", 0.18)
 					break
 
-func _spawn_orbital_hit_spark(hit_pos: Vector3) -> void:
-	var container := get_parent().get_node_or_null("Projectiles")
-	if not container:
-		return
-	var VFX := preload("res://scripts/vfx.gd")
-	VFX.spawn_spark_burst(container, Vector3(hit_pos.x, 0.6, hit_pos.z), Color(0.1, 0.8, 0.5), 6, 2.5, 0.15)
-	VFX.spawn_impact_flash(container, Vector3(hit_pos.x, 0.6, hit_pos.z), Color(0.1, 0.8, 0.5), 1.0, 0.08)
+func _spawn_orbital_hit_spark(_hit_pos: Vector3) -> void:
+	# Disabled — orbital ticks every 0.5s per enemy can produce dozens of
+	# spark+light bursts per second in big waves. Audio still cues the hit.
+	pass
 
 # === ULTIMATE ===
 
@@ -934,15 +948,11 @@ func _check_contact_damage(delta: float) -> void:
 			dmg = enemy.contact_damage
 		contact_cd = CONTACT_COOLDOWN
 		GameState.take_damage(dmg)
-		var kb_dir: Vector3 = (global_position - enemy.global_position).normalized() if enemy else Vector3.BACK
-		kb_dir.y = 0.0
-		position += kb_dir * 1.5
-		GameState.request_shake(1.5, kb_dir)
-		# Spark at the point of contact so melee hits read as real impacts
-		var spark_container := get_parent().get_node_or_null("Projectiles")
-		if spark_container:
-			var VFX := preload("res://scripts/vfx.gd")
-			VFX.spawn_spark_burst(spark_container, global_position + Vector3(0, 0.7, 0), Color(1.0, 0.35, 0.2), 8, 3.0, 0.2)
+		# Contact pushback removed — player no longer gets shoved by creep contact.
+		# Special attacks (warrior lunge, golem slam/charge) still apply their own
+		# knockback because those are telegraphed, intentional hits.
+		# Contact spark removed — GPUParticles alloc on every melee tick was a
+		# repeat offender under big swarms. HP flash + SFX still telegraph it.
 
 func _update_weapon_glow() -> void:
 	var glow := get_node_or_null("PlayerGlow") as OmniLight3D
@@ -965,12 +975,12 @@ func _update_regen_vfx(delta: float) -> void:
 	_regen_vfx_timer -= delta
 	if _regen_vfx_timer > 0.0:
 		return
-	_regen_vfx_timer = 1.0
+	_regen_vfx_timer = 1.4
 	# Spawn subtle green heal particles around the player
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	for i in 3:
+	for i in 1:
 		var p := MeshInstance3D.new()
 		var sphere := SphereMesh.new()
 		sphere.radius = 0.06
@@ -1027,12 +1037,9 @@ func _on_upgrade_burst() -> void:
 	VFX.spawn_impact_flash(container, position + Vector3(0, 0.9, 0), gold, 2.8, 0.28)
 
 func _on_iframes_started() -> void:
-	# Brief cyan shockwave to show i-frames after a hit
-	var container := get_parent().get_node_or_null("Projectiles")
-	if not container:
-		return
-	var VFX := preload("res://scripts/vfx.gd")
-	VFX.spawn_shockwave(container, position, Color(0.2, 0.7, 0.9, 0.35), 1.2, 0.15, 0.05)
+	# Disabled: per-hit shockwave allocated a shader plane + tween on every
+	# damage event. Shield-ring visual + HP flash already convey i-frames.
+	pass
 
 func _apply_flash_recursive(node: Node, flash_on: bool) -> void:
 	if node is MeshInstance3D:

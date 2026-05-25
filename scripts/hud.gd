@@ -1,5 +1,53 @@
 extends Control
 
+# Compact radial cooldown indicator — a ring that drains/fills around a
+# keybind glyph, replacing the old text "DASH [1.4s]" indicators.
+class RadialCooldown extends Control:
+	var progress: float = 1.0
+	var ready_color: Color = Color(0.4, 0.9, 1.0)
+	var label_text: String = ""
+	var subtext: String = ""
+	var is_ready: bool = false
+	const RING_RADIUS := 22.0
+	const RING_THICK := 4.0
+
+	func _ready() -> void:
+		custom_minimum_size = Vector2(RING_RADIUS * 2.0 + 8.0, RING_RADIUS * 2.0 + 24.0)
+
+	func set_state(p: float, text: String, ready_state: bool, sub: String = "") -> void:
+		progress = clampf(p, 0.0, 1.0)
+		label_text = text
+		subtext = sub
+		is_ready = ready_state
+		queue_redraw()
+
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var cy := RING_RADIUS + 2.0
+		var center := Vector2(cx, cy)
+		# Background dim ring (full outline)
+		draw_arc(center, RING_RADIUS, 0.0, TAU, 56, Color(0.08, 0.04, 0.14, 0.7), RING_THICK, true)
+		# Foreground arc — fills clockwise starting from 12 o'clock
+		if progress > 0.0:
+			var col := ready_color
+			if not is_ready:
+				col = Color(ready_color.r * 0.55, ready_color.g * 0.55, ready_color.b * 0.55, 0.85)
+			else:
+				col.a = 0.95
+			var end := -PI * 0.5 + TAU * progress
+			draw_arc(center, RING_RADIUS, -PI * 0.5, end, 56, col, RING_THICK, true)
+		# Keybind glyph in the center
+		var f := ThemeDB.fallback_font
+		var fs := 11
+		var sz := f.get_string_size(label_text, HORIZONTAL_ALIGNMENT_CENTER, -1, fs)
+		var lcol := ready_color if is_ready else Color(0.55, 0.55, 0.65, 0.75)
+		draw_string(f, Vector2(cx - sz.x * 0.5, cy + sz.y * 0.3), label_text, HORIZONTAL_ALIGNMENT_CENTER, -1, fs, lcol)
+		# Subtext under the ring (charges count or remaining seconds)
+		if subtext != "":
+			var sub_fs := 10
+			var ssz := f.get_string_size(subtext, HORIZONTAL_ALIGNMENT_CENTER, -1, sub_fs)
+			draw_string(f, Vector2(cx - ssz.x * 0.5, cy + RING_RADIUS + 14.0), subtext, HORIZONTAL_ALIGNMENT_CENTER, -1, sub_fs, lcol)
+
 var hp_bar: ProgressBar
 var hp_label: Label
 var xp_bar: ProgressBar
@@ -7,8 +55,8 @@ var xp_value_label: Label
 var wave_label: Label
 var kills_label: Label
 var level_label: Label
-var dash_indicator: Label
-var ult_indicator: Label
+var dash_indicator: RadialCooldown
+var ult_indicator: RadialCooldown
 var wave_announce: Label
 var upgrade_panel: PanelContainer
 var upgrade_buttons: Array[Button] = []
@@ -406,18 +454,14 @@ func _build_bottom_bar() -> void:
 	hbox.position.y = -45
 	add_child(hbox)
 
-	dash_indicator = Label.new()
-	dash_indicator.text = "DASH [SPACE]"
-	dash_indicator.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0, 0.7))
-	dash_indicator.add_theme_font_size_override("font_size", 13)
-	dash_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dash_indicator = RadialCooldown.new()
+	dash_indicator.ready_color = Color(0.4, 0.9, 1.0)
+	dash_indicator.set_state(1.0, "SPACE", true, "")
 	hbox.add_child(dash_indicator)
 
-	ult_indicator = Label.new()
-	ult_indicator.text = "ULT [Q]"
-	ult_indicator.add_theme_color_override("font_color", Color(0.9, 0.4, 1.0, 0.7))
-	ult_indicator.add_theme_font_size_override("font_size", 13)
-	ult_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ult_indicator = RadialCooldown.new()
+	ult_indicator.ready_color = Color(0.95, 0.45, 1.0)
+	ult_indicator.set_state(1.0, "Q", true, "")
 	hbox.add_child(ult_indicator)
 
 # === WAVE ANNOUNCE ===
@@ -786,7 +830,9 @@ func _update_streak_bar() -> void:
 	if not _streak_bar_bg or not _streak_bar:
 		return
 	var progress := GameState.get_streak_progress()
-	if GameState.get_streak_count() >= 2 and progress > 0.0 and not GameState.game_over:
+	# Hide while the upgrade card panel is open — the bar used to overlap the
+	# card descriptions and made them harder to read.
+	if GameState.get_streak_count() >= 2 and progress > 0.0 and not GameState.game_over and not GameState.paused_for_upgrade:
 		_streak_bar_bg.visible = true
 		_streak_bar.offset_right = 110.0 * progress
 		# Shift toward red as the window runs out for an at-a-glance urgency read
@@ -1696,35 +1742,41 @@ func _process(delta: float) -> void:
 	_update_streak_bar()
 	Audio.update_hum_pitch()
 
+const ULT_VISUAL_CD := 12.0  # base ultimate cooldown for the radial fill — see player.ULTIMATE_COOLDOWN
+
 func _update_indicators() -> void:
 	var player: Node = get_tree().get_first_node_in_group("player_node")
 	if not player:
 		return
 	if dash_indicator:
-		var cd = player.get("dash_cd_timer")
+		var dash_cd = player.get("dash_cd_timer")
+		var dash_total: float = GameState.dash_cooldown
 		var ch := GameState.dash_charges
 		var mx := GameState.dash_max_charges
+		var prog: float
+		var ready_now: bool
+		var sub: String
 		if ch >= 1:
-			# At least one dash banked
-			if mx > 1 and ch < mx and cd != null and cd > 0.0:
-				dash_indicator.text = "DASH x%d  (+%.1fs)" % [ch, cd]
-			elif mx > 1:
-				dash_indicator.text = "DASH x%d  [SPACE]" % ch
-			else:
-				dash_indicator.text = "DASH [SPACE]"
-			dash_indicator.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0, 0.8))
+			# At least one dash is banked — ring is full; subtext shows how many.
+			prog = 1.0
+			ready_now = true
+			sub = ("x%d" % ch) if mx > 1 else ""
 		else:
-			dash_indicator.text = "DASH [%.1fs]" % (cd if cd != null else 0.0)
-			dash_indicator.add_theme_color_override("font_color", Color(0.4, 0.4, 0.5, 0.5))
+			# Recharging — ring fills as the next charge comes back.
+			var cd_val: float = (dash_cd as float) if dash_cd != null else 0.0
+			prog = 1.0 - clampf(cd_val / maxf(dash_total, 0.01), 0.0, 1.0)
+			ready_now = false
+			sub = "%.1fs" % cd_val
+		dash_indicator.set_state(prog, "SPACE", ready_now, sub)
 	if ult_indicator:
-		var cd = player.get("ult_cd_timer")
-		if cd != null and cd > 0.0:
+		var ult_cd = player.get("ult_cd_timer")
+		var cd_val: float = (ult_cd as float) if ult_cd != null else 0.0
+		if cd_val > 0.0:
 			_ult_was_on_cd = true
-			ult_indicator.text = "ULT [%.1fs]" % cd
-			ult_indicator.add_theme_color_override("font_color", Color(0.4, 0.3, 0.5, 0.5))
+			var prog := 1.0 - clampf(cd_val / ULT_VISUAL_CD, 0.0, 1.0)
+			ult_indicator.set_state(prog, "Q", false, "%.1fs" % cd_val)
 		else:
-			ult_indicator.text = "ULT [Q] READY"
-			ult_indicator.add_theme_color_override("font_color", Color(0.9, 0.4, 1.0, 0.8))
+			ult_indicator.set_state(1.0, "Q", true, "READY")
 			# Purple screen-edge pulse when ult just became ready
 			if _ult_was_on_cd:
 				_ult_was_on_cd = false

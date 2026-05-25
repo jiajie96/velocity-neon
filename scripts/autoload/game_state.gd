@@ -10,6 +10,7 @@ signal player_died
 # scripts, which the per-class unused-signal check can't see, so silence it here.
 @warning_ignore("unused_signal")
 signal upgrade_selected
+@warning_ignore("unused_signal")
 signal hit_stop_requested(duration: float)
 @warning_ignore("unused_signal")
 signal boss_defeated
@@ -43,7 +44,7 @@ var projectile_count: int = 1
 var projectile_speed: float = 38.0
 var magnet_range: float = 3.5
 var hp_regen: float = 0.0
-var dash_cooldown: float = 1.75
+var dash_cooldown: float = 1.5
 var dash_speed: float = 25.0
 var dash_max_charges: int = 1   # how many dashes can be banked
 var dash_charges: int = 1       # currently available dashes
@@ -102,6 +103,11 @@ const STREAK_WINDOW := 2.0
 var shake_amount: float = 0.0
 var shake_direction: Vector3 = Vector3.ZERO
 
+# Boss arena — set true while a boss is alive. Used by the spawner to skip
+# regular spawns and by player/enemy movement to clamp inside a smaller ring.
+var boss_active: bool = false
+var arena_radius: float = 48.0  # default full arena half-extent; shrunk during boss fights
+
 func _process(delta: float) -> void:
 	if game_started and not game_over:
 		time_survived += delta
@@ -131,10 +137,13 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	var reduced := amount * maxf(0.0, 1.0 - (0.0 if is_self_damage else damage_reduction))
 	hp = clampf(hp - reduced, 0.0, max_hp)
 	total_damage_taken += reduced
-	shake_amount = 2.0 * log(reduced + 1.0) / log(10.0)
 	if not is_self_damage:
 		_wave_damage_taken = true
 		_damage_immunity_timer = DAMAGE_IMMUNITY_DURATION
+		# Brief camera kick so taking a hit actually reads. i-frame gated, so this
+		# fires at most ~5x/sec even when surrounded.
+		if reduced > 0.0:
+			request_shake(1.1 + minf(reduced * 0.05, 1.4))
 	hp_changed.emit(hp, max_hp)
 	if amount >= 5.0:
 		Audio.sfx_player_hit()
@@ -255,14 +264,19 @@ func get_adrenaline_mult() -> float:
 	return 1.0 + 0.30 * clampf(missing, 0.0, 1.0)
 
 func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
-	# Gentle shake — scaled down from original values for subtlety
-	var scaled := intensity * 0.4
-	shake_amount = maxf(shake_amount, scaled)
+	# Gentle, allocation-free camera shake. Moving the camera costs nothing — the
+	# frame hitches in big waves came from per-hit GPU particle bursts (trimmed in
+	# projectile.gd), not from this. Scaled down and hard-capped so a dense swarm
+	# can't stack many calls into a constant rumble.
+	var scaled := intensity * 0.28
+	shake_amount = minf(maxf(shake_amount, scaled), 1.6)
 	if direction.length_squared() > 0.01:
 		shake_direction = direction.normalized()
 
-func request_hit_stop(duration: float = 0.04) -> void:
-	hit_stop_requested.emit(duration)
+func request_hit_stop(_duration: float = 0.04) -> void:
+	# Still disabled: hit-stop drives Engine.time_scale and tangled with the
+	# level-up pause, so it stays off. Screen shake above carries the impact.
+	pass
 
 func reset() -> void:
 	hp = 80.0
@@ -274,7 +288,7 @@ func reset() -> void:
 	projectile_speed = 38.0
 	magnet_range = 3.5
 	hp_regen = 0.0
-	dash_cooldown = 1.75
+	dash_cooldown = 1.5
 	dash_speed = 25.0
 	dash_max_charges = 1
 	dash_charges = 1
@@ -310,6 +324,8 @@ func reset() -> void:
 	_streak_timer = 0.0
 	shake_amount = 0.0
 	shake_direction = Vector3.ZERO
+	boss_active = false
+	arena_radius = 48.0
 	_wave_damage_taken = false
 	_damage_immunity_timer = 0.0
 	acquired_upgrades.clear()

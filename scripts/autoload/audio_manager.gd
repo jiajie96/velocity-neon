@@ -150,6 +150,13 @@ func sfx_ui_hover() -> void:
 func sfx_boss_defeat() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", 0.0, 0.8)
 
+func sfx_boss_incoming() -> void:
+	# Ominous low-end stinger announcing a boss wave — deep pulse, a sub thud,
+	# and a slowed wave-horn so the entrance lands before the music swaps.
+	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -1.0, 0.55)
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -3.0, 0.4)
+	play_sfx("res://assets/audio/sfx/wave_start.ogg", -6.0, 0.7)
+
 func sfx_dice_roll() -> void:
 	play_sfx("res://assets/audio/sfx/dice_roll.ogg", -3.0)
 

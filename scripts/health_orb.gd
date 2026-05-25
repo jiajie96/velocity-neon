@@ -5,7 +5,7 @@ extends Node3D
 const COLLECT_DISTANCE := 0.9
 const MAGNET_SPEED := 10.0
 const BOB_SPEED := 3.0
-const BOB_HEIGHT := 0.2
+const BOB_HEIGHT := 0.32
 const LIFETIME := 18.0
 const FADE_TIME := 3.0
 
@@ -30,22 +30,23 @@ func _build_visual() -> void:
 	# Heart glb tinted neon green so it still reads as a health pickup
 	var holder := HEART_SCENE.instantiate() as Node3D
 	holder.name = "Mesh"
-	holder.position.y = 0.55
-	holder.scale = Vector3.ONE * 0.6
+	holder.position.y = 0.6
+	# Bigger + brighter — old size was easy to miss in the middle of a swarm.
+	holder.scale = Vector3.ONE * 0.95
 	add_child(holder)
-	var green := Color(0.2, 1.0, 0.45)
+	var green := Color(0.25, 1.0, 0.5)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = green
 	mat.emission_enabled = true
 	mat.emission = green
-	mat.emission_energy_multiplier = 2.5
+	mat.emission_energy_multiplier = 4.0
 	_tint_glb(holder, mat)
 	var light := OmniLight3D.new()
 	light.light_color = green
-	light.light_energy = 0.6
-	light.omni_range = 2.0
+	light.light_energy = 1.1
+	light.omni_range = 3.0
 	light.omni_attenuation = 2.0
-	light.position.y = 0.55
+	light.position.y = 0.6
 	add_child(light)
 
 func _tint_glb(root: Node, mat: StandardMaterial3D) -> void:

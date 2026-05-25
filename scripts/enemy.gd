@@ -60,14 +60,14 @@ const WARRIOR_LUNGE_DURATION := 0.25
 const WARRIOR_LUNGE_DAMAGE := 20.0
 
 # Golem slam attack
-var _golem_slam_timer: float = 4.0
-const GOLEM_SLAM_CD := 4.0
-const GOLEM_SLAM_RANGE := 5.0
+var _golem_slam_timer: float = 2.5
+const GOLEM_SLAM_CD := 2.4
+const GOLEM_SLAM_RANGE := 5.5
 const GOLEM_SLAM_DAMAGE := 35.0
 
 # Golem ranged rock throw
-var _golem_throw_timer: float = 3.0
-const GOLEM_THROW_CD := 3.5
+var _golem_throw_timer: float = 1.8
+const GOLEM_THROW_CD := 2.0
 const GOLEM_THROW_DAMAGE := 25.0
 const GOLEM_THROW_SPEED := 16.0
 
@@ -77,8 +77,8 @@ const TELEPORT_CD := 2.5
 const TELEPORT_RANGE := 8.0
 
 # Golem charge/dash
-var _golem_charge_timer: float = 8.0
-const GOLEM_CHARGE_CD := 9.0
+var _golem_charge_timer: float = 5.0
+const GOLEM_CHARGE_CD := 5.5
 const GOLEM_CHARGE_SPEED := 18.0
 const GOLEM_CHARGE_DURATION := 0.6
 const GOLEM_CHARGE_DAMAGE := 30.0
@@ -111,7 +111,7 @@ func _ready() -> void:
 	_build_visual()
 	_build_contact_shadow()
 	_build_hitbox()
-	_spawn_materialize()
+	# Materialize flash removed — per-spawn mesh+tween was a tax under big waves.
 	# Mini HP bars above non-minion enemies for target prioritization
 	if enemy_type != "minion":
 		_build_hp_bar()
@@ -134,7 +134,7 @@ func _build_visual() -> void:
 		"rogue": Color(0.1, 0.75, 0.4),
 		"necromancer": Color(0.45, 0.05, 0.7),
 		"exploder": Color(0.9, 0.6, 0.05),
-		"teleporter": Color(0.1, 0.6, 0.8),
+		"teleporter": Color(0.9, 0.2, 0.85),
 		"golem": Color(0.9, 0.25, 0.05),
 	}
 	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -486,16 +486,16 @@ func _process(delta: float) -> void:
 			if _golem_charging:
 				_golem_charge_elapsed += delta
 				position += _golem_charge_dir * GOLEM_CHARGE_SPEED * delta
-				position.x = clampf(position.x, -46.0, 46.0)
-				position.z = clampf(position.z, -46.0, 46.0)
+				position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
+				position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 				# Damage player if we reach them during charge
 				if dist_to_player < 2.5 and not GameState.invincible:
 					GameState.take_damage(GOLEM_CHARGE_DAMAGE)
 					var charge_kb := (player.global_position - global_position).normalized()
 					charge_kb.y = 0.0
 					player.position += charge_kb * 5.0
-					player.position.x = clampf(player.position.x, -48.0, 48.0)
-					player.position.z = clampf(player.position.z, -48.0, 48.0)
+					player.position.x = clampf(player.position.x, -GameState.arena_radius, GameState.arena_radius)
+					player.position.z = clampf(player.position.z, -GameState.arena_radius, GameState.arena_radius)
 					GameState.request_shake(4.0, dir)
 					_golem_charging = false
 					_golem_charge_impact()
@@ -504,6 +504,8 @@ func _process(delta: float) -> void:
 					_golem_charge_impact()
 			else:
 				position += dir * boss_spd * delta
+				position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
+				position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 			_golem_slam_timer -= delta
 			_golem_throw_timer -= delta
 			_golem_charge_timer -= delta
@@ -614,13 +616,13 @@ func _process(delta: float) -> void:
 		var pulse := (sin(_golem_slam_timer * 8.0) + 1.0) * 0.5
 		_mat.emission = Color(1.0, 0.1, 0.0).lerp(_original_color, pulse * 0.3)
 		_mat.emission_energy_multiplier = lerpf(3.0, 5.0, pulse)
-		# Dust trail behind enraged boss for visual intensity
+		# Dust trail behind enraged boss for visual intensity (rate trimmed)
 		_enrage_dust_timer -= delta
 		if _enrage_dust_timer <= 0.0:
-			_enrage_dust_timer = 0.08
+			_enrage_dust_timer = 0.22
 			_spawn_enrage_dust()
 
-func _mage_telegraph(dir: Vector3) -> void:
+func _mage_telegraph(_dir: Vector3) -> void:
 	# Brief charge-up glow before firing so players can react
 	var glow := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
@@ -653,7 +655,7 @@ func _mage_telegraph(dir: Vector3) -> void:
 					_fire_mage_bolt(fresh_dir)
 		)
 
-func _necro_bolt_telegraph(dir: Vector3) -> void:
+func _necro_bolt_telegraph(_dir: Vector3) -> void:
 	# Purple charge-up glow before necromancer fires a bolt
 	var glow := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
@@ -695,9 +697,11 @@ func _teleport_blink(player: Node3D) -> void:
 		cyl.height = 0.03
 		vanish.mesh = cyl
 		var vmat := StandardMaterial3D.new()
-		vmat.albedo_color = Color(0.0, 0.8, 1.0, 0.7)
+		# Magenta — teleporter is an enemy, so its blink VFX uses the warm/hostile
+		# palette and stops clashing with the player's cyan dash/projectiles.
+		vmat.albedo_color = Color(0.95, 0.2, 0.85, 0.7)
 		vmat.emission_enabled = true
-		vmat.emission = Color(0.0, 0.7, 1.0)
+		vmat.emission = Color(0.9, 0.15, 0.8)
 		vmat.emission_energy_multiplier = 6.0
 		vmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		vanish.material_override = vmat
@@ -728,9 +732,9 @@ func _teleport_blink(player: Node3D) -> void:
 		acyl.height = 0.03
 		appear.mesh = acyl
 		var amat := StandardMaterial3D.new()
-		amat.albedo_color = Color(0.0, 0.8, 1.0, 0.0)
+		amat.albedo_color = Color(0.95, 0.2, 0.85, 0.0)
 		amat.emission_enabled = true
-		amat.emission = Color(0.0, 0.7, 1.0)
+		amat.emission = Color(0.9, 0.15, 0.8)
 		amat.emission_energy_multiplier = 5.0
 		amat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		appear.material_override = amat
@@ -918,9 +922,11 @@ func _add_bounds_check(node: MeshInstance3D) -> void:
 	node.add_child(timer)
 
 func _add_bolt_trail(bolt: MeshInstance3D, container: Node, color: Color) -> void:
-	# Add a timer that spawns fading trail particles behind the bolt
+	# Add a timer that spawns fading trail particles behind the bolt.
+	# Spawn rate kept low so a screen full of bolts doesn't flood the scene with
+	# short-lived MeshInstance3D + tween allocations.
 	var trail_timer := Timer.new()
-	trail_timer.wait_time = 0.05
+	trail_timer.wait_time = 0.14
 	trail_timer.autostart = true
 	trail_timer.timeout.connect(func():
 		if not bolt.is_inside_tree():
@@ -1408,6 +1414,11 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 	var cam := get_viewport().get_camera_3d()
 	if not cam:
 		return
+	var is_big_hit := amount >= 30.0 or is_crit
+	# Throttle: keep all crits + big hits, drop most small ticks so the HUD doesn't
+	# pile up hundreds of Labels per second under railgun/orbital fire.
+	if not is_big_hit and randf() > 0.25:
+		return
 	var screen_pos := cam.unproject_position(global_position + Vector3(0, 1.8, 0))
 	var canvas := get_tree().get_first_node_in_group("hud_node") as Control
 	if not canvas:
@@ -1415,7 +1426,6 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 	var label := Label.new()
 	# Star prefix for crits instead of "CRIT" text
 	label.text = ("★" if is_crit else "") + str(int(amount))
-	var is_big_hit := amount >= 30.0 or is_crit
 	# Weapon-tinted damage numbers — subtle, small, readable
 	var weapon_colors := {
 		"railgun": Color(0.4, 0.55, 0.9),
@@ -1423,7 +1433,7 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 		"chain": Color(0.35, 0.7, 0.85),
 		"orbital": Color(0.15, 0.8, 0.5),
 		"dash": Color(0.25, 0.7, 0.9),
-		"signal": Color(0.95, 0.3, 0.2),
+		"signal": Color(1.0, 0.82, 0.2),
 	}
 	# All sizes much smaller — crits only slightly bigger than normal hits
 	if is_crit:
@@ -1473,9 +1483,9 @@ func _teleporter_death_vfx() -> void:
 		capsule.height = 0.8
 		ghost.mesh = capsule
 		var gmat := StandardMaterial3D.new()
-		gmat.albedo_color = Color(0.0, 0.8, 1.0, 0.6)
+		gmat.albedo_color = Color(0.95, 0.2, 0.85, 0.6)
 		gmat.emission_enabled = true
-		gmat.emission = Color(0.0, 0.7, 1.0)
+		gmat.emission = Color(0.9, 0.15, 0.8)
 		gmat.emission_energy_multiplier = 5.0
 		gmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		ghost.material_override = gmat
@@ -1668,9 +1678,9 @@ func _maybe_drop_health() -> void:
 	if is_boss:
 		drop_count = 2
 	else:
-		var chance := 0.04
+		var chance := 0.05
 		if enemy_type in ["warrior", "mage", "rogue", "necromancer", "teleporter"]:
-			chance = 0.08
+			chance = 0.10
 		if randf() < chance:
 			drop_count = 1
 	if drop_count <= 0:
@@ -1697,37 +1707,39 @@ func _death_vfx() -> void:
 		"rogue": Color(0.0, 1.0, 0.5),
 		"necromancer": Color(0.6, 0.0, 0.9),
 		"exploder": Color(1.0, 0.8, 0.0),
-		"teleporter": Color(0.0, 0.8, 1.0),
+		"teleporter": Color(0.9, 0.2, 0.85),
 		"golem": Color(1.0, 0.3, 0.0),
 	}
 	var color: Color = death_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
 
-	# Expanding ring
-	var ring := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.8 if not is_boss else 2.0
-	cyl.bottom_radius = 0.8 if not is_boss else 2.0
-	cyl.height = 0.03
-	ring.mesh = cyl
-	var ring_mat := StandardMaterial3D.new()
-	ring_mat.albedo_color = Color(color.r, color.g, color.b, 0.8)
-	ring_mat.emission_enabled = true
-	ring_mat.emission = color
-	ring_mat.emission_energy_multiplier = 5.0
-	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ring.material_override = ring_mat
-	ring.position = global_position
-	ring.position.y = 0.3
-	container.add_child(ring)
-	var rtw := ring.create_tween()
-	rtw.set_parallel(true)
-	rtw.tween_property(ring, "scale", Vector3(3.0, 1.0, 3.0), 0.3)
-	rtw.tween_property(ring_mat, "albedo_color:a", 0.0, 0.3)
-	rtw.set_parallel(false)
-	rtw.tween_callback(ring.queue_free)
+	# Pop burst — bright energy sphere at body height that expands and fades.
+	# Replaces the old flat ground decal that read as a sticker on the floor.
+	var pop := MeshInstance3D.new()
+	var pop_mesh := SphereMesh.new()
+	pop_mesh.radius = 0.35 if not is_boss else 0.9
+	pop_mesh.height = pop_mesh.radius * 2.0
+	pop.mesh = pop_mesh
+	var pop_mat := StandardMaterial3D.new()
+	pop_mat.albedo_color = Color(color.r, color.g, color.b, 0.85)
+	pop_mat.emission_enabled = true
+	pop_mat.emission = color
+	pop_mat.emission_energy_multiplier = 9.0 if not is_boss else 14.0
+	pop_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pop.material_override = pop_mat
+	pop.position = global_position + Vector3(0, 0.6 if not is_boss else 1.4, 0)
+	container.add_child(pop)
+	var pop_dur := 0.22 if not is_boss else 0.4
+	var pop_scale := 3.2 if not is_boss else 5.5
+	var ptw := pop.create_tween()
+	ptw.set_parallel(true)
+	ptw.tween_property(pop, "scale", Vector3(pop_scale, pop_scale, pop_scale), pop_dur).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	ptw.tween_property(pop_mat, "albedo_color:a", 0.0, pop_dur)
+	ptw.tween_property(pop_mat, "emission_energy_multiplier", 0.0, pop_dur)
+	ptw.set_parallel(false)
+	ptw.tween_callback(pop.queue_free)
 
-	# Spark burst
-	var spark_count := 6 if not is_boss else 12
+	# Spark burst (kept slim — under heavy waves the per-kill allocation hurts)
+	var spark_count := 5 if not is_boss else 10
 	for i in spark_count:
 		var spark := MeshInstance3D.new()
 		var ss := SphereMesh.new()
@@ -1800,7 +1812,9 @@ func setup(type: String, wave: int) -> void:
 		"golem":
 			hp = 500.0 * wave_scale
 			# Boss speed scales with wave — late-game golems are noticeably faster
-			speed = 2.2 + minf(wave, 20) * 0.12
+			# Faster base + steeper wave scaling so the boss actually chases the
+			# player around the smaller solo arena instead of being kited forever.
+			speed = 3.4 + minf(wave, 20) * 0.15
 			# Boss XP scales with wave for rewarding late-game bosses
 			xp_value = 80.0 + wave * 10.0
 			contact_damage = 35.0

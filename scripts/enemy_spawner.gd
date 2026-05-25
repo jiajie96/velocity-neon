@@ -4,6 +4,7 @@ const SPAWN_DISTANCE := 20.0
 const WAVE_INTERVAL := 2.5
 const SPAWN_INTERVAL_BASE := 0.25
 const ENEMIES_PER_WAVE_BASE := 12
+const BOSS_ARENA_RADIUS := 18.0
 
 var _spawned_this_wave: int = 0
 var _target_this_wave: int = 0
@@ -11,6 +12,8 @@ var _spawn_timer: float = 0.0
 var _wave_timer: float = 0.0
 var _wave_active: bool = false
 var _spawn_interval: float = SPAWN_INTERVAL_BASE
+var _arena_ring: Node3D = null  # parent holding the boss-arena wall meshes
+var _was_boss_wave: bool = false
 
 func _ready() -> void:
 	GameState.wave_changed.connect(_on_wave_changed)
@@ -18,16 +21,22 @@ func _ready() -> void:
 func _on_wave_changed(wave: int) -> void:
 	_wave_active = true
 	_spawned_this_wave = 0
-	# Aggressive scaling: swarm the player harder each wave, but with a softer
-	# quadratic so very late waves don't balloon into a slog of hundreds of kills.
-	# Wave 1: 20, Wave 5: 67, Wave 10: 152, Wave 15: 267, Wave 20: 412
-	_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.6)
-	_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
-	_spawn_timer = 0.1
-	_wave_timer = 0.0
-
-	if wave % 5 == 0:
+	_was_boss_wave = (wave % 5 == 0)
+	if _was_boss_wave:
+		# Boss waves are now solo duels — no regular spawns until the boss falls.
+		_target_this_wave = 0
+		_spawn_interval = SPAWN_INTERVAL_BASE
+		_spawn_timer = 0.1
+		_wave_timer = 0.0
 		_spawn_boss(wave)
+	else:
+		# Aggressive scaling: swarm the player harder each wave, but with a softer
+		# quadratic so very late waves don't balloon into a slog of hundreds of kills.
+		# Wave 1: 20, Wave 5: 67, Wave 10: 152, Wave 15: 267, Wave 20: 412
+		_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.6)
+		_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
+		_spawn_timer = 0.1
+		_wave_timer = 0.0
 
 func _process(delta: float) -> void:
 	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
@@ -55,6 +64,10 @@ func _process(delta: float) -> void:
 		if enemies.size() == 0:
 			_wave_active = false
 			_wave_timer = WAVE_INTERVAL
+			# Restore full arena once the boss falls.
+			if _was_boss_wave:
+				_end_boss_arena()
+				_was_boss_wave = false
 			# Pull all remaining XP orbs to player on wave clear
 			GameState.xp_magnet_pulse.emit()
 			# Heal on wave clear scales with max HP so Fortify stacks stay relevant
@@ -157,26 +170,79 @@ func _pick_type() -> String:
 		else:
 			return "teleporter"
 
-func _spawn_boss(wave: int) -> void:
-	var player := get_tree().get_first_node_in_group("player_node")
-	var spawn_center := Vector3.ZERO
+func _spawn_boss(_wave: int) -> void:
+	# Boss arena setup — shrink the playable area and pop a visual barrier ring
+	# so the fight is a focused 1v1 instead of a stroll around the full map.
+	GameState.boss_active = true
+	GameState.arena_radius = BOSS_ARENA_RADIUS
+	# Ominous entrance sting before the boss music swaps in.
+	Audio.sfx_boss_incoming()
+	# Boss spawns at world center; player gets re-centered so neither party
+	# starts outside the new ring.
+	var player := get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:
-		spawn_center = player.global_position
-	var angle := randf() * TAU
-	var pos := spawn_center + Vector3(cos(angle), 0, sin(angle)) * (SPAWN_DISTANCE + 5.0)
-	var boss := _create_enemy("golem", pos)
+		var p := player.position
+		p.x = clampf(p.x, -BOSS_ARENA_RADIUS + 2.0, BOSS_ARENA_RADIUS - 2.0)
+		p.z = clampf(p.z, -BOSS_ARENA_RADIUS + 2.0, BOSS_ARENA_RADIUS - 2.0)
+		player.position = p
+	var boss := _create_enemy("golem", Vector3(0, 0, 0))
 	if boss:
 		# Notify HUD to show boss HP bar
 		var hud := get_tree().get_first_node_in_group("hud_node")
 		if hud and hud.has_method("track_boss"):
 			hud.track_boss(boss)
-		# Boss entrance slow-mo + camera zoom for dramatic flair
-		GameState.request_hit_stop(0.15)
-		GameState.request_shake(3.0)
 		# Temporary zoom-out so player can see the boss arriving
 		var cam_rig := get_tree().root.find_child("CameraRig", true, false)
 		if cam_rig and cam_rig.has_method("boss_zoom_out"):
 			cam_rig.boss_zoom_out()
+	_spawn_arena_ring()
+
+func _spawn_arena_ring() -> void:
+	if _arena_ring and is_instance_valid(_arena_ring):
+		_arena_ring.queue_free()
+	var container := get_parent()
+	if not container:
+		return
+	# Four glowing wall segments forming a real square that matches the
+	# clampf(±arena_radius) bound. The old circle looked like the boundary
+	# but didn't — players hit the corners of the actual square and felt
+	# like the wall failed.
+	_arena_ring = Node3D.new()
+	_arena_ring.name = "BossArenaWalls"
+	container.add_child(_arena_ring)
+	var r := BOSS_ARENA_RADIUS
+	var wall_h := 1.6
+	var wall_t := 0.35
+	var side_len := r * 2.0 + wall_t
+	# (offset, axis-aligned size). z-aligned for north/south, x-aligned for east/west.
+	var walls := [
+		[Vector3(0, wall_h * 0.5, -r), Vector3(side_len, wall_h, wall_t)],
+		[Vector3(0, wall_h * 0.5, r),  Vector3(side_len, wall_h, wall_t)],
+		[Vector3(-r, wall_h * 0.5, 0), Vector3(wall_t, wall_h, side_len)],
+		[Vector3(r,  wall_h * 0.5, 0), Vector3(wall_t, wall_h, side_len)],
+	]
+	for w in walls:
+		var seg := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = w[1]
+		seg.mesh = box
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(1.0, 0.18, 0.1, 0.4)
+		mat.emission_enabled = true
+		mat.emission = Color(1.0, 0.22, 0.06)
+		mat.emission_energy_multiplier = 3.2
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		seg.material_override = mat
+		seg.position = w[0]
+		_arena_ring.add_child(seg)
+
+func _end_boss_arena() -> void:
+	GameState.boss_active = false
+	GameState.arena_radius = 48.0
+	if _arena_ring and is_instance_valid(_arena_ring):
+		_arena_ring.queue_free()
+	_arena_ring = null
 
 func _spawn_warning(pos: Vector3, type: String) -> void:
 	var container := get_parent().get_node_or_null("Enemies")
@@ -189,7 +255,7 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 		"rogue": Color(0.1, 0.75, 0.4),
 		"necromancer": Color(0.45, 0.05, 0.7),
 		"exploder": Color(0.9, 0.6, 0.05),
-		"teleporter": Color(0.1, 0.6, 0.8),
+		"teleporter": Color(0.9, 0.2, 0.85),
 	}
 	# Dangerous enemies get bigger, brighter warnings so players can react
 	var threat_scale := {

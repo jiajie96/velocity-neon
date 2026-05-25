@@ -3,7 +3,7 @@ extends Node3D
 const COLLECT_DISTANCE := 0.8
 const MAGNET_SPEED := 12.0
 const BOB_SPEED := 3.0
-const BOB_HEIGHT := 0.2
+const BOB_HEIGHT := 0.3
 const LIFETIME := 20.0
 const FADE_TIME := 3.0
 const AUTO_MAGNET_DELAY := 6.0  # Orbs drift to the player after this long so XP isn't lost in chaos
@@ -36,28 +36,31 @@ const STAR_SCENE := preload("res://assets/models/pickups/star.glb")
 func _build_visual() -> void:
 	var holder := STAR_SCENE.instantiate() as Node3D
 	holder.name = "Mesh"
-	holder.position.y = 0.5
-	holder.scale = Vector3.ONE * 0.55
+	holder.position.y = 0.55
+	# Bigger star — old 0.55 scale read as a dim speck on the neon floor.
+	holder.scale = Vector3.ONE * 0.85
 	add_child(holder)
 
 	var value_ratio := clampf((xp_value - 8.0) / 72.0, 0.0, 1.0)
-	var base_color := Color(0.1, 0.55, 0.25).lerp(Color(0.7, 0.6, 0.15), value_ratio)
+	# Brighter base palette — saturated lime → warm gold for high value orbs.
+	var base_color := Color(0.3, 1.0, 0.4).lerp(Color(1.0, 0.85, 0.2), value_ratio)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = base_color
 	mat.emission_enabled = true
-	mat.emission = base_color * 0.5
-	mat.emission_energy_multiplier = 1.0 + value_ratio * 1.0
+	mat.emission = base_color
+	mat.emission_energy_multiplier = 2.0 + value_ratio * 2.0
 	_shared_mat = mat
 	_tint_glb(holder, mat)
 
-	if value_ratio > 0.5:
-		var light := OmniLight3D.new()
-		light.light_color = base_color
-		light.light_energy = 0.2
-		light.omni_range = 1.2
-		light.omni_attenuation = 2.0
-		light.position.y = 0.5
-		add_child(light)
+	# Every orb gets a small light so the floor under it glows — they used to
+	# disappear visually against the dark grid unless value_ratio > 0.5.
+	var light := OmniLight3D.new()
+	light.light_color = base_color
+	light.light_energy = 0.45 + value_ratio * 0.6
+	light.omni_range = 1.8 + value_ratio * 1.0
+	light.omni_attenuation = 2.0
+	light.position.y = 0.5
+	add_child(light)
 
 func _tint_glb(root: Node, mat: StandardMaterial3D) -> void:
 	for child in root.get_children():

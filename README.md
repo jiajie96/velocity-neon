@@ -20,17 +20,18 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Combat
 - Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto
-- Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra hit-stop/shake so they land hard)
+- Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra screen shake so they land hard)
 - Kill streaks grant an escalating combo damage bonus (up to +24%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
 - Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
 - Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push)
-- Sustained-fire feel: primary-weapon hit-stop now only triggers on kills, so high fire rate + multi-shot no longer drags the game into constant slow-motion (crits and boss kills still freeze-frame)
+- Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
+- Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
 ### Weapons & Upgrades (22 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
 - **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
-- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (2.5 HP lifesteal per kill, up to 3 stacks)
+- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks)
 - **Utility**: Phase Charge (banks an extra dash — stack to hold and chain multiple dashes), Gravity Well
 
 ### Enemies (8 types)
@@ -62,6 +63,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Dash ready audio cue when cooldown completes
 - Ultimate ready audio cue when cooldown finishes
 - Necromancer summon SFX (eerie pulse when minions spawn)
+- Boss entrance sting (ominous low-end stinger announces a boss wave before the music swaps)
+- Heavy Multi-Shot volley SFX (chunky scatter report when firing 3+ projectiles at once)
 - Golem charge telegraph SFX (low rumble before charge)
 - Golem rock throw SFX (distinct deep whoosh, separate from slam)
 - Orbital Guard hit SFX (subtle click when orbitals damage enemies)
@@ -85,9 +88,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Enemy hit-pop flares the whole model's glow white on hit (reads clearly even on multi-surface skeletons), then restores to its true resting neon glow
 - Cyan Phase Dash trail unified with the dash afterimages, ring, and shockwave
 - Speed lines during Phase Dash (radial shader)
-- Directional screen shake with hit-stop on heavy impacts
-- Camera punch on player damage for visceral hit feedback
-- Boss entrance slow-mo with temporary camera zoom-out
+- Directional screen shake on impacts and when you take a hit — bounded and hard-capped so dense swarms stay readable (hit-stop slow-mo is intentionally off to keep frame pacing smooth)
+- Boss entrance: ominous warning sting + temporary camera zoom-out so you can read the arena
 - Boss wave red flash + screenshake on wave announcement
 - Dynamic camera zoom (pulls in for close combat, out for distant threats)
 - Floating damage numbers (color-coded, scaled for big hits)
@@ -99,12 +101,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Teleporter blink-scatter death effect (ghost copies flash outward)
 - Gravity Well visible radius ring (purple pulsing ring shows slow field area)
 - Rogue dodge ghost trail (translucent afterimage on sidestep)
-- Orbital Guard hit sparks (green flash when orbitals damage enemies)
+- Orbital Guard hit feedback (the orb flares brighter and pulses larger for a moment when it damages an enemy — allocation-free, so it stays cheap under heavy fire)
 - Mage/Necromancer bolt trail particles (fading trail behind enemy projectiles)
 - Player model damage flash (white flash on hit for clear feedback)
 - XP orb spawn burst (orbs pop outward from kills before settling)
 - Boss enrage arena red pulse (screen edge throb during enrage phase)
-- Kill streak slow-motion (brief time-slow on 5+ and 8+ streaks)
 - Threat-scaled spawn warnings (bigger glow rings for dangerous enemy types)
 - Nano Shield visible ring (blue pulse around player when damage reduction is active)
 - Golem charge end ground impact ring (visual punctuation when charge stops)
@@ -115,6 +116,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Ultimate ready screen flash (purple screen-edge pulse when ult comes off cooldown)
 - Title screen neon color cycle (animated title text with shifting neon colors)
 - Enemy projectiles despawn at arena boundaries (prevents stale node buildup)
+- Player shots ricochet and despawn against the *active* arena edge, so Ricochet bounces correctly off the shrunken boss-fight walls instead of passing through them
 - Dash-colored damage numbers (cyan) when hitting enemies during Phase Dash
 - Scatter shot cone flash (brief orange cone showing pellet spread direction)
 - Gravity Well purple tint on slowed enemies (visual feedback for slow field)
@@ -127,6 +129,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Exploder detonation radius danger ring (pulsing warning as they approach)
 - Damage i-frame visual indicator (cyan ring flash showing invulnerability window)
 - Velocity Rounds visual scaling (faster projectiles have thicker, brighter trails)
+- Build-tinted bolts — your pulse shots shift color with your build (Piercing → white-cyan, Ricochet → lime-green, both → blended) so upgrades read at a glance
 
 ### HUD & UI
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
@@ -150,7 +153,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Upgrade stat preview (concrete before/after values on level-up cards, including all weapon upgrades)
 - Wave countdown shows upcoming wave number and boss wave warnings
 - Batched XP pickup text (rapid collection combines into one "+X XP" label)
-- Enhanced death sequence (screen shake, slow-mo, red flash)
+- Enhanced death sequence (screen shake, red flash)
 - Mini HP bars above elite enemies for target prioritization
 
 ### Game Systems
@@ -165,7 +168,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Wave clear heal bonus scales with max HP (rewards Fortify investment)
 - Brief invulnerability on wave clear (1s breathing room)
 - Phase Dash keeps a short i-frame grace after the dash ends, so phasing through a pack is a reliable escape
-- Snappier Phase Dash cooldown (1.75s) for more responsive mobility
+- Snappier Phase Dash cooldown (1.5s) for more responsive mobility
 - Multi-source damage i-frame window (0.2s) so simultaneous hits in dense waves are fairer
 - XP magnet pulse on level-up, wave clear, kill streaks (3+), boss defeat, and exploder chain reactions
 - XP orbs fade out after 15 seconds to prevent late-game buildup
@@ -176,6 +179,16 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Game over shows wave reached prominently with performance rating
 - Game over enemy kill breakdown (top enemy types killed, total XP earned)
 - Arena boundary walls with neon glow pillars
+
+## Recent Changes
+
+- **Solo boss duels** — boss waves now clear the regular swarm and lock the fight into a shrunken, walled arena; the golem is faster so it actually chases you in the smaller space.
+- **Boss arena containment** — player shots ricochet/despawn against the *active* arena edge, so Ricochet works off the boss walls instead of passing through them.
+- **Smoother dense waves** — per-hit projectile VFX is tiered (chip hits = cheap flash, kills = full shockwave + sparks), cutting the heaviest per-frame allocation during big swarms.
+- **Restored hit feel** — bounded, hard-capped screen shake is back (including a kick when you take damage); hit-stop slow-mo stays off to keep frame pacing smooth.
+- **Audio** — new boss entrance sting, and heavy Multi-Shot volleys (3+ shots) fire a chunky scatter report; wired the Orbital Guard hit feedback back in as a cheap emission/scale pop.
+- **Readability** — pulse bolts tint by your build (Piercing / Ricochet); bigger, brighter XP and health pickups.
+- **Balance** — Phase Dash cooldown 1.75s → 1.5s; Vampire 1.0 → 1.75 HP/kill; slightly more generous health-orb drops.
 
 ## Running the Game
 
@@ -195,7 +208,7 @@ scripts/
   upgrade_system.gd  — 22 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
-  camera_rig.gd      — Camera follow, shake, zoom, punch
+  camera_rig.gd      — Camera follow, shake, zoom
   autoload/
     game_state.gd    — Global state and signals
     audio_manager.gd — 16-channel SFX pool + music system

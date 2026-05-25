@@ -19,7 +19,8 @@ var _hits_done: int = 0
 var _alive: float = 0.0
 var _trail_t: float = 0.0
 var _done: bool = false
-var _color := Color(0.95, 0.18, 0.12)
+var _color := Color(1.0, 0.82, 0.2)  # warm gold — Yondu's Yaka arrow, also keeps it visually distinct from enemy red mage bolts
+var _shadow: MeshInstance3D = null
 
 func _ready() -> void:
 	speed = get_meta("speed", 24.0)
@@ -30,32 +31,115 @@ func _ready() -> void:
 	if dir.length_squared() < 0.01:
 		dir = Vector3.FORWARD
 	_vel = dir.normalized() * speed
-	position.y = 0.8
+	position.y = 0.65
 	_build_visual()
 	_acquire_target()
 
 func _build_visual() -> void:
-	var mesh_inst := MeshInstance3D.new()
-	mesh_inst.name = "Mesh"
-	var bolt := CylinderMesh.new()
-	bolt.top_radius = 0.03      # pointed tip (front, +Z)
-	bolt.bottom_radius = 0.09   # fletching end (back)
-	bolt.height = 0.75
-	mesh_inst.mesh = bolt
-	mesh_inst.rotation.x = PI / 2.0  # lay the arrow along local +Z (travel axis)
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = _color
-	mat.emission_enabled = true
-	mat.emission = _color
-	mat.emission_energy_multiplier = 6.0
-	mesh_inst.material_override = mat
-	add_child(mesh_inst)
+	# Composite procedural arrow — shaft + cone tip + two crossed fletchings.
+	# Built under a single holder so we can spin/rotate everything together.
+	var holder := Node3D.new()
+	holder.name = "Mesh"
+	holder.rotation.x = PI / 2.0  # lay arrow along local +Z (travel axis)
+	add_child(holder)
+
+	var body_mat := StandardMaterial3D.new()
+	body_mat.albedo_color = _color
+	body_mat.emission_enabled = true
+	body_mat.emission = _color
+	body_mat.emission_energy_multiplier = 6.0
+
+	var shaft := MeshInstance3D.new()
+	var shaft_mesh := CylinderMesh.new()
+	shaft_mesh.top_radius = 0.045
+	shaft_mesh.bottom_radius = 0.045
+	shaft_mesh.height = 0.9
+	shaft.mesh = shaft_mesh
+	shaft.material_override = body_mat
+	holder.add_child(shaft)
+
+	var tip := MeshInstance3D.new()
+	var tip_mesh := CylinderMesh.new()
+	tip_mesh.top_radius = 0.0
+	tip_mesh.bottom_radius = 0.13
+	tip_mesh.height = 0.32
+	tip.mesh = tip_mesh
+	tip.material_override = body_mat
+	tip.position.y = 0.61  # forward along the cylinder axis (before rotation)
+	holder.add_child(tip)
+
+	# Halo sphere around the body so it reads as energized at distance
+	var halo := MeshInstance3D.new()
+	var halo_mesh := SphereMesh.new()
+	halo_mesh.radius = 0.16
+	halo_mesh.height = 0.32
+	halo.mesh = halo_mesh
+	var halo_mat := StandardMaterial3D.new()
+	halo_mat.albedo_color = Color(_color.r, _color.g, _color.b, 0.28)
+	halo_mat.emission_enabled = true
+	halo_mat.emission = _color
+	halo_mat.emission_energy_multiplier = 4.0
+	halo_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	halo_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	halo.material_override = halo_mat
+	holder.add_child(halo)
+
+	var fletch_mat := StandardMaterial3D.new()
+	fletch_mat.albedo_color = _color.darkened(0.1)
+	fletch_mat.emission_enabled = true
+	fletch_mat.emission = _color
+	fletch_mat.emission_energy_multiplier = 4.5
+	fletch_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# Three fletchings (120° apart) — reads more arrow-like than the old 2-fin cross
+	for i in 3:
+		var f := MeshInstance3D.new()
+		var fmesh := BoxMesh.new()
+		fmesh.size = Vector3(0.34, 0.012, 0.22)
+		f.mesh = fmesh
+		f.material_override = fletch_mat
+		f.position.y = -0.42  # at the back of the shaft
+		f.rotation.y = (TAU / 3.0) * float(i)
+		holder.add_child(f)
+
 	var light := OmniLight3D.new()
 	light.light_color = _color
 	light.light_energy = 1.8
 	light.omni_range = 3.0
 	light.omni_attenuation = 2.0
 	add_child(light)
+
+	_build_ground_shadow()
+
+func _build_ground_shadow() -> void:
+	# Flat dark disc tracked under the arrow each frame. Replaces the harsh
+	# blob the engine was rendering and grounds the projectile against the
+	# neon floor so it reads as a flying object rather than a floating shape.
+	_shadow = MeshInstance3D.new()
+	_shadow.name = "Shadow"
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.35
+	disc.bottom_radius = 0.35
+	disc.height = 0.005
+	disc.radial_segments = 14
+	_shadow.mesh = disc
+	var smat := StandardMaterial3D.new()
+	smat.albedo_color = Color(0.0, 0.0, 0.0, 0.55)
+	smat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_shadow.material_override = smat
+	# Shadow is parented to the scene container so it stays world-aligned
+	# even as the arrow rotates to face its target. Add deferred so we have a
+	# parent at this point (signal_arrow is added to "Projectiles" by player.gd).
+	call_deferred("_attach_shadow")
+
+func _attach_shadow() -> void:
+	if _shadow == null:
+		return
+	var container := get_parent()
+	if container:
+		container.add_child(_shadow)
+		_shadow.global_position = Vector3(global_position.x, 0.04, global_position.z)
 
 func _process(delta: float) -> void:
 	if _done:
@@ -81,8 +165,10 @@ func _process(delta: float) -> void:
 		_vel = desired
 	_vel = _vel.normalized() * speed
 	position += _vel * delta
-	position.y = 0.8
+	position.y = 0.65
 	rotation.y = atan2(_vel.x, _vel.z)
+	if _shadow and is_instance_valid(_shadow):
+		_shadow.global_position = Vector3(global_position.x, 0.04, global_position.z)
 
 	# Trail
 	_trail_t -= delta
@@ -99,8 +185,13 @@ func _process(delta: float) -> void:
 	if absf(position.x) > 52.0 or absf(position.z) > 52.0:
 		_despawn()
 
-func _target_valid(t: Node3D) -> bool:
+func _target_valid(t) -> bool:
+	# NOTE: parameter is intentionally untyped. Godot 4's typed-parameter check
+	# raises before the function body runs when `t` is a previously-freed
+	# Object, which crashed _process every tick that a target died mid-flight.
 	if t == null or not is_instance_valid(t):
+		return false
+	if not (t is Node3D):
 		return false
 	if t.is_queued_for_deletion():
 		return false
@@ -172,7 +263,12 @@ func _despawn() -> void:
 	if _done:
 		return
 	_done = true
-	var mesh := get_node_or_null("Mesh") as MeshInstance3D
+	# Shadow lives under the container, not the arrow, so it must be freed
+	# explicitly when the arrow expires.
+	if _shadow and is_instance_valid(_shadow):
+		_shadow.queue_free()
+		_shadow = null
+	var mesh := get_node_or_null("Mesh") as Node3D
 	if mesh:
 		var tw := create_tween()
 		tw.tween_property(mesh, "scale", Vector3.ZERO, 0.12)

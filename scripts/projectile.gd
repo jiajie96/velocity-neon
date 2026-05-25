@@ -39,6 +39,15 @@ func _ready() -> void:
 
 func _build_visual() -> void:
 	var color: Color = _colors.get(weapon_type, Color(1.0, 0.95, 0.3))
+	# Tint pulse bolts by the active build so upgrades read at a glance:
+	# Piercing -> bright white-cyan, Ricochet -> lime-green, both -> blended.
+	if weapon_type == "pulse":
+		if piercing > 0 and ricochet > 0:
+			color = Color(0.7, 1.0, 0.7)
+		elif piercing > 0:
+			color = Color(0.75, 0.95, 1.0)
+		elif ricochet > 0:
+			color = Color(0.7, 1.0, 0.35)
 	var mesh_inst := MeshInstance3D.new()
 	mesh_inst.name = "Mesh"
 
@@ -156,28 +165,32 @@ func _process(delta: float) -> void:
 		return
 	position += direction * speed * delta
 	position.y = lerpf(position.y, 0.8, 5.0 * delta)
+	# Bounce/despawn against the *active* arena edge — this shrinks during boss
+	# fights, so ricochet now works off the boss walls instead of sailing through
+	# them to the full-map bound.
+	var bound: float = GameState.arena_radius
 	# Despawn projectiles that leave arena bounds (no ricochet left)
 	if ricochet <= 0 or _bounce_count >= ricochet:
-		if absf(position.x) > 50.0 or absf(position.z) > 50.0:
+		if absf(position.x) > bound + 2.0 or absf(position.z) > bound + 2.0:
 			queue_free()
 			return
 	# Ricochet — bounce off arena walls
 	if ricochet > 0 and _bounce_count < ricochet:
 		var bounced := false
-		if position.x < -48.0:
-			position.x = -48.0
+		if position.x < -bound:
+			position.x = -bound
 			direction.x = absf(direction.x)
 			bounced = true
-		elif position.x > 48.0:
-			position.x = 48.0
+		elif position.x > bound:
+			position.x = bound
 			direction.x = -absf(direction.x)
 			bounced = true
-		if position.z < -48.0:
-			position.z = -48.0
+		if position.z < -bound:
+			position.z = -bound
 			direction.z = absf(direction.z)
 			bounced = true
-		elif position.z > 48.0:
-			position.z = 48.0
+		elif position.z > bound:
+			position.z = bound
 			direction.z = -absf(direction.z)
 			bounced = true
 		if bounced:
@@ -208,10 +221,11 @@ func _on_hit(area: Area3D) -> void:
 	# multi-shot) used to trigger a hit-stop on every single impact, which stacked
 	# into near-constant slow-motion and made sustained fire feel choppy. Crits
 	# still freeze via the enemy's own take_damage, so impactful moments still land.
-	if is_instance_valid(enemy) and enemy.get("_dead"):
+	var killed: bool = is_instance_valid(enemy) and bool(enemy.get("_dead"))
+	if killed:
 		GameState.request_hit_stop(0.04)
 	Audio.sfx_hit_impact(weapon_type)
-	_hit_vfx()
+	_hit_vfx(killed)
 
 	if can_pierce:
 		_pierce_count += 1
@@ -321,15 +335,20 @@ func _spawn_shatter_fragments() -> void:
 		tw.tween_property(frag, "position", frag.position + frag_dir * 3.0, 0.3)
 		tw.tween_callback(frag.queue_free)
 
-func _hit_vfx() -> void:
+func _hit_vfx(killed: bool = false) -> void:
 	var container := get_parent()
 	if not container:
 		return
 	var color: Color = _colors.get(weapon_type, Color(1.0, 1.0, 0.5))
 	var VFX := preload("res://scripts/vfx.gd")
-	# Shader-driven expanding shockwave ring
-	VFX.spawn_shockwave(container, global_position, Color(color.r, color.g, color.b, 0.5), 1.5, 0.18, 0.4)
-	# GPU particle spark burst
-	VFX.spawn_spark_burst(container, global_position + Vector3(0, 0.5, 0), color, 8, 3.0, 0.25)
-	# Brief point light flash at impact
-	VFX.spawn_impact_flash(container, global_position + Vector3(0, 0.5, 0), color, 1.5, 0.1)
+	if killed:
+		# Kills earn the full, juicy impact — shockwave ring + spark burst + flash.
+		VFX.spawn_shockwave(container, global_position, Color(color.r, color.g, color.b, 0.5), 1.5, 0.18, 0.4)
+		VFX.spawn_spark_burst(container, global_position + Vector3(0, 0.5, 0), color, 8, 3.0, 0.25)
+		VFX.spawn_impact_flash(container, global_position + Vector3(0, 0.5, 0), color, 1.5, 0.1)
+	else:
+		# Chip hits get just the cheap point-light flash. Spawning a GPUParticles
+		# node + shader plane on every single bullet impact was the heaviest
+		# remaining per-frame allocation; sustained fire could fire it dozens of
+		# times a second. The enemy's own white hit-flash still sells the hit.
+		VFX.spawn_impact_flash(container, global_position + Vector3(0, 0.5, 0), color, 1.2, 0.08)

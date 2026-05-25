@@ -22,19 +22,13 @@ func _ready() -> void:
 var _prev_cam_hp: float = -1.0
 
 func _on_hp_changed(current: float, _maximum: float) -> void:
-	if _prev_cam_hp > 0.0 and current < _prev_cam_hp:
-		# Camera punch toward damage direction for visceral hit feedback
-		var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
-		if player and GameState.shake_direction.length_squared() > 0.01:
-			_punch_offset = GameState.shake_direction * 0.4
-		else:
-			_punch_offset = Vector3(randf_range(-0.3, 0.3), 0, randf_range(-0.3, 0.3))
+	# Camera punch on damage disabled — kept the connection so the prev-HP
+	# tracking stays consistent if we ever want it back.
 	_prev_cam_hp = current
 
-func _on_hit_stop(duration: float) -> void:
-	var frames := maxi(int(duration * 60.0), 2)
-	_hit_stop_frames = maxi(_hit_stop_frames, frames)
-	Engine.time_scale = HIT_STOP_SCALE
+func _on_hit_stop(_duration: float) -> void:
+	# Hit-stop slow-mo disabled.
+	pass
 
 func _process(delta: float) -> void:
 	if _hit_stop_frames > 0:
