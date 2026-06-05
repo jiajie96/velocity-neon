@@ -642,7 +642,11 @@ func _shoot(delta: float) -> void:
 	for i in count:
 		var spread := 0.0
 		if count > 1:
-			spread = deg_to_rad(12.0) * (float(i) - float(count - 1) * 0.5)
+			# Tighter per-shot angle, and the total fan narrows as projectile count
+			# grows, so a stacked Multi-Shot build lands most of its pellets on the
+			# target instead of spraying a wide arc that mostly misses.
+			var spread_step := deg_to_rad(14.0) / float(count)
+			spread = spread_step * (float(i) - float(count - 1) * 0.5)
 		var shot_dir := dir_to_target.rotated(Vector3.UP, spread)
 		_fire_projectile(container, shot_dir, "pulse")
 	# Heavy multi-shot volleys get the chunkier scatter report instead of the
@@ -892,8 +896,11 @@ func _do_ultimate() -> void:
 				var falloff := 1.0 - clampf(dist / ULTIMATE_RADIUS, 0.0, 1.0)
 				var push_force: float = (2.0 if e.get("is_boss") else 5.5) * (0.4 + falloff)
 				e.position += push_dir * push_force
-				e.position.x = clampf(e.position.x, -47.0, 47.0)
-				e.position.z = clampf(e.position.z, -47.0, 47.0)
+				# Clamp to the *active* arena bound (shrinks during boss duels) so the
+				# ult can't shove enemies through the visible boss-fight walls.
+				var ult_bound: float = GameState.arena_radius - 1.0
+				e.position.x = clampf(e.position.x, -ult_bound, ult_bound)
+				e.position.z = clampf(e.position.z, -ult_bound, ult_bound)
 	_spawn_ult_vfx()
 
 func _spawn_ult_vfx() -> void:
@@ -926,7 +933,10 @@ func _find_nearest_enemy() -> Node3D:
 	var nearest: Node3D = null
 	var min_dist := 30.0
 	for e in enemies:
-		if e is Node3D:
+		# Skip corpses: a dying enemy lingers in the group until it's freed at the end
+		# of the frame, so without this guard auto-aim (and the reticle) can lock onto
+		# something that's already dead and waste a shot on it.
+		if e is Node3D and not e.get("_dead"):
 			var d := global_position.distance_to(e.global_position)
 			if d < min_dist:
 				min_dist = d

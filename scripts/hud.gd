@@ -75,6 +75,7 @@ var _levelup_flash: ColorRect
 var _overclock_label: Label
 var _regen_label: Label
 var _pause_panel: PanelContainer
+var _pause_stats: Label
 var _streak_label: Label
 var _wave_timer_label: Label
 var _speed_lines: ColorRect
@@ -930,8 +931,8 @@ func _build_wave_progress_label() -> void:
 func _build_pause_menu() -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_pause_panel.custom_minimum_size = Vector2(320, 264)
-	_pause_panel.position = Vector2(-160, -132)
+	_pause_panel.custom_minimum_size = Vector2(320, 300)
+	_pause_panel.position = Vector2(-160, -150)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.02, 0.01, 0.06, 0.95)
 	style.border_color = Color(0.0, 0.8, 1.0, 0.5)
@@ -954,6 +955,13 @@ func _build_pause_menu() -> void:
 	title.add_theme_font_size_override("font_size", 28)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
+
+	# Live run stats so the pause screen doubles as a quick at-a-glance progress check.
+	_pause_stats = Label.new()
+	_pause_stats.add_theme_font_size_override("font_size", 13)
+	_pause_stats.add_theme_color_override("font_color", Color(0.6, 0.8, 0.95, 0.85))
+	_pause_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_pause_stats)
 
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 8
@@ -1026,8 +1034,17 @@ func toggle_pause() -> void:
 		# Clear any active hit-stop so the pause menu isn't entered in slow-motion
 		Engine.time_scale = 1.0
 		_update_mute_button_label()
+		_update_pause_stats()
 		_pause_panel.visible = true
 		get_tree().paused = true
+
+func _update_pause_stats() -> void:
+	if not _pause_stats:
+		return
+	var secs := int(GameState.time_survived)
+	_pause_stats.text = "Wave %d   •   %d kills   •   %d:%02d" % [
+		GameState.wave, GameState.kills, secs / 60, secs % 60
+	]
 
 # === AUDIO MUTE ===
 
@@ -1107,6 +1124,13 @@ func _on_kill_streak(count: int) -> void:
 	var bonus := GameState.get_combo_bonus_pct()
 	if bonus > 0:
 		text += "  +%d%% DMG" % bonus
+	# Gold edge flash at big streak milestones so a hot streak reads on-screen, not
+	# just in the audio sting. Intensity ramps a touch with the milestone.
+	if count in [5, 8, 12, 16, 20, 25] and _levelup_flash:
+		var flash_a := minf(0.07 + count * 0.004, 0.16)
+		_levelup_flash.color = Color(1.0, 0.82, 0.2, flash_a)
+		var ftw := create_tween()
+		ftw.tween_property(_levelup_flash, "color:a", 0.0, 0.22).set_ease(Tween.EASE_OUT)
 	_streak_label.text = text
 	_streak_label.modulate.a = 0.0
 	var font_size := mini(22 + (count - 2) * 3, 36)
@@ -1431,6 +1455,9 @@ func _on_hp_changed(current: float, maximum: float) -> void:
 	# Flash red on damage
 	if _prev_hp > 0.0 and current < _prev_hp:
 		_trigger_hit_flash()
+		var taken := _prev_hp - current
+		if taken >= 1.0:
+			_spawn_player_damage_number(taken)
 	_prev_hp = current
 	if hp_bar:
 		hp_bar.max_value = maximum
@@ -1454,6 +1481,33 @@ func _on_hp_changed(current: float, maximum: float) -> void:
 			hp_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.2))
 		else:
 			hp_label.add_theme_color_override("font_color", Color(0.0, 1.0, 0.9))
+
+func _spawn_player_damage_number(amount: float) -> void:
+	# Red "-X" that floats up off the player so you can read how hard a hit landed,
+	# not just that you got hit. Mirrors the enemy damage-number style.
+	var player := get_tree().get_first_node_in_group("player_node") as Node3D
+	if not player:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if not cam:
+		return
+	var screen_pos := cam.unproject_position(player.global_position + Vector3(0, 1.8, 0))
+	var label := Label.new()
+	label.text = "-%d" % int(round(amount))
+	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.3))
+	label.add_theme_color_override("font_outline_color", Color(0.12, 0.02, 0.02))
+	label.add_theme_constant_override("outline_size", 3)
+	label.position = screen_pos + Vector2(randf_range(-10, 10), -8)
+	label.z_index = 100
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(label)
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 32.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(label, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN)
+	tw.set_parallel(false)
+	tw.tween_callback(label.queue_free)
 
 func _on_xp_changed(current: float, needed: float) -> void:
 	if xp_bar:

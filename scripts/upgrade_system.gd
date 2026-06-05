@@ -35,7 +35,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("swift", "SWIFT", "+12% move speed", Color(0.3, 0.8, 1.0), "~~"),
 		Upgrade.new("multi_shot", "MULTI-SHOT", "+1 projectile", Color(0.9, 0.5, 1.0), "**", 4),
 		Upgrade.new("magnet", "MAGNET", "+50% pickup range", Color(0.5, 1.0, 0.8), "<>"),
-		Upgrade.new("regen", "REGENERATION", "+0.5 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
+		Upgrade.new("regen", "REGENERATION", "+0.7 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		# Overclock removed — too punishing without guaranteed healing upgrade
@@ -90,7 +90,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+50%% pickup range (%.1f -> %.1f)" % [cur, cur * 1.5]
 		"regen":
 			var cur := GameState.hp_regen
-			return "+0.5 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.5]
+			return "+0.7 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.7]
 		"dash_charge":
 			return "+1 dash charge (%d -> %d)" % [GameState.dash_max_charges, GameState.dash_max_charges + 1]
 		"crit_surge":
@@ -156,7 +156,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"magnet":
 			GameState.magnet_range *= 1.5
 		"regen":
-			GameState.hp_regen += 0.5
+			GameState.hp_regen += 0.7
 		"shatter":
 			GameState.has_shatter = true
 		"gravity_well":

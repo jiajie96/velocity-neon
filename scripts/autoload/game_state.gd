@@ -192,19 +192,9 @@ func next_wave() -> void:
 		else:
 			Audio.play_music("res://assets/audio/music/cyberpunk_battle.ogg", -4.0)
 	elif wave > 1:
-		# Rotate gameplay music as waves progress for variety
-		if wave >= 25:
-			Audio.play_music("res://assets/audio/music/cavern_ambient.ogg", -4.0)
-		elif wave >= 20:
-			Audio.play_music("res://assets/audio/music/synthwave_hostile_territory.ogg", -5.0)
-		elif wave >= 15:
-			Audio.play_music("res://assets/audio/music/neon_runner.mp3", -5.0)
-		elif wave >= 12:
-			Audio.play_music("res://assets/audio/music/synthwave_deadly_contracts.ogg", -5.0)
-		elif wave >= 7:
-			Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -5.0)
-		else:
-			Audio.play_music("res://assets/audio/music/determined_pursuit.ogg", -6.0)
+		# Rotate gameplay music as waves progress for variety (single source of truth
+		# in AudioManager so the post-boss resume can't drift from this rotation).
+		Audio.play_gameplay_music_for_wave(wave)
 
 func add_kill(enemy_type: String = "") -> void:
 	kills += 1

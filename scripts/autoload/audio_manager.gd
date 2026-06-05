@@ -78,6 +78,30 @@ func play_music(path: String, vol_db: float = -6.0) -> void:
 
 	_active_music = incoming
 
+# Single source of truth for which gameplay track plays at a given wave tier, so
+# the wave-change rotation and the post-boss music resume can't drift apart.
+# Returns [path, volume_db].
+func gameplay_music_for_wave(wave: int) -> Array:
+	if wave >= 25:
+		return ["res://assets/audio/music/cavern_ambient.ogg", -4.0]
+	elif wave >= 20:
+		# Reuse lands here, in the rarely-reached late game — every track the player
+		# actually spends time with in the early/mid game is now distinct.
+		return ["res://assets/audio/music/synthwave_hostile_territory.ogg", -5.0]
+	elif wave >= 15:
+		return ["res://assets/audio/music/neon_runner.mp3", -5.0]
+	elif wave >= 12:
+		return ["res://assets/audio/music/synthwave_deadly_contracts.ogg", -5.0]
+	elif wave >= 7:
+		# Mid-game now gets its own track instead of repeating the early-wave one.
+		return ["res://assets/audio/music/synthwave_hostile_territory.ogg", -5.0]
+	else:
+		return ["res://assets/audio/music/determined_pursuit.ogg", -6.0]
+
+func play_gameplay_music_for_wave(wave: int) -> void:
+	var track: Array = gameplay_music_for_wave(wave)
+	play_music(track[0], track[1])
+
 func stop_music() -> void:
 	if _fade_tween and _fade_tween.is_valid():
 		_fade_tween.kill()

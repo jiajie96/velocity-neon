@@ -100,6 +100,10 @@ var _anim_tilt_x: float = 0.0
 var _anim_tilt_z: float = 0.0
 var _anim_squash: float = 1.0
 var _anim_base_scale: float = 0.5
+# Spawn-in grow: enemies scale up from small to full so they materialize in after
+# the warning ring instead of popping in fully-formed on top of the player.
+const SPAWN_GROW_TIME := 0.18
+var _spawn_grow_t: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -111,6 +115,10 @@ func _ready() -> void:
 	_build_visual()
 	_build_contact_shadow()
 	_build_hitbox()
+	# Quick scale-up so regular enemies grow in rather than appearing fully-formed.
+	# Bosses keep their dedicated entrance, so they skip the pop.
+	if not is_boss:
+		_spawn_grow_t = SPAWN_GROW_TIME
 	# Materialize flash removed — per-spawn mesh+tween was a tax under big waves.
 	# Mini HP bars above non-minion enemies for target prioritization
 	if enemy_type != "minion":
@@ -278,12 +286,18 @@ func _update_procedural_anim(delta: float) -> void:
 	# non-finite Transform3D crashes the renderer with no GDScript error).
 	_anim_squash = lerpf(_anim_squash, target_squash, clampf(8.0 * delta, 0.0, 1.0))
 	_anim_squash = clampf(_anim_squash, 0.6, 1.4)
+	# Spawn-in grow multiplier — eases from a small scale up to full over SPAWN_GROW_TIME.
+	var grow := 1.0
+	if _spawn_grow_t > 0.0:
+		_spawn_grow_t = maxf(_spawn_grow_t - delta, 0.0)
+		var t := 1.0 - (_spawn_grow_t / SPAWN_GROW_TIME)
+		grow = lerpf(0.4, 1.0, t * (2.0 - t))  # ease-out
 	# Apply transforms
 	if model:
 		model.position.y = bob_y
 		var base_rot_y: float = model.rotation.y
 		model.rotation = Vector3(_anim_tilt_x, base_rot_y, _anim_tilt_z)
-		var s: float = _anim_base_scale
+		var s: float = _anim_base_scale * grow
 		model.scale = Vector3(s / _anim_squash, s * _anim_squash, s / _anim_squash)
 	elif mesh:
 		var base_y: float = 0.5 if not is_boss else 1.25
@@ -1269,6 +1283,8 @@ func _explode() -> void:
 	Audio.sfx_exploder_boom()
 	_spawn_explosion_vfx()
 	_dead = true
+	# Drop out of the targeting pool right away (see note in _die).
+	remove_from_group("enemies")
 	GameState.add_kill(enemy_type)
 	_spawn_xp()
 	_maybe_drop_health()
@@ -1601,6 +1617,10 @@ func _spawn_exploder_danger_ring(urgency: float) -> void:
 
 func _die() -> void:
 	_dead = true
+	# Leave the targeting pool immediately. A queue_free'd node lingers in its groups
+	# until the end of the frame, so without this the player's auto-aim, reticle,
+	# railgun, orbitals, and signal arrow can keep targeting this corpse for a frame.
+	remove_from_group("enemies")
 	GameState.add_kill(enemy_type)
 	Audio.sfx_enemy_death_typed(enemy_type)
 	_spawn_xp()
@@ -1643,15 +1663,9 @@ func _die() -> void:
 # post-boss resume keeps late-game intensity instead of always dropping to the
 # early track. Mirrors the rotation in GameState.next_wave().
 func _wave_tier_music(wave: int) -> String:
-	if wave >= 25:
-		return "res://assets/audio/music/cavern_ambient.ogg"
-	elif wave >= 20:
-		return "res://assets/audio/music/synthwave_hostile_territory.ogg"
-	elif wave >= 15:
-		return "res://assets/audio/music/neon_runner.mp3"
-	elif wave >= 12:
-		return "res://assets/audio/music/synthwave_deadly_contracts.ogg"
-	return "res://assets/audio/music/determined_pursuit.ogg"
+	# Delegate to the shared rotation so the post-boss resume always matches what
+	# GameState.next_wave() would play at this wave tier.
+	return Audio.gameplay_music_for_wave(wave)[0]
 
 func _spawn_xp() -> void:
 	var orb_container := get_parent().get_parent().get_node_or_null("XPOrbs")
