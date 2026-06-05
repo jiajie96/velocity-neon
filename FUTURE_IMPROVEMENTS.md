@@ -325,6 +325,15 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Snappier Phase Dash cooldown (1.75s -> 1.5s)
 - [x] Vampire lifesteal rebalanced (1.0 -> 1.75 HP/kill)
 - [x] Slightly more generous health-orb drops (4%/8% -> 5%/10%)
+- [x] Dead enemies leave the targeting group the instant they die (auto-aim, reticle, railgun, orbitals, and Signal Arrow no longer waste a frame on corpses); auto-aim also explicitly skips dying foes
+- [x] Ultimate knockback clamps to the *active* arena radius so it can't shove enemies/boss through the shrunken boss-fight walls
+- [x] Gameplay music rotation centralized in AudioManager (single source of truth shared by wave changes and the post-boss resume); early/mid wave tiers each get a distinct track instead of repeating the early one
+- [x] Enemy spawn-in scale pop — regular enemies grow in after their warning ring (allocation-free; bosses keep their dedicated entrance)
+- [x] Gold screen-edge flash on big kill-streak milestones (5/8/12/16/20/25)
+- [x] Floating red "-X" damage number above the player on hit (readability for how hard a hit landed)
+- [x] Pause menu shows live run stats (current wave / kills / time survived)
+- [x] Multi-Shot spread tightens as projectile count grows (stacked Multi-Shot lands more pellets on target)
+- [x] Regeneration buffed (0.5 -> 0.7 HP/sec per stack)
 
 ---
 

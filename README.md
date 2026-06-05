@@ -4,6 +4,8 @@ A top-down 3D action roguelike built in Godot 4.6 with a neon cyberpunk aestheti
 
 Survive relentless waves of skeleton enemies, level up to choose powerful upgrades, and push deeper into the neon grid.
 
+![Velocity Neon gameplay — a boss fight on the neon grid](screenshots/gameplay.png)
+
 ## How to Play
 
 - **WASD / Arrows** — Move
@@ -31,7 +33,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
 - **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
-- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks)
+- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.7 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks)
 - **Utility**: Phase Charge (banks an extra dash — stack to hold and chain multiple dashes), Gravity Well
 
 ### Enemies (8 types)
@@ -47,7 +49,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Audio
 - Title screen ambient music (neon_runner) with crossfade into gameplay tracks
-- Dynamic soundtrack that rotates across 9 tracks as waves progress
+- Dynamic soundtrack that rotates across 9 tracks as waves progress — each early/mid-game wave tier you actually spend time in plays a distinct track (rotation centralized so the post-boss music resume always matches the current tier)
 - Boss-specific music (cyberpunk_battle for early bosses, epic_boss for wave 10+)
 - Defeat music on game over (somber track plays on death)
 - Weapon-specific hit impact SFX (railgun, scatter, chain, pulse)
@@ -79,6 +81,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Visual Polish
 - Neon cyberpunk aesthetic with bloom, glow, and emissive materials
+- Enemy spawn-in scale pop (regular enemies grow in after their warning ring instead of appearing fully-formed on top of you)
 - Auto-aim target reticle (spinning cyan bracket marks the locked-on enemy; scales up for bosses)
 - Floating ambient neon motes drifting across the arena floor
 - Damage vignette (red pulse at low HP), hit flash on damage taken
@@ -140,7 +143,9 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Wave announcements with boss wave callouts
 - Kill streak and milestone announcements, plus a draining combo-streak timer bar under the banner that shows how long the kill-streak window (and its damage bonus) has left
 - No-damage wave indicator
-- Pause menu (resume/restart/mute/quit) with a live MUTE/UNMUTE toggle button
+- Pause menu (resume/restart/mute/quit) with a live MUTE/UNMUTE toggle button and an at-a-glance run summary (current wave, kills, and time survived)
+- Floating red "-X" damage number above the player when you take a hit, so you can read how hard it landed
+- Gold screen-edge flash on big kill-streak milestones (layered on top of the streak banner and rising audio sting)
 - Level-up "powered up" world burst — a golden shockwave + spark flare at the player when an upgrade is confirmed
 - Ultimate cooldown shows seconds remaining (e.g. "ULT [3.2s]") for precise timing
 - Wave clear shows XP orb vacuum count (e.g. "WAVE CLEAR +12 ORBS")
@@ -182,6 +187,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Tighter targeting** — dead enemies now leave the targeting pool the instant they die, so auto-aim, the reticle, the railgun, orbitals, and the Signal Arrow no longer waste a beat on corpses; auto-aim also explicitly ignores dying foes.
+- **Ultimate respects the boss arena** — the Ultimate's outward knockback is now clamped to the *active* arena bound, so it can't shove enemies (or the boss) through the shrunken boss-fight walls.
+- **More music variety** — the gameplay soundtrack rotation lives in one place now (shared by wave changes and the post-boss resume), and the early/mid waves you actually spend time in each get a distinct track instead of repeating one.
+- **Enemy spawn-in pop** — regular enemies grow in over a beat after their warning ring instead of appearing fully-formed on top of you (allocation-free, stays cheap in big waves).
+- **Punchier streaks & damage readout** — big kill-streak milestones add a gold screen-edge flash, and taking a hit now floats a red "-X" off the player so you can read how hard you got hit.
+- **Pause = progress check** — the pause menu shows your current wave, kills, and run time at a glance.
+- **Balance** — Multi-Shot's spread tightens as you stack it (more pellets land on target); Regeneration buffed to +0.7 HP/sec per stack.
 - **Solo boss duels** — boss waves now clear the regular swarm and lock the fight into a shrunken, walled arena; the golem is faster so it actually chases you in the smaller space.
 - **Boss arena containment** — player shots ricochet/despawn against the *active* arena edge, so Ricochet works off the boss walls instead of passing through them.
 - **Smoother dense waves** — per-hit projectile VFX is tiered (chip hits = cheap flash, kills = full shockwave + sparks), cutting the heaviest per-frame allocation during big swarms.
