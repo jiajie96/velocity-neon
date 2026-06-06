@@ -87,6 +87,9 @@ var _golem_charge_dir: Vector3 = Vector3.ZERO
 var _golem_charge_elapsed: float = 0.0
 var _golem_enraged: bool = false
 var _enrage_dust_timer: float = 0.0
+# True while this enemy is inside the player's Gravity Well — read by take_damage so
+# slowed foes also take a vulnerability bonus, giving Gravity Well offensive value.
+var _gravity_slowed: bool = false
 
 var _hp_bar: MeshInstance3D
 var _hp_bar_mat: StandardMaterial3D
@@ -401,7 +404,7 @@ func _process(delta: float) -> void:
 		return
 
 	var spd := speed
-	var _gravity_slowed := false
+	_gravity_slowed = false
 	if GameState.gravity_well_strength > 0.0:
 		var dist := global_position.distance_to(player.global_position)
 		if dist < 6.0:
@@ -1376,13 +1379,17 @@ func _spawn_chain_arc_vfx(from_pos: Vector3, to_pos: Vector3) -> void:
 func take_damage(amount: float, weapon_hint: String = "") -> void:
 	if _dead:
 		return
-	# Critical hit check
+	# Critical hit check (crit multiplier grows with Critical Surge stacks)
 	var is_crit := randf() < GameState.crit_chance
-	var final_amount := amount * (2.0 if is_crit else 1.0)
+	var final_amount := amount * (GameState.crit_damage if is_crit else 1.0)
 	# Kill-streak combo bonus — sustained streaks ramp up damage
 	final_amount *= GameState.get_combo_damage_mult()
 	# Adrenaline — outgoing damage rises as the player's own HP falls
 	final_amount *= GameState.get_adrenaline_mult()
+	# Gravity Well vulnerability — enemies caught in the well take extra damage,
+	# giving the slow an offensive payoff instead of pure crowd control.
+	if _gravity_slowed:
+		final_amount *= 1.12
 	# Executioner bonus — extra damage to enemies below 30% HP
 	var _execute_proc := false
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:
@@ -1395,7 +1402,9 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		# Crisp audio + a touch more freeze/shake so the 10% crit moments land
 		Audio.sfx_crit()
 		GameState.request_hit_stop(0.05)
-		GameState.request_shake(1.2)
+		# Crit shake escalates with the active kill streak — bigger combos hit harder
+		# on screen (request_shake is still hard-capped, so it can't become a rumble).
+		GameState.request_shake(1.2 + minf(GameState.get_streak_count() * 0.05, 0.8))
 	_flash_timer = FLASH_DURATION
 	var flash_col := Color.WHITE
 	var flash_energy := 6.0
@@ -1412,12 +1421,17 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	if _glow_light:
 		_glow_light.light_color = flash_col
 		_glow_light.light_energy = _glow_base_energy * (4.0 if (is_crit or _execute_proc) else 3.0)
-	# Knockback — crits knock back harder
+	# Knockback — crits knock back harder, and heavier hits shove enemies further so
+	# big-damage weapons feel punchy. Bosses mostly shrug it off.
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D
 	if player:
 		var kb_dir := (global_position - player.global_position).normalized()
 		kb_dir.y = 0.0
-		position += kb_dir * (0.6 if is_crit else 0.3)
+		var kb := 0.6 if is_crit else 0.3
+		kb += clampf(final_amount / maxf(max_hp, 1.0), 0.0, 0.5) * 1.1
+		if is_boss:
+			kb *= 0.18
+		position += kb_dir * kb
 	_spawn_damage_number(final_amount, is_crit, weapon_hint)
 	if hp <= 0.0:
 		if enemy_type == "exploder" and not _exploder_fuse_lit:
@@ -1824,7 +1838,10 @@ func setup(type: String, wave: int) -> void:
 			contact_damage = 14.0
 			is_boss = false
 		"golem":
-			hp = 500.0 * wave_scale
+			# Gentler HP curve than regular enemies so an under-geared player isn't
+			# stuck whittling the wave 5/10 boss down for ages — boss pacing stays tight.
+			var boss_scale := 1.0 + minf(wave, 15) * 0.13 + maxf(wave - 15, 0) * 0.07
+			hp = 500.0 * boss_scale
 			# Boss speed scales with wave — late-game golems are noticeably faster
 			# Faster base + steeper wave scaling so the boss actually chases the
 			# player around the smaller solo arena instead of being kited forever.

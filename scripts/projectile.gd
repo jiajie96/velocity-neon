@@ -207,9 +207,12 @@ func _on_hit(area: Area3D) -> void:
 		return
 	_pierced_enemies.append(eid)
 
-	# Check if we can pierce further
+	# Check if we can keep going. Piercing punches through; Ricochet also lets the
+	# bolt phase through an enemy so it survives to bounce off a wall and re-engage
+	# (without this it died on first contact and the upgrade was nearly worthless).
 	var can_pierce := piercing > 0 and _pierce_count < piercing
-	if not can_pierce:
+	var can_ricochet := ricochet > 0 and _bounce_count < ricochet
+	if not can_pierce and not can_ricochet:
 		if _hit:
 			return
 		_hit = true
@@ -231,6 +234,10 @@ func _on_hit(area: Area3D) -> void:
 		_pierce_count += 1
 		# Reduce damage slightly per pierce
 		damage *= 0.75
+	elif can_ricochet:
+		# Phase through this enemy and keep flying so it can bounce off the wall and
+		# come back around. Mild falloff so a bouncing bolt isn't infinite full damage.
+		damage *= 0.9
 	else:
 		if shatter:
 			_spawn_shatter_fragments()

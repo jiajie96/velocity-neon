@@ -6,7 +6,7 @@ const BOB_SPEED := 3.0
 const BOB_HEIGHT := 0.3
 const LIFETIME := 20.0
 const FADE_TIME := 3.0
-const AUTO_MAGNET_DELAY := 6.0  # Orbs drift to the player after this long so XP isn't lost in chaos
+const AUTO_MAGNET_DELAY := 4.0  # Orbs drift to the player after this long so XP isn't lost in chaos
 
 var xp_value: float = 10.0
 var _magnetized: bool = false
