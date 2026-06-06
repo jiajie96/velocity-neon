@@ -77,6 +77,7 @@ func _ready() -> void:
 	# Burst plays once the upgrade is confirmed (and the game un-pauses), so it
 	# animates in real time instead of being frozen behind the upgrade screen.
 	GameState.upgrade_selected.connect(_on_upgrade_burst)
+	GameState.guardian_save.connect(_on_guardian_save)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -1045,6 +1046,18 @@ func _on_upgrade_burst() -> void:
 	VFX.spawn_shockwave(container, position, Color(gold.r, gold.g, gold.b, 0.55), 2.8, 0.45, 0.05)
 	VFX.spawn_spark_burst(container, position + Vector3(0, 0.7, 0), gold, 20, 5.0, 0.45)
 	VFX.spawn_impact_flash(container, position + Vector3(0, 0.9, 0), gold, 2.8, 0.28)
+
+func _on_guardian_save() -> void:
+	# A big protective cyan-white shockwave when Guardian Angel cheats death, so the
+	# clutch save reads in the world, not just on the HUD.
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var VFX := preload("res://scripts/vfx.gd")
+	var save_color := Color(0.5, 0.9, 1.0)
+	VFX.spawn_shockwave(container, position, Color(save_color.r, save_color.g, save_color.b, 0.6), 3.4, 0.5, 0.05)
+	VFX.spawn_spark_burst(container, position + Vector3(0, 0.8, 0), save_color, 26, 6.5, 0.5)
+	VFX.spawn_impact_flash(container, position + Vector3(0, 0.9, 0), Color(0.9, 0.98, 1.0), 3.4, 0.3)
 
 func _on_iframes_started() -> void:
 	# Disabled: per-hit shockwave allocated a shader plane + tween on every

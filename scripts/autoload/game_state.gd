@@ -33,6 +33,10 @@ signal health_pickup(amount: float)
 signal golem_enraged
 signal death_by_overclock
 signal damage_iframes_started
+# Fired when Guardian Angel saves the player from a fatal hit, so the player node
+# can play a protective burst.
+@warning_ignore("unused_signal")
+signal guardian_save
 
 # Player stats
 var hp: float = 80.0
@@ -42,7 +46,7 @@ var fire_rate: float = 2.2
 var damage: float = 7.0
 var projectile_count: int = 1
 var projectile_speed: float = 38.0
-var magnet_range: float = 3.5
+var magnet_range: float = 4.2
 var hp_regen: float = 0.0
 var dash_cooldown: float = 1.5
 var dash_speed: float = 25.0
@@ -55,10 +59,13 @@ var has_shatter: bool = false
 var gravity_well_strength: float = 0.0
 var overclock_active: bool = false
 var crit_chance: float = 0.10
+var crit_damage: float = 2.0    # Crit multiplier; Critical Surge raises it per stack
 var lifesteal: float = 0.0
 var damage_reduction: float = 0.0
 var execute_bonus: float = 0.0  # Bonus damage multiplier vs low-HP enemies
 var adrenaline: bool = false    # Deal more damage the lower the player's HP gets
+var xp_gain_mult: float = 1.0   # Greed upgrade — scales all XP gained
+var revive_available: bool = false  # Guardian Angel — one-time fatal-hit save
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -144,20 +151,41 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 		# fires at most ~5x/sec even when surrounded.
 		if reduced > 0.0:
 			request_shake(1.1 + minf(reduced * 0.05, 1.4))
-	hp_changed.emit(hp, max_hp)
 	if amount >= 5.0:
 		Audio.sfx_player_hit()
 	if hp <= 0.0:
+		# Guardian Angel — once per run, a fatal hit leaves the player on a sliver of
+		# HP with a protective burst and a moment of i-frames instead of dying.
+		if revive_available and not is_self_damage:
+			revive_available = false
+			hp = maxf(max_hp * 0.35, 1.0)
+			invincible = true
+			_damage_immunity_timer = DAMAGE_IMMUNITY_DURATION
+			guardian_save.emit()
+			Audio.sfx_guardian_save()
+			request_shake(5.0)
+			xp_magnet_pulse.emit()
+			var tree := get_tree()
+			if tree:
+				tree.create_timer(1.5).timeout.connect(func():
+					if not game_over:
+						invincible = false
+				)
+			hp_changed.emit(hp, max_hp)
+			return
 		game_over = true
 		if is_self_damage:
 			death_by_overclock.emit()
 		player_died.emit()
+	hp_changed.emit(hp, max_hp)
 
 func heal(amount: float) -> void:
 	hp = clampf(hp + amount, 0.0, max_hp)
 	hp_changed.emit(hp, max_hp)
 
 func add_xp(amount: float) -> void:
+	# Greed scales all XP gained (orbs, perfect-wave and boss bonuses alike)
+	amount *= xp_gain_mult
 	xp += amount
 	total_xp_earned += amount
 	# Loop so a single large XP gain (boss bonus, batched orbs) awards every level
@@ -276,7 +304,7 @@ func reset() -> void:
 	damage = 7.0
 	projectile_count = 1
 	projectile_speed = 38.0
-	magnet_range = 3.5
+	magnet_range = 4.2
 	hp_regen = 0.0
 	dash_cooldown = 1.5
 	dash_speed = 25.0
@@ -287,10 +315,13 @@ func reset() -> void:
 	gravity_well_strength = 0.0
 	overclock_active = false
 	crit_chance = 0.10
+	crit_damage = 2.0
 	lifesteal = 0.0
 	damage_reduction = 0.0
 	execute_bonus = 0.0
 	adrenaline = false
+	xp_gain_mult = 1.0
+	revive_available = false
 	railgun_level = 0
 	signal_arrow_level = 0
 	chain_level = 0

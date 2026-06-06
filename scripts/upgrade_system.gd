@@ -47,12 +47,14 @@ static func _ensure_init() -> void:
 		Upgrade.new("orbital", "ORBITAL GUARD", "Orbiting damage orbs", Color(0.0, 1.0, 0.6), "@@", 3),
 		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
 		Upgrade.new("ricochet", "RICOCHET", "Shots bounce off arena walls", Color(0.8, 1.0, 0.3), "<>", 2),
-		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% critical hit chance", Color(1.0, 0.5, 0.0), "!!", 4),
+		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% crit chance & +15% crit damage", Color(1.0, 0.5, 0.0), "!!", 4),
 		Upgrade.new("vampire", "VAMPIRE", "Heal 1.75 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 		Upgrade.new("velocity_rounds", "VELOCITY ROUNDS", "+20% projectile speed", Color(0.9, 1.0, 0.3), "=>", 3),
 		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to low-HP enemies", Color(0.9, 0.1, 0.2), "XX", 3),
 		Upgrade.new("adrenaline", "ADRENALINE", "More damage the lower your HP", Color(1.0, 0.25, 0.1), "AD", 1),
+		Upgrade.new("greed", "GREED", "+20% XP from all sources", Color(1.0, 0.8, 0.1), "$$", 3),
+		Upgrade.new("guardian", "GUARDIAN ANGEL", "Survive one fatal hit per run", Color(0.6, 0.9, 1.0), "++", 1),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -95,7 +97,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+1 dash charge (%d -> %d)" % [GameState.dash_max_charges, GameState.dash_max_charges + 1]
 		"crit_surge":
 			var cur := GameState.crit_chance * 100.0
-			return "+5%% crit chance (%d%% -> %d%%)" % [int(cur), int(cur + 5)]
+			return "+5%% crit chance (%d%%->%d%%), +15%% crit dmg (%.2fx->%.2fx)" % [int(cur), int(cur + 5), GameState.crit_damage, GameState.crit_damage + 0.15]
 		"vampire":
 			var cur := GameState.lifesteal
 			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 1.75]
@@ -135,6 +137,11 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+25%% dmg to low HP enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
 		"adrenaline":
 			return "Up to +30%% damage as your HP drops (scales with missing HP)"
+		"greed":
+			var gcur := (GameState.xp_gain_mult - 1.0) * 100.0
+			return "+20%% XP gained (%d%% -> %d%%)" % [int(round(gcur)), int(round(gcur + 20))]
+		"guardian":
+			return "Cheat death once: survive a fatal hit at 35%% HP"
 		_:
 			return u.description
 
@@ -165,6 +172,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"dash_charge":
 			GameState.dash_max_charges += 1
 			GameState.dash_charges += 1
+			# Banking a dash also speeds up its recharge (floor 0.8s)
+			GameState.dash_cooldown = maxf(GameState.dash_cooldown * 0.92, 0.8)
 		"railgun":
 			GameState.railgun_level += 1
 		"signal_arrow":
@@ -179,6 +188,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.ricochet_level += 1
 		"crit_surge":
 			GameState.crit_chance += 0.05
+			GameState.crit_damage += 0.15
 		"vampire":
 			GameState.lifesteal += 1.75
 		"nano_shield":
@@ -189,6 +199,10 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.execute_bonus += 0.25
 		"adrenaline":
 			GameState.adrenaline = true
+		"greed":
+			GameState.xp_gain_mult += 0.20
+		"guardian":
+			GameState.revive_available = true
 
 static func reset_all() -> void:
 	_initialized = false

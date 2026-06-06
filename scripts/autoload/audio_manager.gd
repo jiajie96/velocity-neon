@@ -291,6 +291,13 @@ func play_defeat_music() -> void:
 func sfx_wave_heal() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.6)
 
+func sfx_guardian_save() -> void:
+	# Bright protective swell when Guardian Angel cheats death — a buff chime layered
+	# over a low pulse so the save reads as a big, rescuing moment.
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -1.0, 1.1)
+	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -4.0, 1.4)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -8.0, 1.6)
+
 func sfx_health_pickup() -> void:
 	# Bright, satisfying chime when grabbing a dropped health orb
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -5.0, 1.4)
