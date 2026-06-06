@@ -29,12 +29,12 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
-### Weapons & Upgrades (22 upgrades)
+### Weapons & Upgrades (24 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
-- **Combat**: Piercing Rounds, Ricochet, Shatter Point, Critical Surge, Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
-- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.7 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks)
-- **Utility**: Phase Charge (banks an extra dash — stack to hold and chain multiple dashes), Gravity Well
+- **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
+- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.7 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility)
+- **Utility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks)
 
 ### Enemies (8 types)
 - **Skeleton Minion** — basic melee rusher
@@ -187,6 +187,14 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Guardian Angel** — a new defensive upgrade lets you cheat death once per run: a fatal hit leaves you at 35% HP with a protective cyan burst and a brief window of invincibility instead of ending the run.
+- **Greed** — a new stackable upgrade grants +20% XP from every source (orbs, perfect-wave and boss bonuses), so a greed build levels noticeably faster.
+- **Ricochet actually ricochets** — ricochet bolts now phase through enemies and keep bouncing off the arena walls until their bounces run out, instead of dying on the first enemy they touch. The upgrade went from near-useless to a genuine area-clearer.
+- **Critical Surge scales crit damage** — each stack now adds +0.15× crit damage on top of the +5% crit chance, so stacking it pays off twice.
+- **Gravity Well bites** — enemies caught in the slow field take +12% damage, giving the well an offensive payoff instead of pure crowd control.
+- **Phase Charge recharges faster** — every Phase Charge stack also trims the dash cooldown (~8%, floor 0.8s), so banking dashes makes them come back quicker too.
+- **Punchier hits** — heavier damage shoves enemies further (capped; bosses mostly shrug it off), and crit screen-shake now escalates with your active kill streak.
+- **Balance & pacing** — the golem boss uses a gentler HP curve so wave 5/10 bosses aren't a slog; base pickup range is bigger (3.5 → 4.2) and stray XP orbs auto-magnetize sooner (6s → 4s) so earned XP isn't stranded in chaos.
 - **Tighter targeting** — dead enemies now leave the targeting pool the instant they die, so auto-aim, the reticle, the railgun, orbitals, and the Signal Arrow no longer waste a beat on corpses; auto-aim also explicitly ignores dying foes.
 - **Ultimate respects the boss arena** — the Ultimate's outward knockback is now clamped to the *active* arena bound, so it can't shove enemies (or the boss) through the shrunken boss-fight walls.
 - **More music variety** — the gameplay soundtrack rotation lives in one place now (shared by wave changes and the post-boss resume), and the early/mid waves you actually spend time in each get a distinct track instead of repeating one.
@@ -217,7 +225,7 @@ scripts/
   enemy_spawner.gd   — Wave logic and spawn system
   main.gd            — Scene setup
   hud.gd             — All UI rendering
-  upgrade_system.gd  — 22 upgrade definitions
+  upgrade_system.gd  — 24 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
   camera_rig.gd      — Camera follow, shake, zoom

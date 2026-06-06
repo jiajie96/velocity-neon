@@ -64,7 +64,7 @@
 - **Weapon types**: Swap between weapon archetypes (railgun, shotgun, laser beam, homing missiles) each with different auto-aim behavior
 - ~~**Critical hits**: Random chance for 2x damage with distinct VFX~~ DONE — 10% crit chance, 2x damage, orange CRIT text
 - ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ DONE — kill streaks grant an escalating damage bonus (up to +24%) shown live on the streak banner
-- ~~**Ricochet upgrade**: Projectiles bounce off arena boundaries~~ DONE — stackable upgrade (2 levels), bounces off arena walls and can re-hit enemies
+- ~~**Ricochet upgrade**: Projectiles bounce off arena boundaries~~ DONE — stackable upgrade (2 levels); bolts phase through enemies and keep bouncing off the walls until their bounces are spent, re-hitting foes on each pass
 - ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
 - **Mine layer**: Drop proximity mines during dash trail
@@ -334,6 +334,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Pause menu shows live run stats (current wave / kills / time survived)
 - [x] Multi-Shot spread tightens as projectile count grows (stacked Multi-Shot lands more pellets on target)
 - [x] Regeneration buffed (0.5 -> 0.7 HP/sec per stack)
+- [x] GUARDIAN ANGEL upgrade — one-time per-run death save (fatal hit leaves you at 35% HP + protective burst + brief i-frames)
+- [x] GREED upgrade — +20% XP from all sources, stackable to 3
+- [x] Ricochet rework — bolts now phase through enemies and keep bouncing off walls until bounces are spent (was near-useless, died on first contact)
+- [x] Critical Surge now also scales crit damage (+0.15x per stack on top of +5% crit chance)
+- [x] Gravity Well vulnerability — slowed enemies take +12% damage (offensive payoff for the slow)
+- [x] Phase Charge also trims dash cooldown (~8% per stack, floor 0.8s)
+- [x] Damage-scaled enemy knockback — heavier hits shove enemies further (capped; bosses resist)
+- [x] Crit screen-shake escalates with the active kill streak (roadmap shake formula)
+- [x] Softer early boss HP curve so wave 5/10 golems aren't a slog
+- [x] Bigger base pickup range (3.5 -> 4.2) + sooner XP auto-magnetize (6s -> 4s) so earned XP isn't stranded
 
 ---
 
