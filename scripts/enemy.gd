@@ -76,6 +76,15 @@ var _teleport_timer: float = 2.0
 const TELEPORT_CD := 2.5
 const TELEPORT_RANGE := 8.0
 
+# Healer behavior — hangs back behind the swarm and mends nearby enemies.
+# A priority target: leaving it alive undoes the player's chip damage.
+var _healer_pulse_timer: float = 2.5
+const HEALER_PULSE_CD := 4.0
+const HEALER_RANGE := 7.0
+const HEALER_KEEP_RANGE := 9.0
+const HEALER_HEAL_PCT := 0.18
+const HEALER_MAX_TARGETS := 3
+
 # Golem charge/dash
 var _golem_charge_timer: float = 5.0
 const GOLEM_CHARGE_CD := 5.5
@@ -136,6 +145,7 @@ func _build_visual() -> void:
 		"necromancer": "res://assets/models/Necromancer.glb",
 		"exploder": "res://assets/models/Skeleton_Minion.glb",
 		"teleporter": "res://assets/models/Skeleton_Rogue.glb",
+		"healer": "res://assets/models/Skeleton_Mage.glb",
 		"golem": "res://assets/models/Skeleton_Golem.glb",
 	}
 	var neon_colors := {
@@ -146,6 +156,7 @@ func _build_visual() -> void:
 		"necromancer": Color(0.45, 0.05, 0.7),
 		"exploder": Color(0.9, 0.6, 0.05),
 		"teleporter": Color(0.9, 0.2, 0.85),
+		"healer": Color(0.15, 0.95, 0.55),
 		"golem": Color(0.9, 0.25, 0.05),
 	}
 	var neon_color: Color = neon_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -479,6 +490,18 @@ func _process(delta: float) -> void:
 			if dist_to_player < EXPLODER_DETONATE_RANGE and not _exploder_fuse_lit:
 				_exploder_fuse_lit = true
 				_explode()
+		elif enemy_type == "healer":
+			# Healers hang back at the edge of the fight and pulse heals into the swarm
+			_healer_pulse_timer -= delta
+			if _healer_pulse_timer <= 0.0:
+				_healer_pulse_timer = HEALER_PULSE_CD
+				_healer_pulse()
+			if dist_to_player < HEALER_KEEP_RANGE:
+				position -= dir * spd * 0.5 * delta
+			else:
+				position += dir * spd * 0.4 * delta
+			position.x = clampf(position.x, -47.0, 47.0)
+			position.z = clampf(position.z, -47.0, 47.0)
 		elif enemy_type == "teleporter":
 			# Teleporters blink to random positions near the player
 			_teleport_timer -= delta
@@ -1015,6 +1038,48 @@ func _necro_summon() -> void:
 		container.add_child(minion)
 		_necro_minions.append(weakref(minion))
 
+func _healer_pulse() -> void:
+	# Mend the nearby wounded (up to a few targets). The green ring + shimmer SFX
+	# telegraph exactly who's doing the healing so players learn to focus it first.
+	var healed := 0
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	for e in enemies:
+		if healed >= HEALER_MAX_TARGETS:
+			break
+		if e == self or not (e is Node3D) or e.get("_dead"):
+			continue
+		# Healers don't heal each other — a pocket of stacked healers stays killable
+		if e.get("enemy_type") == "healer":
+			continue
+		if not e.has_method("receive_heal"):
+			continue
+		if global_position.distance_to(e.global_position) > HEALER_RANGE:
+			continue
+		if e.hp >= e.max_hp:
+			continue
+		e.receive_heal(e.max_hp * HEALER_HEAL_PCT)
+		healed += 1
+	if healed == 0:
+		return
+	Audio.sfx_healer_pulse()
+	var container := get_parent()
+	if container:
+		var VFX := preload("res://scripts/vfx.gd")
+		VFX.spawn_shockwave(container, global_position, Color(0.2, 1.0, 0.55, 0.4), HEALER_RANGE * 0.85, 0.45, 0.06)
+
+func receive_heal(amount: float) -> void:
+	if _dead or hp >= max_hp:
+		return
+	hp = minf(hp + amount, max_hp)
+	# Brief green glint so the player can see which enemies just got mended
+	_flash_timer = FLASH_DURATION
+	if _mat:
+		_mat.emission = Color(0.2, 1.0, 0.5)
+		_mat.emission_energy_multiplier = 6.0
+	if _glow_light:
+		_glow_light.light_color = Color(0.2, 1.0, 0.5)
+		_glow_light.light_energy = _glow_base_energy * 3.0
+
 func _golem_slam() -> void:
 	# Telegraph — warning ring on ground before the slam lands
 	var container := get_parent()
@@ -1432,6 +1497,10 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		if is_boss:
 			kb *= 0.18
 		position += kb_dir * kb
+		# Keep knockback inside the *active* arena (shrinks during boss duels) —
+		# heavy hits used to shove enemies visibly through the neon walls.
+		position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
+		position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 	_spawn_damage_number(final_amount, is_crit, weapon_hint)
 	if hp <= 0.0:
 		if enemy_type == "exploder" and not _exploder_fuse_lit:
@@ -1464,6 +1533,7 @@ func _spawn_damage_number(amount: float, is_crit: bool = false, weapon_hint: Str
 		"orbital": Color(0.15, 0.8, 0.5),
 		"dash": Color(0.25, 0.7, 0.9),
 		"signal": Color(1.0, 0.82, 0.2),
+		"ult": Color(0.75, 0.35, 1.0),
 	}
 	# All sizes much smaller — crits only slightly bigger than normal hits
 	if is_crit:
@@ -1736,6 +1806,7 @@ func _death_vfx() -> void:
 		"necromancer": Color(0.6, 0.0, 0.9),
 		"exploder": Color(1.0, 0.8, 0.0),
 		"teleporter": Color(0.9, 0.2, 0.85),
+		"healer": Color(0.2, 1.0, 0.55),
 		"golem": Color(1.0, 0.3, 0.0),
 	}
 	var color: Color = death_colors.get(enemy_type, Color(1.0, 0.0, 0.6))
@@ -1836,6 +1907,12 @@ func setup(type: String, wave: int) -> void:
 			speed = 4.5 + wave * 0.08
 			xp_value = 16.0
 			contact_damage = 14.0
+			is_boss = false
+		"healer":
+			hp = 45.0 * wave_scale
+			speed = 2.6 + wave * 0.08
+			xp_value = 24.0
+			contact_damage = 12.0
 			is_boss = false
 		"golem":
 			# Gentler HP curve than regular enemies so an under-geared player isn't

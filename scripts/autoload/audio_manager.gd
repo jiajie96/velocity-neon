@@ -268,6 +268,8 @@ func sfx_enemy_death_typed(enemy_type: String) -> void:
 			pitch = randf_range(0.9, 1.0)
 		"teleporter":
 			pitch = randf_range(1.3, 1.5)
+		"healer":
+			pitch = randf_range(1.05, 1.2)
 		"golem":
 			pitch = randf_range(0.4, 0.55)
 	play_sfx(paths[randi() % paths.size()], -4.0, pitch)
@@ -290,6 +292,18 @@ func play_defeat_music() -> void:
 
 func sfx_wave_heal() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.6)
+
+func sfx_perfect_wave() -> void:
+	# Bright ascending two-layer chime — a flawless wave deserves its own fanfare
+	# instead of sharing the silent treatment with regular announcements.
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -5.0, 1.5)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -8.0, 1.8)
+
+func sfx_healer_pulse() -> void:
+	# Soft restorative shimmer when a healer mends nearby enemies — audible cue
+	# to hunt the healer down even when it's offscreen.
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -12.0, 1.85)
+	play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -16.0, 0.8)
 
 func sfx_guardian_save() -> void:
 	# Bright protective swell when Guardian Angel cheats death — a buff chime layered

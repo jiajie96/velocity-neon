@@ -132,9 +132,11 @@ func _pick_type() -> String:
 			return "rogue"
 		elif roll < 0.62:
 			return "mage"
-		elif roll < 0.75:
+		elif roll < 0.73:
 			return "necromancer"
-		elif roll < 0.88:
+		elif roll < 0.79:
+			return "healer"
+		elif roll < 0.90:
 			return "exploder"
 		else:
 			return "teleporter"
@@ -147,14 +149,16 @@ func _pick_type() -> String:
 			return "rogue"
 		elif roll < 0.52:
 			return "mage"
-		elif roll < 0.68:
+		elif roll < 0.64:
 			return "necromancer"
-		elif roll < 0.82:
+		elif roll < 0.71:
+			return "healer"
+		elif roll < 0.84:
 			return "exploder"
 		else:
 			return "teleporter"
 	else:
-		# Wave 12+ — heavy chaos with more necromancers, exploders, teleporters
+		# Wave 12+ — heavy chaos with more necromancers, healers, exploders, teleporters
 		if roll < 0.08:
 			return "minion"
 		elif roll < 0.18:
@@ -163,9 +167,11 @@ func _pick_type() -> String:
 			return "rogue"
 		elif roll < 0.42:
 			return "mage"
-		elif roll < 0.58:
+		elif roll < 0.54:
 			return "necromancer"
-		elif roll < 0.75:
+		elif roll < 0.62:
+			return "healer"
+		elif roll < 0.77:
 			return "exploder"
 		else:
 			return "teleporter"
@@ -256,6 +262,7 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 		"necromancer": Color(0.45, 0.05, 0.7),
 		"exploder": Color(0.9, 0.6, 0.05),
 		"teleporter": Color(0.9, 0.2, 0.85),
+		"healer": Color(0.15, 0.95, 0.55),
 	}
 	# Dangerous enemies get bigger, brighter warnings so players can react
 	var threat_scale := {
@@ -266,6 +273,7 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 		"necromancer": 1.6,
 		"exploder": 1.5,
 		"teleporter": 1.4,
+		"healer": 1.5,
 	}
 	var color: Color = warn_colors.get(type, Color(0.85, 0.08, 0.35))
 	var scale_factor: float = threat_scale.get(type, 1.0)
