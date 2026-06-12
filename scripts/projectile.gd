@@ -325,13 +325,15 @@ func _spawn_shatter_fragments() -> void:
 		frag_area.monitorable = false
 		var col := CollisionShape3D.new()
 		var shape := SphereShape3D.new()
-		shape.radius = 0.3
+		shape.radius = 0.4
 		col.shape = shape
 		frag_area.add_child(col)
 		frag.add_child(frag_area)
 		var angle := TAU / 3.0 * i + randf() * 0.5
 		var frag_dir := Vector3(cos(angle), 0, sin(angle))
-		var frag_damage := damage * 0.4
+		# Buffed from 40% — fragments fly further and hit harder so Shatter Point
+		# reads as a real area-clear pick instead of a rounding error.
+		var frag_damage := damage * 0.55
 		container.add_child(frag)
 		frag_area.area_entered.connect(func(a: Area3D):
 			var e := a.get_parent()
@@ -339,7 +341,7 @@ func _spawn_shatter_fragments() -> void:
 				e.take_damage(frag_damage)
 		)
 		var tw := frag.create_tween()
-		tw.tween_property(frag, "position", frag.position + frag_dir * 3.0, 0.3)
+		tw.tween_property(frag, "position", frag.position + frag_dir * 4.5, 0.35)
 		tw.tween_callback(frag.queue_free)
 
 func _hit_vfx(killed: bool = false) -> void:

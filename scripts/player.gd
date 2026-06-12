@@ -710,7 +710,9 @@ func _shoot_railgun(delta: float) -> void:
 	var target := _find_nearest_enemy()
 	if not target:
 		return
-	railgun_timer = RAILGUN_COOLDOWN
+	# Stacking Railgun also speeds it up (2.0s -> 1.7s -> 1.4s), so extra levels
+	# feel like a real cadence change, not just a bigger number.
+	railgun_timer = RAILGUN_COOLDOWN * maxf(1.0 - 0.15 * float(GameState.railgun_level - 1), 0.7)
 	var dir: Vector3 = (target.global_position - global_position)
 	dir.y = 0.0
 	dir = dir.normalized()
@@ -886,7 +888,9 @@ func _do_ultimate() -> void:
 			var dist := global_position.distance_to(e.global_position)
 			if dist < ULTIMATE_RADIUS:
 				if e.has_method("take_damage"):
-					e.take_damage(ult_dmg)
+					# "ult" hint tints the damage numbers purple so the burst reads
+					# as one big ability hit instead of anonymous white ticks.
+					e.take_damage(ult_dmg, "ult")
 				# Shove survivors outward so the ultimate doubles as a panic-button
 				# that clears breathing room. Bosses resist most of the push.
 				var push_dir: Vector3 = e.global_position - global_position

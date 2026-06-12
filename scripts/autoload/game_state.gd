@@ -115,6 +115,35 @@ var shake_direction: Vector3 = Vector3.ZERO
 var boss_active: bool = false
 var arena_radius: float = 48.0  # default full arena half-extent; shrunk during boss fights
 
+# Persistent best-run record — survives restarts via a tiny config file.
+const SAVE_PATH := "user://velocity_neon.cfg"
+var best_wave: int = 0
+var best_kills: int = 0
+var new_record: bool = false
+
+func _ready() -> void:
+	_load_best_run()
+
+func _load_best_run() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SAVE_PATH) == OK:
+		best_wave = cfg.get_value("best_run", "wave", 0)
+		best_kills = cfg.get_value("best_run", "kills", 0)
+
+func _check_best_run() -> void:
+	# Deepest wave wins; kills break ties. Wave 1 deaths don't count as a record
+	# so an instant first-run death doesn't celebrate itself.
+	if wave < 2:
+		return
+	if wave > best_wave or (wave == best_wave and kills > best_kills):
+		new_record = true
+		best_wave = wave
+		best_kills = kills
+		var cfg := ConfigFile.new()
+		cfg.set_value("best_run", "wave", best_wave)
+		cfg.set_value("best_run", "kills", best_kills)
+		cfg.save(SAVE_PATH)
+
 func _process(delta: float) -> void:
 	if game_started and not game_over:
 		time_survived += delta
@@ -174,6 +203,7 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 			hp_changed.emit(hp, max_hp)
 			return
 		game_over = true
+		_check_best_run()
 		if is_self_damage:
 			death_by_overclock.emit()
 		player_died.emit()
@@ -347,6 +377,7 @@ func reset() -> void:
 	shake_direction = Vector3.ZERO
 	boss_active = false
 	arena_radius = 48.0
+	new_record = false
 	_wave_damage_taken = false
 	_damage_immunity_timer = 0.0
 	acquired_upgrades.clear()

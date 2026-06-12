@@ -15,7 +15,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Scroll Wheel** — Zoom camera in/out
 - **ESC** — Pause menu
 - **M** — Mute / unmute all audio
-- **R** — Restart (game over)
+- **R** — Reroll upgrade choices (level-up) / Restart (game over)
 - **1/2/3** — Quick-select upgrades on level-up
 
 ## Features
@@ -36,7 +36,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.7 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility)
 - **Utility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks)
 
-### Enemies (8 types)
+### Enemies (9 types)
 - **Skeleton Minion** — basic melee rusher
 - **Skeleton Warrior** — tougher, with periodic lunge attacks that deal contact damage + knockback on impact (lunge frequency increases in later waves, SFX + ground dust VFX on landing)
 - **Skeleton Mage** — ranged caster with telegraphed fire bolts, strafing orbit movement, speed scales with wave, retreat clamped to arena bounds
@@ -44,6 +44,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave, retreat clamped to arena bounds
 - **Exploder** — rushes player, detonates on proximity with chain reaction potential, lightning arc VFX between chained explosions, and pulsing danger ring showing blast radius (explosion damage scales with wave)
 - **Teleporter** — blinks to random positions near the player, unpredictable (blink frequency scales with wave)
+- **Healer** — hangs back behind the swarm and pulses healing into nearby wounded enemies (green ring + shimmer telegraph the pulse, mended enemies glint green) — a priority target that undoes your chip damage if left alive (wave 4+)
 - **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw with ground target indicator (3-rock spread when enraged, fiery trail particles, distinct throw SFX), charge (with knockback, ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP with dramatic gold flash
 - Non-minion enemies display mini HP bars for target prioritization
 
@@ -59,6 +60,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Critical hit ping (bright two-layer chime when a crit lands)
 - Escalating kill-streak chime that climbs in pitch at streak milestones (3/5/8/12/16/20/25)
 - Kill milestone celebratory SFX (distinct sound at 100/250/500/1000 kills)
+- Perfect wave chime (bright ascending fanfare when the no-damage bonus lands)
+- Healer pulse shimmer (soft restorative cue when a healer mends the swarm — audible even offscreen)
 - Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
 - XP pickup pitch scaling (pentatonic climb on rapid collection)
 - Big XP batch collection chime (satisfying sound when collecting many orbs at once)
@@ -143,7 +146,10 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Wave announcements with boss wave callouts
 - Kill streak and milestone announcements, plus a draining combo-streak timer bar under the banner that shows how long the kill-streak window (and its damage bonus) has left
 - No-damage wave indicator
-- Pause menu (resume/restart/mute/quit) with a live MUTE/UNMUTE toggle button and an at-a-glance run summary (current wave, kills, and time survived)
+- Pause menu (resume/restart/mute/quit) with a live MUTE/UNMUTE toggle button and an at-a-glance run summary plus a full build sheet (damage, fire rate, projectiles, crit, DR, regen, lifesteal, XP bonus, Guardian status)
+- Upgrade reroll — one per level-up screen (button or R key) swaps all three choices
+- Guardian Angel HUD badge while the death save is still banked
+- Title screen shows your saved best run (wave + kills); game over shows a gold "★ NEW RECORD ★" banner when you beat it
 - Floating red "-X" damage number above the player when you take a hit, so you can read how hard it landed
 - Gold screen-edge flash on big kill-streak milestones (layered on top of the streak banner and rising audio sting)
 - Level-up "powered up" world burst — a golden shockwave + spark flare at the player when an upgrade is confirmed
@@ -181,34 +187,23 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - All knockback effects properly clamped to arena boundaries
 - Enemy spawn throttle (caps at 100 alive enemies to maintain performance)
 - Post-game performance rating (RECRUIT → LEGENDARY based on waves survived)
+- Persistent best-run record (deepest wave + kills) saved between sessions
 - Game over shows wave reached prominently with performance rating
 - Game over enemy kill breakdown (top enemy types killed, total XP earned)
 - Arena boundary walls with neon glow pillars
 
 ## Recent Changes
 
-- **Guardian Angel** — a new defensive upgrade lets you cheat death once per run: a fatal hit leaves you at 35% HP with a protective cyan burst and a brief window of invincibility instead of ending the run.
-- **Greed** — a new stackable upgrade grants +20% XP from every source (orbs, perfect-wave and boss bonuses), so a greed build levels noticeably faster.
-- **Ricochet actually ricochets** — ricochet bolts now phase through enemies and keep bouncing off the arena walls until their bounces run out, instead of dying on the first enemy they touch. The upgrade went from near-useless to a genuine area-clearer.
-- **Critical Surge scales crit damage** — each stack now adds +0.15× crit damage on top of the +5% crit chance, so stacking it pays off twice.
-- **Gravity Well bites** — enemies caught in the slow field take +12% damage, giving the well an offensive payoff instead of pure crowd control.
-- **Phase Charge recharges faster** — every Phase Charge stack also trims the dash cooldown (~8%, floor 0.8s), so banking dashes makes them come back quicker too.
-- **Punchier hits** — heavier damage shoves enemies further (capped; bosses mostly shrug it off), and crit screen-shake now escalates with your active kill streak.
-- **Balance & pacing** — the golem boss uses a gentler HP curve so wave 5/10 bosses aren't a slog; base pickup range is bigger (3.5 → 4.2) and stray XP orbs auto-magnetize sooner (6s → 4s) so earned XP isn't stranded in chaos.
-- **Tighter targeting** — dead enemies now leave the targeting pool the instant they die, so auto-aim, the reticle, the railgun, orbitals, and the Signal Arrow no longer waste a beat on corpses; auto-aim also explicitly ignores dying foes.
-- **Ultimate respects the boss arena** — the Ultimate's outward knockback is now clamped to the *active* arena bound, so it can't shove enemies (or the boss) through the shrunken boss-fight walls.
-- **More music variety** — the gameplay soundtrack rotation lives in one place now (shared by wave changes and the post-boss resume), and the early/mid waves you actually spend time in each get a distinct track instead of repeating one.
-- **Enemy spawn-in pop** — regular enemies grow in over a beat after their warning ring instead of appearing fully-formed on top of you (allocation-free, stays cheap in big waves).
-- **Punchier streaks & damage readout** — big kill-streak milestones add a gold screen-edge flash, and taking a hit now floats a red "-X" off the player so you can read how hard you got hit.
-- **Pause = progress check** — the pause menu shows your current wave, kills, and run time at a glance.
-- **Balance** — Multi-Shot's spread tightens as you stack it (more pellets land on target); Regeneration buffed to +0.7 HP/sec per stack.
-- **Solo boss duels** — boss waves now clear the regular swarm and lock the fight into a shrunken, walled arena; the golem is faster so it actually chases you in the smaller space.
-- **Boss arena containment** — player shots ricochet/despawn against the *active* arena edge, so Ricochet works off the boss walls instead of passing through them.
-- **Smoother dense waves** — per-hit projectile VFX is tiered (chip hits = cheap flash, kills = full shockwave + sparks), cutting the heaviest per-frame allocation during big swarms.
-- **Restored hit feel** — bounded, hard-capped screen shake is back (including a kick when you take damage); hit-stop slow-mo stays off to keep frame pacing smooth.
-- **Audio** — new boss entrance sting, and heavy Multi-Shot volleys (3+ shots) fire a chunky scatter report; wired the Orbital Guard hit feedback back in as a cheap emission/scale pop.
-- **Readability** — pulse bolts tint by your build (Piercing / Ricochet); bigger, brighter XP and health pickups.
-- **Balance** — Phase Dash cooldown 1.75s → 1.5s; Vampire 1.0 → 1.75 HP/kill; slightly more generous health-orb drops.
+- **Healer enemy** — a new support enemy (wave 4+) hangs back and pulses healing into nearby wounded enemies; the green ring, shimmer SFX, and glinting heal targets teach you to focus it down first.
+- **Upgrade reroll** — every level-up screen gets one reroll (button or R key) that swaps all three choices, so a whiffed offer no longer forces an off-build pick.
+- **Best-run record** — your deepest run (wave + kills) is saved to disk: the title screen shows your personal best and beating it earns a pulsing gold "★ NEW RECORD ★" banner + victory sting on the game over screen.
+- **Wall-proof knockback** — fixed heavy hits shoving enemies visibly through the arena (and boss-duel) walls; knockback is now clamped to the active arena bound.
+- **Guardian on the HUD** — a small "++ GUARDIAN" badge shows while the Guardian Angel death-save is still banked, so you always know whether your second chance is up.
+- **Pause = build sheet** — the pause menu now shows your full build at a glance: damage, fire rate, projectiles, crit chance/multiplier, plus DR, regen, lifesteal, XP bonus, and Guardian status when you have them.
+- **Ultimate readability** — Ultimate hits now float purple-tinted damage numbers, so the big burst reads as one ability instead of anonymous ticks.
+- **Perfect wave fanfare** — the no-damage wave bonus finally has its own bright chime instead of being text-only.
+- **Railgun cadence** — stacking Railgun now also speeds it up (2.0s → 1.7s → 1.4s between beams), and the upgrade card shows the cooldown.
+- **Shatter Point buffed** — fragments deal 55% damage (up from 40%), fly farther, and connect more reliably, turning it into a real area-clear pick.
 
 ## Running the Game
 

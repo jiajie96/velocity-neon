@@ -92,6 +92,10 @@ var _mute_label: Label
 var _mute_button: Button
 var _streak_bar: ColorRect
 var _streak_bar_bg: ColorRect
+var _guardian_label: Label
+var _record_label: Label
+var _reroll_btn: Button
+var _reroll_used: bool = false
 
 var _current_choices: Array = []
 var _prev_hp: float = -1.0
@@ -125,6 +129,7 @@ func _ready() -> void:
 	_build_pause_menu()
 	_build_mute_indicator()
 	_build_streak_bar()
+	_build_guardian_indicator()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -240,6 +245,7 @@ func _build_title_screen() -> void:
 		["SPACE", "Phase Dash"],
 		["Q", "Ultimate"],
 		["1 / 2 / 3", "Pick upgrade"],
+		["R", "Reroll upgrades"],
 		["SCROLL", "Zoom camera"],
 		["ESC", "Pause"],
 		["M", "Mute audio"],
@@ -274,8 +280,17 @@ func _build_title_screen() -> void:
 	tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	center.add_child(tagline)
 
+	# Personal best from previous sessions — gives every new run a target to beat
+	if GameState.best_wave > 0:
+		var best := Label.new()
+		best.text = "BEST RUN  —  WAVE %d  •  %d KILLS" % [GameState.best_wave, GameState.best_kills]
+		best.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25, 0.8))
+		best.add_theme_font_size_override("font_size", 14)
+		best.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		center.add_child(best)
+
 	var version := Label.new()
-	version.text = "v0.3"
+	version.text = "v0.4"
 	version.add_theme_color_override("font_color", Color(0.4, 0.35, 0.55, 0.4))
 	version.add_theme_font_size_override("font_size", 11)
 	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -633,9 +648,47 @@ func _build_upgrade_panel() -> void:
 
 		cards_row.add_child(card)
 
+	# Reroll — one fresh set of choices per level-up screen, for when all three
+	# options whiff the build you're going for.
+	var reroll_row := HBoxContainer.new()
+	reroll_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.add_child(reroll_row)
+	_reroll_btn = Button.new()
+	_reroll_btn.text = "REROLL  [R]"
+	_reroll_btn.add_theme_font_size_override("font_size", 13)
+	_reroll_btn.add_theme_color_override("font_color", Color(0.8, 0.75, 0.95))
+	_reroll_btn.add_theme_color_override("font_hover_color", Color(0.0, 1.0, 0.9))
+	_reroll_btn.add_theme_color_override("font_disabled_color", Color(0.45, 0.42, 0.55, 0.6))
+	var rr_normal := StyleBoxFlat.new()
+	rr_normal.bg_color = Color(0.05, 0.03, 0.12, 0.9)
+	rr_normal.border_color = Color(0.3, 0.2, 0.6, 0.5)
+	rr_normal.set_border_width_all(1)
+	rr_normal.set_corner_radius_all(6)
+	rr_normal.content_margin_top = 6
+	rr_normal.content_margin_bottom = 6
+	rr_normal.content_margin_left = 18
+	rr_normal.content_margin_right = 18
+	_reroll_btn.add_theme_stylebox_override("normal", rr_normal)
+	var rr_hover := rr_normal.duplicate() as StyleBoxFlat
+	rr_hover.bg_color = Color(0.08, 0.05, 0.18, 0.95)
+	rr_hover.border_color = Color(0.0, 1.0, 0.9, 0.8)
+	_reroll_btn.add_theme_stylebox_override("hover", rr_hover)
+	_reroll_btn.add_theme_stylebox_override("pressed", rr_hover.duplicate())
+	_reroll_btn.add_theme_stylebox_override("disabled", rr_normal.duplicate())
+	_reroll_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_reroll_btn.pressed.connect(_on_reroll_pressed)
+	_reroll_btn.mouse_entered.connect(func(): Audio.sfx_ui_hover())
+	reroll_row.add_child(_reroll_btn)
+
 	upgrade_panel.visible = false
 	upgrade_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(upgrade_panel)
+
+func _on_reroll_pressed() -> void:
+	if _reroll_used or not upgrade_panel.visible:
+		return
+	_reroll_used = true
+	_show_upgrade_choices(true)
 
 func _on_card_hover(index: int, entered: bool) -> void:
 	if index >= _card_containers.size():
@@ -928,6 +981,21 @@ func _build_wave_progress_label() -> void:
 	_wave_progress_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wave_progress_label)
 
+func _build_guardian_indicator() -> void:
+	# Small cyan badge while the Guardian Angel death-save is banked, so the player
+	# always knows whether their second chance is still up.
+	_guardian_label = Label.new()
+	_guardian_label.text = "++ GUARDIAN"
+	_guardian_label.add_theme_font_size_override("font_size", 12)
+	_guardian_label.add_theme_color_override("font_color", Color(0.6, 0.9, 1.0, 0.75))
+	_guardian_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_guardian_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_guardian_label.position = Vector2(-170, 104)
+	_guardian_label.custom_minimum_size = Vector2(150, 20)
+	_guardian_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_guardian_label.visible = false
+	add_child(_guardian_label)
+
 func _build_pause_menu() -> void:
 	_pause_panel = PanelContainer.new()
 	_pause_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -1042,9 +1110,29 @@ func _update_pause_stats() -> void:
 	if not _pause_stats:
 		return
 	var secs := int(GameState.time_survived)
-	_pause_stats.text = "Wave %d   •   %d kills   •   %d:%02d" % [
+	var lines: Array[String] = []
+	lines.append("Wave %d   •   %d kills   •   %d:%02d" % [
 		GameState.wave, GameState.kills, secs / 60, secs % 60
-	]
+	])
+	# Full build sheet so pausing answers "how strong am I right now?"
+	lines.append("DMG %.1f  •  %.1f shots/s  •  %d proj  •  Crit %d%% x%.2f" % [
+		GameState.damage, GameState.fire_rate, GameState.projectile_count,
+		int(round(GameState.crit_chance * 100.0)), GameState.crit_damage
+	])
+	var extras: Array[String] = []
+	if GameState.damage_reduction > 0.0:
+		extras.append("DR %d%%" % int(round(GameState.damage_reduction * 100.0)))
+	if GameState.hp_regen > 0.0:
+		extras.append("Regen %.1f/s" % GameState.hp_regen)
+	if GameState.lifesteal > 0.0:
+		extras.append("Lifesteal %.1f" % GameState.lifesteal)
+	if GameState.xp_gain_mult > 1.0:
+		extras.append("XP +%d%%" % int(round((GameState.xp_gain_mult - 1.0) * 100.0)))
+	if GameState.revive_available:
+		extras.append("Guardian ready")
+	if extras.size() > 0:
+		lines.append("  •  ".join(extras))
+	_pause_stats.text = "\n".join(lines)
 
 # === AUDIO MUTE ===
 
@@ -1142,6 +1230,8 @@ func _on_kill_streak(count: int) -> void:
 	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
 
 func _on_perfect_wave(bonus_xp: float) -> void:
+	# A flawless wave gets its own bright chime — it used to be text-only
+	Audio.sfx_perfect_wave()
 	if not wave_announce:
 		return
 	wave_announce.text = "PERFECT WAVE  +%d XP" % int(bonus_xp)
@@ -1387,6 +1477,15 @@ func _build_game_over() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
+	# Gold banner shown only when this run beat the saved personal best
+	_record_label = Label.new()
+	_record_label.text = "★ NEW RECORD ★"
+	_record_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	_record_label.add_theme_font_size_override("font_size", 20)
+	_record_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_record_label.visible = false
+	vbox.add_child(_record_label)
+
 	var stats := Label.new()
 	stats.name = "StatsLabel"
 	stats.text = ""
@@ -1569,7 +1668,7 @@ func _on_leveled_up(level: int) -> void:
 	_xp_bar_level_pulse()
 	_show_upgrade_choices()
 
-func _show_upgrade_choices() -> void:
+func _show_upgrade_choices(is_reroll: bool = false) -> void:
 	_current_choices = UpgradeSystem.get_random_choices(3)
 	# If every upgrade is maxed there's nothing to offer — resume instead of
 	# showing an empty, unclickable panel (which would soft-lock the run).
@@ -1577,6 +1676,12 @@ func _show_upgrade_choices() -> void:
 		GameState.pending_levelups = 0
 		_finish_upgrade_selection()
 		return
+	# Each fresh level-up screen grants one reroll
+	if not is_reroll:
+		_reroll_used = false
+	if _reroll_btn:
+		_reroll_btn.disabled = _reroll_used
+		_reroll_btn.text = "REROLLED" if _reroll_used else "REROLL  [R]"
 	Audio.sfx_dice_roll()
 	for i in 3:
 		if i < _current_choices.size():
@@ -1677,6 +1782,15 @@ func _on_player_died() -> void:
 		var flash_tw := create_tween()
 		flash_tw.tween_property(_levelup_flash, "color:a", 0.0, 1.0).set_ease(Tween.EASE_OUT)
 	game_over_panel.visible = true
+	# Celebrate a new personal best with a gold banner + victory sting
+	if _record_label:
+		_record_label.visible = GameState.new_record
+		if GameState.new_record:
+			Audio.play_victory_sting()
+			var rec_tw := create_tween()
+			rec_tw.set_loops(3)
+			rec_tw.tween_property(_record_label, "modulate:a", 0.4, 0.4)
+			rec_tw.tween_property(_record_label, "modulate:a", 1.0, 0.4)
 	# Customize title for overclock burnout
 	for child in game_over_panel.get_child(0).get_children():
 		if child is Label and child.text == "SYSTEM FAILURE":
@@ -1799,6 +1913,8 @@ func _process(delta: float) -> void:
 const ULT_VISUAL_CD := 12.0  # base ultimate cooldown for the radial fill — see player.ULTIMATE_COOLDOWN
 
 func _update_indicators() -> void:
+	if _guardian_label:
+		_guardian_label.visible = GameState.revive_available and not GameState.game_over
 	var player: Node = get_tree().get_first_node_in_group("player_node")
 	if not player:
 		return
@@ -1937,7 +2053,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.physical_keycode == KEY_M and not event.echo:
 			_toggle_mute()
 			return
-		# Keyboard upgrade selection (1/2/3) during level-up
+		# Keyboard upgrade selection (1/2/3, R to reroll) during level-up
 		if upgrade_panel and upgrade_panel.visible and GameState.paused_for_upgrade:
 			if event.physical_keycode == KEY_1:
 				_on_upgrade_chosen(0)
@@ -1947,6 +2063,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			elif event.physical_keycode == KEY_3:
 				_on_upgrade_chosen(2)
+				return
+			elif event.physical_keycode == KEY_R:
+				_on_reroll_pressed()
 				return
 		if event.physical_keycode == KEY_ESCAPE:
 			if GameState.game_over:

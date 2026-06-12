@@ -110,7 +110,8 @@ static func _stat_preview(u: Upgrade) -> String:
 		"railgun":
 			var cur := GameState.railgun_level
 			var dmg_mult := 1.5 + 0.5 * (cur + 1)
-			return "Piercing beam (Lv %d -> %d, %.1fx base dmg)" % [cur, cur + 1, dmg_mult]
+			var rg_cd := 2.0 * maxf(1.0 - 0.15 * float(cur), 0.7)
+			return "Piercing beam (Lv %d -> %d, %.1fx dmg, every %.1fs)" % [cur, cur + 1, dmg_mult, rg_cd]
 		"signal_arrow":
 			var cur := GameState.signal_arrow_level
 			var tgts := 4 + (cur + 1) * 2
@@ -128,7 +129,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			var cur := GameState.ricochet_level
 			return "Wall bounces (%d -> %d bounces)" % [cur, cur + 1]
 		"shatter":
-			return "Bullets split into 3 fragments on hit"
+			return "Bullets split into 3 fragments on hit (55% dmg each)"
 		"gravity_well":
 			var cur := GameState.gravity_well_strength
 			return "Slow nearby enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.35) * 100]

@@ -75,7 +75,7 @@
 - **Shield Bearer**: Front-facing shield blocks projectiles — must be hit from behind or with area damage
 - ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
 - ~~**Teleporter**: Blinks to new position periodically, unpredictable movement~~ DONE — teleporters blink every ~2.5s to random positions near the player
-- **Healer**: Restores HP to nearby enemies, priority target
+- ~~**Healer**: Restores HP to nearby enemies, priority target~~ DONE — hangs back (wave 4+), pulses 18% max-HP heals to up to 3 wounded enemies every 4s with a green ring + shimmer SFX telegraph
 - **Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)
 
 ### Boss Design
@@ -113,7 +113,7 @@
 ### Quality of Life
 - ~~**Pause menu**: Full pause with resume/restart/settings/quit~~ DONE
 - **Settings screen**: Volume sliders, resolution, fullscreen toggle, VFX quality, camera sensitivity — PARTIAL: master mute toggle (M key, plus a MUTE button in the pause menu) is implemented; full settings still pending
-- **Save system**: Save best run stats, unlocked upgrades, settings
+- **Save system**: ~~Save best run stats~~ PARTIAL — best run (deepest wave + kills) persists to disk, shown on title screen with a NEW RECORD banner on game over; unlocked upgrades and settings still pending
 - **Run statistics**: ~~Post-run summary (DPS over time, damage taken, upgrades chosen, XP graph)~~ PARTIAL — game over screen shows kills/min, avg DPS, total damage, time survived, performance rating (RECRUIT→LEGENDARY), and full upgrade build summary
 - **Minimap**: Optional corner minimap showing enemy positions
 - ~~**Damage numbers**: Floating damage text above enemies on hit~~ DONE
@@ -344,6 +344,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Crit screen-shake escalates with the active kill streak (roadmap shake formula)
 - [x] Softer early boss HP curve so wave 5/10 golems aren't a slog
 - [x] Bigger base pickup range (3.5 -> 4.2) + sooner XP auto-magnetize (6s -> 4s) so earned XP isn't stranded
+- [x] Healer enemy (wave 4+ support — heals nearby wounded enemies, green ring + shimmer telegraph, priority target)
+- [x] Upgrade reroll (one per level-up screen — button or R key swaps all three choices)
+- [x] Persistent best-run record (title screen shows personal best; gold NEW RECORD banner + sting on game over)
+- [x] Hit-knockback clamped to the active arena (heavy hits no longer shove enemies through the walls)
+- [x] Guardian Angel HUD badge while the death save is banked
+- [x] Pause menu full build stat sheet (DMG / fire rate / proj / crit + DR / regen / lifesteal / XP / Guardian)
+- [x] Ultimate damage numbers tinted purple ("ult" weapon hint)
+- [x] Perfect wave chime (the no-damage bonus was text-only)
+- [x] Railgun stacks also reduce its cooldown (2.0s -> 1.7s -> 1.4s, shown on the upgrade card)
+- [x] Shatter Point buff (fragments 40% -> 55% dmg, fly farther, bigger hit radius)
 
 ---
 
