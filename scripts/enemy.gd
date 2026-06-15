@@ -478,8 +478,8 @@ func _process(delta: float) -> void:
 				_rogue_dodge_timer = dodge_cd + randf_range(-0.3, 0.3)
 				var side := Vector3(-dir.z, 0, dir.x) * (1.0 if randf() > 0.5 else -1.0)
 				var dodge_pos := position + side * ROGUE_DODGE_DIST
-				dodge_pos.x = clampf(dodge_pos.x, -48.0, 48.0)
-				dodge_pos.z = clampf(dodge_pos.z, -48.0, 48.0)
+				dodge_pos.x = clampf(dodge_pos.x, -GameState.arena_radius, GameState.arena_radius)
+				dodge_pos.z = clampf(dodge_pos.z, -GameState.arena_radius, GameState.arena_radius)
 				_spawn_rogue_dodge_ghost()
 				var tw := create_tween()
 				tw.tween_property(self, "position", dodge_pos, 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
@@ -519,7 +519,7 @@ func _process(delta: float) -> void:
 				_golem_enraged = true
 				GameState.request_shake(3.0)
 				GameState.request_hit_stop(0.08)
-				Audio.sfx_golem_slam()
+				Audio.sfx_boss_enrage()
 				GameState.golem_enraged.emit()
 			var boss_spd := spd * (1.6 if enraged else 1.0)
 			# Handle charge state
@@ -575,8 +575,8 @@ func _process(delta: float) -> void:
 			if _warrior_lunging:
 				_warrior_lunge_elapsed += delta
 				position += _warrior_lunge_dir * WARRIOR_LUNGE_SPEED * delta
-				position.x = clampf(position.x, -48.0, 48.0)
-				position.z = clampf(position.z, -48.0, 48.0)
+				position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
+				position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 				# Deal damage on lunge impact if close to player
 				if not _warrior_lunge_hit and dist_to_player < 1.5 and not GameState.invincible:
 					_warrior_lunge_hit = true
@@ -584,8 +584,8 @@ func _process(delta: float) -> void:
 					var lunge_kb := (player.global_position - global_position).normalized()
 					lunge_kb.y = 0.0
 					player.position += lunge_kb * 2.5
-					player.position.x = clampf(player.position.x, -48.0, 48.0)
-					player.position.z = clampf(player.position.z, -48.0, 48.0)
+					player.position.x = clampf(player.position.x, -GameState.arena_radius, GameState.arena_radius)
+					player.position.z = clampf(player.position.z, -GameState.arena_radius, GameState.arena_radius)
 					GameState.request_shake(2.5, lunge_kb)
 					GameState.request_hit_stop(0.04)
 				if _warrior_lunge_elapsed >= WARRIOR_LUNGE_DURATION:
@@ -1027,8 +1027,8 @@ func _necro_summon() -> void:
 		var angle := TAU / float(NECRO_SUMMON_COUNT) * float(i) + randf() * 0.5
 		var offset := Vector3(cos(angle), 0, sin(angle)) * 2.0
 		var spawn_pos := global_position + offset
-		spawn_pos.x = clampf(spawn_pos.x, -48.0, 48.0)
-		spawn_pos.z = clampf(spawn_pos.z, -48.0, 48.0)
+		spawn_pos.x = clampf(spawn_pos.x, -GameState.arena_radius, GameState.arena_radius)
+		spawn_pos.z = clampf(spawn_pos.z, -GameState.arena_radius, GameState.arena_radius)
 		var minion := Node3D.new()
 		minion.name = "Enemy_minion"
 		minion.set_script(load("res://scripts/enemy.gd"))
@@ -1123,8 +1123,10 @@ func _golem_slam_impact() -> void:
 			var kb_dir := (player.global_position - global_position).normalized()
 			kb_dir.y = 0.0
 			player.position += kb_dir * 3.0
-			player.position.x = clampf(player.position.x, -48.0, 48.0)
-			player.position.z = clampf(player.position.z, -48.0, 48.0)
+			# Clamp to the *active* arena (shrinks during boss duels) — the slam used
+			# to shove the player straight through the visible boss-fight walls.
+			player.position.x = clampf(player.position.x, -GameState.arena_radius, GameState.arena_radius)
+			player.position.z = clampf(player.position.z, -GameState.arena_radius, GameState.arena_radius)
 	GameState.request_shake(3.5)
 	GameState.request_hit_stop(0.06)
 	Audio.sfx_golem_slam()
@@ -1333,7 +1335,10 @@ func _explode() -> void:
 	if player:
 		var dist := global_position.distance_to(player.global_position)
 		if dist < EXPLODER_RADIUS and not GameState.invincible:
-			GameState.take_damage(scaled_explode_dmg)
+			# Distance falloff — full damage at the blast center, down to 40% at the
+			# very edge, so positioning matters and a clipped edge isn't a near-one-shot.
+			var falloff := 1.0 - clampf(dist / EXPLODER_RADIUS, 0.0, 1.0)
+			GameState.take_damage(scaled_explode_dmg * (0.4 + 0.6 * falloff))
 			GameState.request_shake(3.0)
 	# Also damage nearby enemies (chain reaction potential)
 	var chain_hit := false
