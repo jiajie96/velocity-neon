@@ -354,6 +354,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Perfect wave chime (the no-damage bonus was text-only)
 - [x] Railgun stacks also reduce its cooldown (2.0s -> 1.7s -> 1.4s, shown on the upgrade card)
 - [x] Shatter Point buff (fragments 40% -> 55% dmg, fly farther, bigger hit radius)
+- [x] Golem slam knockback clamps to the *active* arena radius (was hardcoded ±48, shoving the player through the shrunken boss-duel walls); same fix applied to warrior lunge, rogue dodge, and necromancer summon spawns
+- [x] Health orbs no longer magnetize/collect at full HP — a heal drop now waits (or fades) instead of being wasted when you don't need it
+- [x] Dedicated boss-enrage roar SFX (deep down-pitched pulse + sub thud + snarl) instead of reusing the plain slam sound when the golem drops below 30% HP
+- [x] THORNS upgrade — reflect 25%/50% of contact damage back into enemies that touch you (defensive brawler pick, 2 stacks)
+- [x] Regeneration buffed (0.7 -> 0.9 HP/sec per stack) to keep pace with rising max HP
+- [x] Ultimate "not ready" feedback — pressing Q on cooldown plays a quiet rate-limited denied blip so the input registers
+- [x] Ultimate base cooldown trimmed (12s -> 10s, floor ~5s at high level) so the panic button is available a little more often
+- [x] Exploder blast damage now falls off with distance (100% at center -> 40% at the edge) so spacing matters and edge clips aren't near-one-shots
+- [x] Orbital Guard buffed (8 -> 10 damage, hit cooldown 0.5s -> 0.45s)
+- [x] Low-HP danger glow — the player's own light bleeds red and pulses faster below 25% HP, reinforcing the heartbeat audio and damage vignette
 
 ---
 

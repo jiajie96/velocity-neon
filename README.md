@@ -29,11 +29,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
-### Weapons & Upgrades (24 upgrades)
+### Weapons & Upgrades (25 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
-- **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard
+- **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard (orbiting damage orbs)
 - **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
-- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.7 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility)
+- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.9 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
 - **Utility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks)
 
 ### Enemies (9 types)
@@ -69,6 +69,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Ultimate ready audio cue when cooldown finishes
 - Necromancer summon SFX (eerie pulse when minions spawn)
 - Boss entrance sting (ominous low-end stinger announces a boss wave before the music swaps)
+- Boss enrage roar (a distinct deep, snarling stinger when the golem drops below 30% HP — no longer recycles the plain slam sound)
+- Ultimate "not ready" blip (a quiet, rate-limited denied cue when you press Q while it's still on cooldown)
 - Heavy Multi-Shot volley SFX (chunky scatter report when firing 3+ projectiles at once)
 - Golem charge telegraph SFX (low rumble before charge)
 - Golem rock throw SFX (distinct deep whoosh, separate from slam)
@@ -88,6 +90,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Auto-aim target reticle (spinning cyan bracket marks the locked-on enemy; scales up for bosses)
 - Floating ambient neon motes drifting across the arena floor
 - Damage vignette (red pulse at low HP), hit flash on damage taken
+- Low-HP danger glow (the player's own light bleeds red and pulses faster below 25% HP — an at-a-glance companion to the heartbeat audio and the screen vignette)
 - Screen flash on critical hits (orange tint)
 - Green screen-edge pulse when grabbing a health pickup
 - Punchy muzzle flash on every shot (brighter, snaps inward as it fades)
@@ -169,7 +172,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Game Systems
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave); late-game wave sizes use a softened quadratic curve so the highest waves stay intense without becoming a slog
-- Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime
+- Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime; heal orbs no longer magnetize or collect while you're at full HP, so a drop isn't wasted when you don't need it
+- Exploder blasts deal distance-scaled damage (full at the blast center, falling to 40% at the edge) so positioning matters and an edge clip is no longer a near-one-shot
 - Multi-level-up: large XP gains (boss bonus, batched orbs) award every level crossed, offering each upgrade in turn instead of banking the overflow
 - Kill-streak combo damage bonus that ramps with the streak and decays when it ends
 - XP orbs auto-magnetize toward the player after a few seconds (and live a little longer) so earned XP isn't lost in chaotic waves
@@ -194,6 +198,14 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Boss-wall slam fix** — fixed the golem slam (and warrior lunge / rogue dodge / necro summons) shoving the player straight through the shrunken boss-duel walls; all of these now clamp to the active arena radius.
+- **Thorns upgrade** — a new defensive pick that reflects 25%/50% of contact damage back into enemies that touch you, so a tanky brawler build can punish melee swarms.
+- **No more wasted heals** — health orbs no longer magnetize or get collected while you're at full HP; a drop waits (or fades) until you actually take damage.
+- **Boss enrage roar** — the golem's sub-30% enrage now has its own deep, snarling stinger instead of recycling the slam sound, so the phase change reads audibly.
+- **Exploder fairness** — exploder blasts deal distance-scaled damage (full at the center, 40% at the edge), rewarding spacing and removing the binary edge-clip one-shots.
+- **Ultimate feel** — base cooldown trimmed to 10s, and pressing Q while it's still recharging now plays a quiet "not ready" blip so the input registers.
+- **Low-HP danger glow** — the player's own light bleeds red and pulses faster below 25% HP, an at-a-glance companion to the heartbeat and the screen vignette.
+- **Balance pass** — Regeneration buffed to +0.9 HP/sec per stack and Orbital Guard buffed (10 damage, 0.45s hit cooldown).
 - **Healer enemy** — a new support enemy (wave 4+) hangs back and pulses healing into nearby wounded enemies; the green ring, shimmer SFX, and glinting heal targets teach you to focus it down first.
 - **Upgrade reroll** — every level-up screen gets one reroll (button or R key) that swaps all three choices, so a whiffed offer no longer forces an off-build pick.
 - **Best-run record** — your deepest run (wave + kills) is saved to disk: the title screen shows your personal best and beating it earns a pulsing gold "★ NEW RECORD ★" banner + victory sting on the game over screen.
