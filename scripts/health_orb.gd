@@ -76,6 +76,12 @@ func _process(delta: float) -> void:
 	if not player:
 		return
 
+	# Don't waste a heal drop while the player is already topped off — the orb just
+	# bobs and waits (or fades) until the player actually takes damage.
+	if GameState.hp >= GameState.max_hp:
+		_magnetized = false
+		return
+
 	var dist: float = global_position.distance_to(player.global_position)
 	if dist < GameState.magnet_range:
 		_magnetized = true

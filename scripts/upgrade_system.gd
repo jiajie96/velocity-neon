@@ -35,7 +35,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("swift", "SWIFT", "+12% move speed", Color(0.3, 0.8, 1.0), "~~"),
 		Upgrade.new("multi_shot", "MULTI-SHOT", "+1 projectile", Color(0.9, 0.5, 1.0), "**", 4),
 		Upgrade.new("magnet", "MAGNET", "+50% pickup range", Color(0.5, 1.0, 0.8), "<>"),
-		Upgrade.new("regen", "REGENERATION", "+0.7 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
+		Upgrade.new("regen", "REGENERATION", "+0.9 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		# Overclock removed — too punishing without guaranteed healing upgrade
@@ -55,6 +55,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("adrenaline", "ADRENALINE", "More damage the lower your HP", Color(1.0, 0.25, 0.1), "AD", 1),
 		Upgrade.new("greed", "GREED", "+20% XP from all sources", Color(1.0, 0.8, 0.1), "$$", 3),
 		Upgrade.new("guardian", "GUARDIAN ANGEL", "Survive one fatal hit per run", Color(0.6, 0.9, 1.0), "++", 1),
+		Upgrade.new("thorns", "THORNS", "Reflect contact damage back to attackers", Color(0.7, 0.85, 0.9), "><", 2),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -92,7 +93,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+50%% pickup range (%.1f -> %.1f)" % [cur, cur * 1.5]
 		"regen":
 			var cur := GameState.hp_regen
-			return "+0.7 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.7]
+			return "+0.9 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.9]
 		"dash_charge":
 			return "+1 dash charge (%d -> %d)" % [GameState.dash_max_charges, GameState.dash_max_charges + 1]
 		"crit_surge":
@@ -143,6 +144,9 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+20%% XP gained (%d%% -> %d%%)" % [int(round(gcur)), int(round(gcur + 20))]
 		"guardian":
 			return "Cheat death once: survive a fatal hit at 35%% HP"
+		"thorns":
+			var cur := GameState.thorns * 100.0
+			return "Reflect contact damage (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
 		_:
 			return u.description
 
@@ -164,7 +168,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"magnet":
 			GameState.magnet_range *= 1.5
 		"regen":
-			GameState.hp_regen += 0.7
+			GameState.hp_regen += 0.9
 		"shatter":
 			GameState.has_shatter = true
 		"gravity_well":
@@ -204,6 +208,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.xp_gain_mult += 0.20
 		"guardian":
 			GameState.revive_available = true
+		"thorns":
+			GameState.thorns = minf(GameState.thorns + 0.25, 0.5)
 
 static func reset_all() -> void:
 	_initialized = false

@@ -2,7 +2,7 @@ extends Node3D
 
 const DASH_DURATION := 0.2
 const DASH_TRAIL_COUNT := 3
-const ULTIMATE_COOLDOWN := 12.0
+const ULTIMATE_COOLDOWN := 10.0
 const ULTIMATE_RADIUS := 8.0
 const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
@@ -11,8 +11,8 @@ const RAILGUN_COOLDOWN := 2.0
 const SIGNAL_ARROW_COOLDOWN := 1.6
 const ORBITAL_RADIUS := 2.5
 const ORBITAL_SPEED := 3.0
-const ORBITAL_DAMAGE := 8.0
-const ORBITAL_HIT_CD := 0.5
+const ORBITAL_DAMAGE := 10.0
+const ORBITAL_HIT_CD := 0.45
 const DASH_AFTERIMAGE_INTERVAL := 0.09
 const DASH_DAMAGE := 15.0
 const DASH_HIT_RADIUS := 1.5
@@ -42,6 +42,7 @@ var _ult_was_on_cd: bool = false
 var _overclock_pulse_t: float = 0.0
 var _gravity_ring: MeshInstance3D
 var _gravity_ring_mat: StandardMaterial3D
+var _ult_denied_cd: float = 0.0
 var _heartbeat_timer: float = 0.0
 var _damage_flash_timer: float = 0.0
 var _shield_ring: MeshInstance3D
@@ -447,6 +448,7 @@ func _process(delta: float) -> void:
 	_ultimate(delta)
 	_check_contact_damage(delta)
 	_update_weapon_glow()
+	_update_low_hp_glow(delta)
 	_update_dash_ring()
 	_update_gravity_ring()
 	_update_overclock_visual(delta)
@@ -864,16 +866,24 @@ func _spawn_orbital_hit_spark(_hit_pos: Vector3) -> void:
 
 func _ultimate(delta: float) -> void:
 	ult_cd_timer = maxf(ult_cd_timer - delta, 0.0)
+	_ult_denied_cd = maxf(_ult_denied_cd - delta, 0.0)
 	if ult_cd_timer > 0.01:
 		_ult_was_on_cd = true
 	elif _ult_was_on_cd:
 		_ult_was_on_cd = false
 		Audio.sfx_ult_ready()
-	if Input.is_action_just_pressed("ultimate") and ult_cd_timer <= 0.0:
-		# Scale cooldown down slightly as player levels up (min 6s at level 20+)
-		var cd_scale := maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
-		ult_cd_timer = ULTIMATE_COOLDOWN * cd_scale
-		_do_ultimate()
+	if Input.is_action_just_pressed("ultimate"):
+		if ult_cd_timer <= 0.0:
+			# Scale cooldown down slightly as player levels up (min 5s at level 20+)
+			var cd_scale := maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
+			ult_cd_timer = ULTIMATE_COOLDOWN * cd_scale
+			_do_ultimate()
+		elif _ult_denied_cd <= 0.0:
+			# Pressed while still recharging — give a quiet "not ready" blip so the
+			# input registers instead of feeling unresponsive. Rate-limited so mashing
+			# Q doesn't machine-gun the sound.
+			_ult_denied_cd = 0.5
+			Audio.sfx_denied()
 
 func _do_ultimate() -> void:
 	Audio.sfx_ultimate()
@@ -963,6 +973,10 @@ func _check_contact_damage(delta: float) -> void:
 			dmg = enemy.contact_damage
 		contact_cd = CONTACT_COOLDOWN
 		GameState.take_damage(dmg)
+		# Thorns — reflect a slice of the contact damage straight back into the enemy
+		# that touched us, so a tanky brawler build can punish melee swarms.
+		if GameState.thorns > 0.0 and enemy and enemy.has_method("take_damage"):
+			enemy.take_damage(dmg * GameState.thorns)
 		# Contact pushback removed — player no longer gets shoved by creep contact.
 		# Special attacks (warrior lunge, golem slam/charge) still apply their own
 		# knockback because those are telegraphed, intentional hits.
@@ -983,6 +997,28 @@ func _update_weapon_glow() -> void:
 		glow.light_color = Color(0.1, 0.6, 0.85)
 	else:
 		glow.light_color = Color(0.0, 0.6, 0.9)
+
+var _low_hp_glow_t: float = 0.0
+
+func _update_low_hp_glow(delta: float) -> void:
+	# At-a-glance danger cue: below 25% HP the player's own glow light bleeds toward
+	# red and pulses faster the lower the HP, reinforcing the heartbeat audio and the
+	# screen-edge vignette so a near-death state is unmistakable. Runs after
+	# _update_weapon_glow so it cleanly takes over (and hands back) the light.
+	if GameState.overclock_active:
+		return  # overclock owns the glow when active
+	var glow := get_node_or_null("PlayerGlow") as OmniLight3D
+	if not glow:
+		return
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
+	if hp_ratio >= 0.25 or GameState.game_over:
+		_low_hp_glow_t = 0.0
+		return
+	var danger := 1.0 - hp_ratio / 0.25  # 0 at the threshold, 1 near death
+	_low_hp_glow_t += delta * lerpf(5.0, 11.0, danger)
+	var pulse := (sin(_low_hp_glow_t) + 1.0) * 0.5
+	glow.light_color = Color(0.0, 0.6, 0.9).lerp(Color(1.0, 0.12, 0.05), 0.5 + 0.5 * danger)
+	glow.light_energy = lerpf(1.2, 3.0, pulse * (0.5 + 0.5 * danger))
 
 func _update_regen_vfx(delta: float) -> void:
 	if GameState.hp_regen <= 0.0 or GameState.hp >= GameState.max_hp:

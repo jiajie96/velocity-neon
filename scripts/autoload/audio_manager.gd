@@ -174,6 +174,14 @@ func sfx_ui_hover() -> void:
 func sfx_boss_defeat() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", 0.0, 0.8)
 
+func sfx_boss_enrage() -> void:
+	# A guttural enrage roar when the golem drops below 30% HP — a deep down-pitched
+	# pulse + a hard sub thud + a snarling layer, distinct from the regular slam so
+	# the phase change reads as "this just got worse."
+	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", 0.0, 0.45)
+	play_sfx("res://assets/audio/sfx/enemy_death_02.ogg", -2.0, 0.5)
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -1.0, 0.35)
+
 func sfx_boss_incoming() -> void:
 	# Ominous low-end stinger announcing a boss wave — deep pulse, a sub thud,
 	# and a slowed wave-horn so the entrance lands before the music swaps.
@@ -219,6 +227,10 @@ func sfx_golem_charge() -> void:
 
 func sfx_ult_ready() -> void:
 	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -10.0, 1.3)
+
+func sfx_denied() -> void:
+	# Soft low "nope" blip for inputs pressed while still on cooldown
+	play_sfx("res://assets/audio/sfx/ui_click.ogg", -10.0, 0.6)
 
 func sfx_mage_bolt() -> void:
 	play_sfx("res://assets/audio/sfx/shoot_inferno_warlock.ogg", -10.0, randf_range(1.4, 1.6))

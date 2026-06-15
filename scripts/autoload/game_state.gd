@@ -66,6 +66,7 @@ var execute_bonus: float = 0.0  # Bonus damage multiplier vs low-HP enemies
 var adrenaline: bool = false    # Deal more damage the lower the player's HP gets
 var xp_gain_mult: float = 1.0   # Greed upgrade — scales all XP gained
 var revive_available: bool = false  # Guardian Angel — one-time fatal-hit save
+var thorns: float = 0.0         # Thorns — fraction of contact damage reflected back
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -352,6 +353,7 @@ func reset() -> void:
 	adrenaline = false
 	xp_gain_mult = 1.0
 	revive_available = false
+	thorns = 0.0
 	railgun_level = 0
 	signal_arrow_level = 0
 	chain_level = 0
