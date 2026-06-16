@@ -56,6 +56,8 @@ static func _ensure_init() -> void:
 		Upgrade.new("greed", "GREED", "+20% XP from all sources", Color(1.0, 0.8, 0.1), "$$", 3),
 		Upgrade.new("guardian", "GUARDIAN ANGEL", "Survive one fatal hit per run", Color(0.6, 0.9, 1.0), "++", 1),
 		Upgrade.new("thorns", "THORNS", "Reflect contact damage back to attackers", Color(0.7, 0.85, 0.9), "><", 2),
+		Upgrade.new("giant_slayer", "GIANT SLAYER", "More damage to bosses", Color(1.0, 0.85, 0.3), "><", 3),
+		Upgrade.new("scavenger", "SCAVENGER", "More & stronger health drops", Color(0.3, 1.0, 0.55), "++", 2),
 	]
 
 static func get_random_choices(count: int = 3) -> Array[Upgrade]:
@@ -147,6 +149,12 @@ static func _stat_preview(u: Upgrade) -> String:
 		"thorns":
 			var cur := GameState.thorns * 100.0
 			return "Reflect contact damage (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
+		"giant_slayer":
+			var cur := (GameState.boss_damage_mult - 1.0) * 100.0
+			return "+22%% damage to bosses (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 22))]
+		"scavenger":
+			var drop := GameState.health_drop_mult
+			return "Health orbs drop +60%% more often & heal +25%% (drop x%.1f -> x%.1f)" % [drop, drop + 0.6]
 		_:
 			return u.description
 
@@ -210,6 +218,11 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.revive_available = true
 		"thorns":
 			GameState.thorns = minf(GameState.thorns + 0.25, 0.5)
+		"giant_slayer":
+			GameState.boss_damage_mult += 0.22
+		"scavenger":
+			GameState.health_drop_mult += 0.6
+			GameState.health_heal_mult += 0.25
 
 static func reset_all() -> void:
 	_initialized = false

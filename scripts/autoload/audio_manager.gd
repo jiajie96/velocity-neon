@@ -159,6 +159,11 @@ func sfx_ultimate() -> void:
 func sfx_dash() -> void:
 	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -6.0, 1.5)
 
+func sfx_dash_hit() -> void:
+	# Meaty thud when a Phase Dash carves through a pack — fires once per dash so it
+	# punctuates the slice instead of machine-gunning across every enemy passed.
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -4.0, randf_range(0.7, 0.85))
+
 func sfx_dash_ready() -> void:
 	play_sfx("res://assets/audio/sfx/ui_select.ogg", -10.0, 1.6)
 

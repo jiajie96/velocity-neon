@@ -16,7 +16,7 @@ const ORBITAL_HIT_CD := 0.45
 const DASH_AFTERIMAGE_INTERVAL := 0.09
 const DASH_DAMAGE := 15.0
 const DASH_HIT_RADIUS := 1.5
-const DASH_IFRAME_GRACE := 0.1
+const DASH_IFRAME_GRACE := 0.15
 
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
@@ -37,6 +37,7 @@ var _afterimage_timer: float = 0.0
 var _dash_ring: MeshInstance3D
 var _dash_ring_mat: StandardMaterial3D
 var _dash_hit_enemies: Array[int] = []
+var _dash_struck: bool = false
 var _regen_vfx_timer: float = 0.0
 var _ult_was_on_cd: bool = false
 var _overclock_pulse_t: float = 0.0
@@ -537,6 +538,12 @@ func _dash(delta: float) -> void:
 					if global_position.distance_to(e.global_position) < DASH_HIT_RADIUS:
 						e.take_damage(scaled_dash_dmg, "dash")
 						_dash_hit_enemies.append(eid)
+						# Punctuate the slice once per dash — a meaty thud + a small
+						# kick in the dash direction so phasing through a pack lands.
+						if not _dash_struck:
+							_dash_struck = true
+							Audio.sfx_dash_hit()
+							GameState.request_shake(1.6, dash_dir)
 		if dash_timer <= 0.0:
 			is_dashing = false
 			# Keep invincibility briefly past the dash for a forgiving escape window
@@ -565,6 +572,7 @@ func _dash(delta: float) -> void:
 		GameState.invincible = true
 		GameState.total_dashes += 1
 		_dash_hit_enemies.clear()
+		_dash_struck = false
 		Audio.sfx_dash()
 		_spawn_dash_trail()
 		# Launch shockwave at the dash origin for extra oomph
@@ -813,6 +821,14 @@ func _update_orbitals(delta: float) -> void:
 		mat.emission = Color(0.0, 1.0, 0.5)
 		mat.emission_energy_multiplier = 4.0
 		orb.material_override = mat
+		# Small glow so the orbiting guard reads against the dark arena floor instead
+		# of being an easy-to-miss emissive speck.
+		var orb_light := OmniLight3D.new()
+		orb_light.light_color = Color(0.0, 1.0, 0.55)
+		orb_light.light_energy = 1.2
+		orb_light.omni_range = 2.2
+		orb_light.omni_attenuation = 2.0
+		orb.add_child(orb_light)
 		add_child(orb)
 		_orbital_nodes.append(orb)
 	while _orbital_nodes.size() > wanted:
@@ -916,6 +932,9 @@ func _do_ultimate() -> void:
 				var ult_bound: float = GameState.arena_radius - 1.0
 				e.position.x = clampf(e.position.x, -ult_bound, ult_bound)
 				e.position.z = clampf(e.position.z, -ult_bound, ult_bound)
+	# The ult doubles as a reward collect — vacuum up loose XP/health orbs so clearing
+	# space also banks the orbs scattered across the fight.
+	GameState.xp_magnet_pulse.emit()
 	_spawn_ult_vfx()
 
 func _spawn_ult_vfx() -> void:

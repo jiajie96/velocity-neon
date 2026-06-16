@@ -67,6 +67,9 @@ var adrenaline: bool = false    # Deal more damage the lower the player's HP get
 var xp_gain_mult: float = 1.0   # Greed upgrade — scales all XP gained
 var revive_available: bool = false  # Guardian Angel — one-time fatal-hit save
 var thorns: float = 0.0         # Thorns — fraction of contact damage reflected back
+var boss_damage_mult: float = 1.0   # Giant Slayer — bonus damage multiplier vs bosses
+var health_drop_mult: float = 1.0   # Scavenger — multiplies health-orb drop chance/count
+var health_heal_mult: float = 1.0   # Scavenger — multiplies the heal from health orbs
 
 # Weapon upgrades (level 0 = not unlocked)
 var railgun_level: int = 0
@@ -354,6 +357,9 @@ func reset() -> void:
 	xp_gain_mult = 1.0
 	revive_available = false
 	thorns = 0.0
+	boss_damage_mult = 1.0
+	health_drop_mult = 1.0
+	health_heal_mult = 1.0
 	railgun_level = 0
 	signal_arrow_level = 0
 	chain_level = 0

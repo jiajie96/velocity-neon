@@ -42,8 +42,10 @@ const NECRO_BOLT_DAMAGE := 12.0
 
 # Exploder behavior
 var _exploder_fuse_lit: bool = false
+var _exploded: bool = false
 var _exploder_warn_timer: float = 0.3
 const EXPLODER_DETONATE_RANGE := 1.8
+const EXPLODER_FUSE_TIME := 0.45  # armed window before a contact blast — gives a dash-out chance
 const EXPLODER_DAMAGE := 40.0
 const EXPLODER_RADIUS := 4.0
 
@@ -99,6 +101,8 @@ var _enrage_dust_timer: float = 0.0
 # True while this enemy is inside the player's Gravity Well — read by take_damage so
 # slowed foes also take a vulnerability bonus, giving Gravity Well offensive value.
 var _gravity_slowed: bool = false
+# Elite modifier — a rare, tougher, higher-value variant (set in setup()).
+var _elite: bool = false
 
 var _hp_bar: MeshInstance3D
 var _hp_bar_mat: StandardMaterial3D
@@ -125,6 +129,8 @@ func _ready() -> void:
 	_anim_prev_pos = global_position
 	_anim_bob_t = randf() * TAU  # Randomize phase so enemies don't bob in sync
 	_build_visual()
+	if _elite:
+		_apply_elite_visual()
 	_build_contact_shadow()
 	_build_hitbox()
 	# Quick scale-up so regular enemies grow in rather than appearing fully-formed.
@@ -133,7 +139,7 @@ func _ready() -> void:
 		_spawn_grow_t = SPAWN_GROW_TIME
 	# Materialize flash removed — per-spawn mesh+tween was a tax under big waves.
 	# Mini HP bars above non-minion enemies for target prioritization
-	if enemy_type != "minion":
+	if enemy_type != "minion" or _elite:
 		_build_hp_bar()
 
 func _build_visual() -> void:
@@ -231,6 +237,43 @@ func _add_glow_light(color: Color) -> void:
 	add_child(light)
 	_glow_light = light
 	_glow_base_energy = light.light_energy
+
+func _apply_elite_visual() -> void:
+	# A larger build + a gold rim light + a floating gold chevron so elites read as
+	# priority/reward targets against the regular swarm's red/purple palette.
+	_anim_base_scale *= 1.35
+	var mesh := get_node_or_null("Mesh") as Node3D
+	if mesh:
+		mesh.scale *= 1.35
+	if _glow_light:
+		_glow_light.light_energy = _glow_base_energy * 1.8
+		_glow_base_energy = _glow_light.light_energy
+	var crown := OmniLight3D.new()
+	crown.name = "EliteGlow"
+	crown.light_color = Color(1.0, 0.85, 0.25)
+	crown.light_energy = 1.6
+	crown.omni_range = 3.2
+	crown.omni_attenuation = 2.0
+	crown.position.y = 1.6
+	add_child(crown)
+	var marker := MeshInstance3D.new()
+	marker.name = "EliteMarker"
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.0
+	cone.bottom_radius = 0.22
+	cone.height = 0.4
+	cone.radial_segments = 4
+	marker.mesh = cone
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.85, 0.2, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.8, 0.1)
+	mat.emission_energy_multiplier = 5.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	marker.material_override = mat
+	marker.rotation.x = PI
+	marker.position.y = 2.0 if not is_boss else 3.6
+	add_child(marker)
 
 func _build_hp_bar() -> void:
 	# Background bar (dark)
@@ -489,7 +532,7 @@ func _process(delta: float) -> void:
 			position += dir * spd * delta
 			if dist_to_player < EXPLODER_DETONATE_RANGE and not _exploder_fuse_lit:
 				_exploder_fuse_lit = true
-				_explode()
+				_start_exploder_fuse()
 		elif enemy_type == "healer":
 			# Healers hang back at the edge of the fight and pulse heals into the swarm
 			_healer_pulse_timer -= delta
@@ -1327,7 +1370,25 @@ func _golem_charge_impact() -> void:
 	rtw.set_parallel(false)
 	rtw.tween_callback(ring.queue_free)
 
+func _start_exploder_fuse() -> void:
+	# Arm a short fuse instead of detonating the instant we touch the player. The
+	# old instant blast gave zero reaction time; now an urgent beep + a hard danger
+	# ring telegraph the blast and a quick Phase Dash can clear the radius in time.
+	Audio.sfx_exploder_warn(2.0)
+	_spawn_exploder_danger_ring(1.0)
+	var tree := get_tree()
+	if tree:
+		tree.create_timer(EXPLODER_FUSE_TIME).timeout.connect(func():
+			if is_inside_tree() and not _exploded:
+				_explode()
+		)
+	else:
+		_explode()
+
 func _explode() -> void:
+	if _exploded:
+		return
+	_exploded = true
 	# Explosion damage scales with wave to stay threatening in late game
 	var scaled_explode_dmg := EXPLODER_DAMAGE * (1.0 + minf(GameState.wave, 20) * 0.05)
 	# Area damage to player if in range
@@ -1465,6 +1526,10 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:
 		final_amount *= (1.0 + GameState.execute_bonus)
 		_execute_proc = true
+	# Giant Slayer — bonus damage against bosses so under-geared players can still
+	# close out a long golem fight.
+	if is_boss:
+		final_amount *= GameState.boss_damage_mult
 	hp -= final_amount
 	GameState.add_damage_dealt(final_amount)
 	if is_crit:
@@ -1508,8 +1573,9 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 	_spawn_damage_number(final_amount, is_crit, weapon_hint)
 	if hp <= 0.0:
-		if enemy_type == "exploder" and not _exploder_fuse_lit:
-			_exploder_fuse_lit = true
+		if enemy_type == "exploder":
+			# Killing an exploder still detonates it (chain reactions); _explode is
+			# guarded by _exploded so a pending proximity fuse can't double-blast.
 			_explode()
 			return
 		_die()
@@ -1781,14 +1847,19 @@ func _maybe_drop_health() -> void:
 	if is_boss:
 		drop_count = 2
 	else:
+		# Scavenger scales the drop chance (capped so it can't become a guaranteed drop).
 		var chance := 0.05
 		if enemy_type in ["warrior", "mage", "rogue", "necromancer", "teleporter"]:
 			chance = 0.10
+		if _elite:
+			chance = maxf(chance, 0.20)
+		chance = minf(chance * GameState.health_drop_mult, 0.5)
 		if randf() < chance:
 			drop_count = 1
 	if drop_count <= 0:
 		return
-	var heal_amt := maxf(8.0, GameState.max_hp * 0.12)
+	# Scavenger also makes each orb heal for more.
+	var heal_amt := maxf(8.0, GameState.max_hp * 0.12) * GameState.health_heal_mult
 	for i in drop_count:
 		var orb := Node3D.new()
 		orb.name = "HealthOrb"
@@ -1935,4 +2006,13 @@ func setup(type: String, wave: int) -> void:
 	# Scale contact damage slightly with wave progression
 	if not is_boss:
 		contact_damage *= (1.0 + minf(wave, 20) * 0.04)
+	# Elite roll — from wave 6 on, a small (wave-scaling, capped) chance to upgrade a
+	# regular enemy into a tougher, higher-value elite. Marked visually in _ready.
+	if not is_boss and wave >= 6:
+		if randf() < minf(0.06 + wave * 0.004, 0.16):
+			_elite = true
+			hp *= 1.9
+			speed *= 1.15
+			contact_damage *= 1.3
+			xp_value *= 2.2
 	max_hp = hp

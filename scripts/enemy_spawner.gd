@@ -31,9 +31,10 @@ func _on_wave_changed(wave: int) -> void:
 		_spawn_boss(wave)
 	else:
 		# Aggressive scaling: swarm the player harder each wave, but with a softer
-		# quadratic so very late waves don't balloon into a slog of hundreds of kills.
-		# Wave 1: 20, Wave 5: 67, Wave 10: 152, Wave 15: 267, Wave 20: 412
-		_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.6)
+		# quadratic so very late waves stay punchy without becoming a kill grind.
+		# Now that elites add per-enemy threat, raw counts ease off a touch in the
+		# late game. Wave 1: 20, Wave 5: 64, Wave 10: 137, Wave 15: 233, Wave 20: 352
+		_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.45)
 		_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
 		_spawn_timer = 0.1
 		_wave_timer = 0.0

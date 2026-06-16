@@ -8,6 +8,7 @@ const BOB_SPEED := 3.0
 const BOB_HEIGHT := 0.32
 const LIFETIME := 18.0
 const FADE_TIME := 3.0
+const AUTO_MAGNET_DELAY := 5.0  # a wounded player pulls in stray heal orbs after a bit
 
 var heal_amount: float = 15.0
 var _time: float = 0.0
@@ -84,6 +85,10 @@ func _process(delta: float) -> void:
 
 	var dist: float = global_position.distance_to(player.global_position)
 	if dist < GameState.magnet_range:
+		_magnetized = true
+	# Auto-magnetize an older orb so a heal dropped across the arena isn't stranded
+	# while the player is hurt and could actually use it.
+	if _time > AUTO_MAGNET_DELAY:
 		_magnetized = true
 	if _magnetized:
 		var dir := (player.global_position - global_position).normalized()
