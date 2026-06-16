@@ -24,17 +24,18 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto
 - Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra screen shake so they land hard)
 - Kill streaks grant an escalating combo damage bonus (up to +24%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
-- Phase Dash with afterimage trail, invincibility, contact damage scaling with speed, and audio-visual ready cue
+- Phase Dash with afterimage trail, invincibility (plus a brief i-frame grace window past the dash for a reliable escape), contact damage scaling with speed, and audio-visual ready cue — carving through a pack now lands a meaty thud + a small camera kick the first time the dash connects
 - Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push)
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
-### Weapons & Upgrades (25 upgrades)
+### Weapons & Upgrades (27 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard (orbiting damage orbs)
 - **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.9 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
-- **Utility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks)
+- **Utility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
+- **Slaying**: Giant Slayer (+22% damage to bosses per stack, up to 3 — helps an under-geared build close out a long golem fight)
 
 ### Enemies (9 types)
 - **Skeleton Minion** — basic melee rusher
@@ -42,11 +43,12 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Skeleton Mage** — ranged caster with telegraphed fire bolts, strafing orbit movement, speed scales with wave, retreat clamped to arena bounds
 - **Skeleton Rogue** — fast with periodic sidestep dodge (dodge frequency increases in later waves)
 - **Necromancer** — stays at range, summons minion waves, fires telegraphed purple bolts, speed scales with wave, retreat clamped to arena bounds
-- **Exploder** — rushes player, detonates on proximity with chain reaction potential, lightning arc VFX between chained explosions, and pulsing danger ring showing blast radius (explosion damage scales with wave)
+- **Exploder** — rushes player and arms a short fuse on contact (urgent beep + a hard danger ring) rather than detonating instantly, giving you a window to Phase Dash clear of the blast; still chain-reacts with nearby exploders and detonates if killed (blast damage scales with wave and falls off toward the edge)
 - **Teleporter** — blinks to random positions near the player, unpredictable (blink frequency scales with wave)
 - **Healer** — hangs back behind the swarm and pulses healing into nearby wounded enemies (green ring + shimmer telegraph the pulse, mended enemies glint green) — a priority target that undoes your chip damage if left alive (wave 4+)
 - **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw with ground target indicator (3-rock spread when enraged, fiery trail particles, distinct throw SFX), charge (with knockback, ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP with dramatic gold flash
-- Non-minion enemies display mini HP bars for target prioritization
+- **Elite variants** (wave 6+) — any regular enemy has a small, wave-scaling chance to spawn as a tougher, higher-value Elite: ~1.9× HP, faster, hits harder, drops ~2.2× XP and is much likelier to drop a heal orb. Marked with a gold rim glow, a floating gold chevron, a larger build, and an always-on HP bar so they read as priority/reward targets
+- Non-minion enemies (and all elites) display mini HP bars for target prioritization
 
 ### Audio
 - Title screen ambient music (neon_runner) with crossfade into gameplay tracks
@@ -75,6 +77,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Golem charge telegraph SFX (low rumble before charge)
 - Golem rock throw SFX (distinct deep whoosh, separate from slam)
 - Orbital Guard hit SFX (subtle click when orbitals damage enemies)
+- Dash-strike thud (a meaty impact the first time a Phase Dash carves through enemies, once per dash)
 - Teleporter blink SFX (high-pitched warp sound on teleport)
 - Player death SFX (dramatic low-pitched explosion on game over)
 - Master mute toggle — press M (or use the pause-menu MUTE button) to silence/restore all audio via the master bus, with an on-screen indicator
@@ -198,6 +201,14 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Elite enemies** — from wave 6 on, any regular enemy can spawn as a gold-marked Elite: tougher, faster, hits harder, drops far more XP and is much likelier to drop a heal. A high-value priority target that adds variety to the swarm.
+- **Exploder fuse** — exploders now arm a short ~0.45s fuse on contact (urgent beep + danger ring) instead of detonating instantly, so a quick Phase Dash can clear the blast. Killing one still detonates it for chain reactions.
+- **Two new upgrades** — *Giant Slayer* (+22%/stack damage to bosses) and *Scavenger* (health orbs drop more often and heal for more).
+- **Dash-strike feedback** — carving through a pack with Phase Dash now lands a meaty thud + a small camera kick the first time it connects, and the post-dash i-frame grace is a touch longer for more reliable escapes.
+- **Orbital Guard glow** — each orbiting orb now casts a small green light so the defensive ring reads clearly against the dark floor.
+- **Smarter health orbs** — a dropped heal now drifts to you on its own after a few seconds if you're hurt, so it isn't stranded across the arena.
+- **Ultimate vacuum** — firing the Ultimate also pulls in loose XP/health orbs, so the panic button doubles as a reward collect.
+- **Pacing** — softened the very-late-game wave-size curve so deep runs stay punchy without becoming a kill grind (pairs with the new per-enemy elite threat).
 - **Boss-wall slam fix** — fixed the golem slam (and warrior lunge / rogue dodge / necro summons) shoving the player straight through the shrunken boss-duel walls; all of these now clamp to the active arena radius.
 - **Thorns upgrade** — a new defensive pick that reflects 25%/50% of contact damage back into enemies that touch you, so a tanky brawler build can punish melee swarms.
 - **No more wasted heals** — health orbs no longer magnetize or get collected while you're at full HP; a drop waits (or fades) until you actually take damage.

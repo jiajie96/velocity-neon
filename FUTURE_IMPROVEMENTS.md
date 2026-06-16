@@ -76,7 +76,7 @@
 - ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
 - ~~**Teleporter**: Blinks to new position periodically, unpredictable movement~~ DONE — teleporters blink every ~2.5s to random positions near the player
 - ~~**Healer**: Restores HP to nearby enemies, priority target~~ DONE — hangs back (wave 4+), pulses 18% max-HP heals to up to 3 wounded enemies every 4s with a green ring + shimmer SFX telegraph
-- **Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)
+- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Distinct named-prefix effects (Vampiric, Splitting, etc.) still pending
 
 ### Boss Design
 - ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow)
@@ -364,6 +364,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Exploder blast damage now falls off with distance (100% at center -> 40% at the edge) so spacing matters and edge clips aren't near-one-shots
 - [x] Orbital Guard buffed (8 -> 10 damage, hit cooldown 0.5s -> 0.45s)
 - [x] Low-HP danger glow — the player's own light bleeds red and pulses faster below 25% HP, reinforcing the heartbeat audio and damage vignette
+- [x] Exploder contact fuse — exploders arm a ~0.45s telegraphed fuse on contact (urgent beep + danger ring) instead of an instant unavoidable blast; killing one still detonates it (chain reactions preserved)
+- [x] GIANT SLAYER upgrade — +22% damage to bosses per stack (×3) so under-geared builds can still close out a long golem fight
+- [x] SCAVENGER upgrade — health orbs drop more often (×0.6/stack) and heal more (+25%/stack), a sustain pick for long runs (×2 stacks)
+- [x] Elite enemy variant (wave 6+) — gold-marked tougher/higher-value enemies as priority/reward targets
+- [x] Dash-strike feedback — Phase Dash carving through a pack lands a meaty thud + small camera kick the first time it connects each dash
+- [x] Phase Dash i-frame grace bumped 0.1s → 0.15s for more reliable escapes
+- [x] Orbital Guard orbs now cast a small glow light so the defensive ring reads on the dark floor
+- [x] Health orbs auto-magnetize after a few seconds when you're below max HP, so a stray heal isn't stranded
+- [x] Ultimate also vacuums loose XP/health orbs (panic clear doubles as a reward collect)
+- [x] Softer late-game wave-size curve (quadratic term 0.6 → 0.45) so deep runs stay punchy without a kill grind
 
 ---
 
