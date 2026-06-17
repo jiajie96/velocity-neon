@@ -29,12 +29,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
-### Weapons & Upgrades (27 upgrades)
+### Weapons & Upgrades (28 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard (orbiting damage orbs)
 - **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
 - **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.9 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
-- **Utility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
+- **Mobility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Phase Blades (+80% Phase Dash carve damage per stack **and** a wider carve radius, up to 2 — finally a payoff for a dash-centric build)
+- **Utility**: Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
 - **Slaying**: Giant Slayer (+22% damage to bosses per stack, up to 3 — helps an under-geared build close out a long golem fight)
 
 ### Enemies (9 types)
@@ -201,6 +202,16 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Phase Blades upgrade** — a new dash-build payoff: each stack adds +80% Phase Dash carve damage and widens the carve radius, so a mobility build can actually delete packs by dashing through them.
+- **Camera punch** — Ultimate, boss kills, and Guardian Angel saves now land a quick camera zoom-kick for extra impact (a previously dormant camera feature, now wired up).
+- **Kill-streak world burst** — hitting a big streak milestone (10/15/20/25) pops a gold shockwave + sparks at your feet, so a hot streak reads in the arena and not just on the HUD.
+- **Green heal flash** — picking up a heal orb or otherwise gaining HP now flashes the player green, a readable counterpart to the white damage flash (the per-frame regen trickle is filtered out so it doesn't strobe).
+- **Urgent low-HP beacon** — below 25% HP your gold locator chevron bleeds red and bobs faster, reinforcing the heartbeat audio and danger vignette.
+- **Audible spawn warnings** — dangerous spawns (necromancer, exploder, teleporter, healer, golem) now play a soft, rate-limited telegraph blip alongside their warning ring, so off-screen threats can be heard coming (the heaviest threats pitch lower).
+- **Signal Arrow cadence** — stacking Signal Arrow now also fires it faster (1.6s → ~1.3s → ~1.1s), like the Railgun, instead of only adding targets and damage.
+- **Ultimate scaling** — the Ultimate's blast radius now grows gently with your level (capped) so the panic button still clears space late when enemies pack in tight.
+- **Livelier swarms** — each enemy gets a small random speed offset so a pack reads as a crowd of individuals (some surging ahead, some lagging) instead of a rigid grid.
+- **Lifesteal feedback** — Vampire heals now pop a small green spark above the player (rate-limited), so the lifesteal payoff is visible in the world.
 - **Elite enemies** — from wave 6 on, any regular enemy can spawn as a gold-marked Elite: tougher, faster, hits harder, drops far more XP and is much likelier to drop a heal. A high-value priority target that adds variety to the swarm.
 - **Exploder fuse** — exploders now arm a short ~0.45s fuse on contact (urgent beep + danger ring) instead of detonating instantly, so a quick Phase Dash can clear the blast. Killing one still detonates it for chain reactions.
 - **Two new upgrades** — *Giant Slayer* (+22%/stack damage to bosses) and *Scavenger* (health orbs drop more often and heal for more).

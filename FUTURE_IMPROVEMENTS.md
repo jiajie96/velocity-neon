@@ -374,6 +374,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Health orbs auto-magnetize after a few seconds when you're below max HP, so a stray heal isn't stranded
 - [x] Ultimate also vacuums loose XP/health orbs (panic clear doubles as a reward collect)
 - [x] Softer late-game wave-size curve (quadratic term 0.6 → 0.45) so deep runs stay punchy without a kill grind
+- [x] PHASE BLADES upgrade — +80%/stack Phase Dash carve damage + a wider carve radius (×2), a real payoff for a dash-centric build
+- [x] Camera zoom-punch wired up (was dormant dead code) — quick kick on Ultimate, boss defeat, and Guardian Angel save
+- [x] Kill-streak world burst — gold shockwave + sparks at the player on streak milestones (10/15/20/25), plus a camera punch
+- [x] Green heal flash on the player when HP rises (orb pickup / Fortify / wave-clear / Guardian); 3-HP threshold skips the regen trickle so it doesn't strobe
+- [x] Urgent low-HP locator beacon — the gold chevron bleeds red and bobs faster below 25% HP
+- [x] Audible spawn-warning blip for dangerous types (necro/exploder/teleporter/healer/golem), rate-limited, lower-pitched for the heaviest threats
+- [x] Signal Arrow cadence scales with level (1.6s → ~1.3s → ~1.1s), matching the Railgun cadence treatment
+- [x] Ultimate blast radius scales gently with level (capped) so the panic button stays relevant in dense late waves
+- [x] Per-instance enemy speed jitter (±10%) so a swarm reads as individuals instead of a lockstep grid
+- [x] Vampire lifesteal world spark — rate-limited green pop above the player when a lifesteal heal lands
 
 ---
 
