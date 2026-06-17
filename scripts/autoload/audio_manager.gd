@@ -297,6 +297,11 @@ func sfx_orbital_hit() -> void:
 func sfx_low_hp_heartbeat() -> void:
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", -10.0, 0.35)
 
+func sfx_spawn_warn(pitch: float = 1.0) -> void:
+	# Soft, low telegraph blip when a dangerous enemy type is spawning in off-screen —
+	# pairs with the bigger warning ring so threats can be reacted to by ear too.
+	play_sfx("res://assets/audio/sfx/ui_click.ogg", -18.0, pitch * 0.7)
+
 func sfx_teleporter_blink() -> void:
 	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -12.0, randf_range(1.8, 2.2))
 

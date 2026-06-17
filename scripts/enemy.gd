@@ -1790,6 +1790,7 @@ func _die() -> void:
 	if is_boss:
 		GameState.request_shake(4.0)
 		GameState.request_hit_stop(0.1)
+		GameState.request_camera_punch(2.6)
 		Audio.sfx_boss_defeat()
 		Audio.play_victory_sting()
 		# Award bonus XP for defeating the boss
@@ -2015,4 +2016,9 @@ func setup(type: String, wave: int) -> void:
 			speed *= 1.15
 			contact_damage *= 1.3
 			xp_value *= 2.2
+	# Small per-instance speed jitter so a swarm of the same type reads as a crowd of
+	# individuals (some surging ahead, some lagging) instead of a rigid grid that moves
+	# in lockstep. Bosses keep their exact tuned speed.
+	if not is_boss:
+		speed *= randf_range(0.9, 1.1)
 	max_hp = hp

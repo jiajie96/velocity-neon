@@ -18,6 +18,14 @@ var _hit_stop_frames: int = 0
 func _ready() -> void:
 	GameState.hit_stop_requested.connect(_on_hit_stop)
 	GameState.hp_changed.connect(_on_hp_changed)
+	GameState.camera_punch.connect(_on_camera_punch)
+
+func _on_camera_punch(strength: float) -> void:
+	# Quick zoom-kick: shove the camera toward the floor a touch, then the per-frame
+	# lerp in _process snaps it back. Capped so stacked triggers can't lurch the view.
+	var kick: float = -clampf(strength, 0.0, 3.0)
+	_punch_offset.y = maxf(_punch_offset.y + kick, -3.0)
+	_punch_offset.z = minf(_punch_offset.z - kick * 0.5, 1.5)
 
 var _prev_cam_hp: float = -1.0
 

@@ -53,7 +53,9 @@ var _target_reticle: Node3D
 var _reticle_mats: Array[StandardMaterial3D] = []
 var _reticle_pulse_t: float = 0.0
 var _beacon: MeshInstance3D
+var _beacon_mat: StandardMaterial3D
 var _beacon_t: float = 0.0
+var _vampire_spark_cd: float = 0.0
 
 # Procedural animation
 var _anim_bob_t: float = 0.0
@@ -80,6 +82,8 @@ func _ready() -> void:
 	# animates in real time instead of being frozen behind the upgrade screen.
 	GameState.upgrade_selected.connect(_on_upgrade_burst)
 	GameState.guardian_save.connect(_on_guardian_save)
+	GameState.kill_streak.connect(_on_kill_streak)
+	GameState.vampire_heal.connect(_on_vampire_heal)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -226,6 +230,7 @@ func _build_player_beacon() -> void:
 	mat.emission_energy_multiplier = 4.5
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_beacon.material_override = mat
+	_beacon_mat = mat
 	_beacon.rotation.x = PI  # point the chevron downward toward the player
 	_beacon.position.y = 2.2
 	add_child(_beacon)
@@ -233,8 +238,21 @@ func _build_player_beacon() -> void:
 func _update_player_beacon(delta: float) -> void:
 	if not _beacon:
 		return
-	_beacon_t += delta * 3.0
-	_beacon.position.y = 2.2 + sin(_beacon_t) * 0.12
+	# Below 25% HP the locator chevron bleeds from warm gold to alarm-red and bobs
+	# faster, reinforcing the heartbeat audio + danger vignette so a near-death state
+	# is unmistakable even mid-swarm.
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
+	var danger := clampf(1.0 - hp_ratio / 0.25, 0.0, 1.0)
+	_beacon_t += delta * lerpf(3.0, 9.0, danger)
+	_beacon.position.y = 2.2 + sin(_beacon_t) * lerpf(0.12, 0.22, danger)
+	if _beacon_mat:
+		if danger > 0.0:
+			var pulse := (sin(_beacon_t) + 1.0) * 0.5
+			_beacon_mat.emission = Color(1.0, 0.8, 0.1).lerp(Color(1.0, 0.12, 0.05), danger)
+			_beacon_mat.emission_energy_multiplier = lerpf(4.5, 9.0, pulse * danger)
+		else:
+			_beacon_mat.emission = Color(1.0, 0.8, 0.1)
+			_beacon_mat.emission_energy_multiplier = 4.5
 
 func _build_contact_shadow() -> void:
 	# A flat dark disc under the unit mutes the busy grid directly beneath it,
@@ -440,6 +458,7 @@ func _dash_ready_pulse() -> void:
 func _process(delta: float) -> void:
 	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
 		return
+	_vampire_spark_cd = maxf(_vampire_spark_cd - delta, 0.0)
 	_move(delta)
 	_dash(delta)
 	_shoot(delta)
@@ -528,14 +547,16 @@ func _dash(delta: float) -> void:
 		position.y = 0.0
 		position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
 		position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
-		# Dash damage — hit enemies we pass through (scales with speed)
-		var scaled_dash_dmg := DASH_DAMAGE * (GameState.speed / 6.5)
+		# Dash damage — hit enemies we pass through (scales with speed, and with the
+		# Phase Blades upgrade which also widens the carve radius).
+		var scaled_dash_dmg := DASH_DAMAGE * (GameState.speed / 6.5) * GameState.dash_damage_mult
+		var dash_radius := DASH_HIT_RADIUS + (GameState.dash_damage_mult - 1.0) * 0.6
 		var enemies := get_tree().get_nodes_in_group("enemies")
 		for e in enemies:
 			if e is Node3D and e.has_method("take_damage"):
 				var eid := e.get_instance_id()
 				if eid not in _dash_hit_enemies:
-					if global_position.distance_to(e.global_position) < DASH_HIT_RADIUS:
+					if global_position.distance_to(e.global_position) < dash_radius:
 						e.take_damage(scaled_dash_dmg, "dash")
 						_dash_hit_enemies.append(eid)
 						# Punctuate the slice once per dash — a meaty thud + a small
@@ -785,14 +806,16 @@ func _shoot_signal_arrow(delta: float) -> void:
 	var target := _find_nearest_enemy()
 	if not target:
 		return
-	signal_arrow_timer = SIGNAL_ARROW_COOLDOWN
+	var lvl := GameState.signal_arrow_level
+	# Cadence scales with level (1.6s -> ~1.3s -> ~1.1s), like the Railgun, so stacking
+	# Signal Arrow speeds up the volley instead of only adding targets/damage.
+	signal_arrow_timer = SIGNAL_ARROW_COOLDOWN * maxf(1.0 - 0.18 * float(lvl - 1), 0.65)
 	var dir: Vector3 = (target.global_position - global_position)
 	dir.y = 0.0
 	dir = dir.normalized()
 	var container := get_parent().get_node_or_null("Projectiles")
 	if not container:
 		return
-	var lvl := GameState.signal_arrow_level
 	# Yaka-style homing arrow: faster + more damage + more targets per level
 	var arrow := Node3D.new()
 	arrow.name = "SignalArrow"
@@ -905,14 +928,18 @@ func _do_ultimate() -> void:
 	Audio.sfx_ultimate()
 	GameState.request_shake(6.0)
 	GameState.request_hit_stop(0.08)
+	GameState.request_camera_punch(2.4)
 	# Ultimate scales with player damage so it stays relevant in later waves
 	var ult_dmg := ULTIMATE_DAMAGE + GameState.damage * 3.0
+	# Radius grows gently with level so the panic-button still clears breathing room
+	# in the late game when enemies are packed tighter (capped so it stays a burst).
+	var ult_radius := ULTIMATE_RADIUS + minf((GameState.level - 1) * 0.12, 3.0)
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if enemy is Node3D:
 			var e: Node3D = enemy
 			var dist := global_position.distance_to(e.global_position)
-			if dist < ULTIMATE_RADIUS:
+			if dist < ult_radius:
 				if e.has_method("take_damage"):
 					# "ult" hint tints the damage numbers purple so the burst reads
 					# as one big ability hit instead of anonymous white ticks.
@@ -924,7 +951,7 @@ func _do_ultimate() -> void:
 				if push_dir.length_squared() < 0.01:
 					push_dir = Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
 				push_dir = push_dir.normalized()
-				var falloff := 1.0 - clampf(dist / ULTIMATE_RADIUS, 0.0, 1.0)
+				var falloff := 1.0 - clampf(dist / ult_radius, 0.0, 1.0)
 				var push_force: float = (2.0 if e.get("is_boss") else 5.5) * (0.4 + falloff)
 				e.position += push_dir * push_force
 				# Clamp to the *active* arena bound (shrinks during boss duels) so the
@@ -1078,6 +1105,12 @@ func _on_hp_changed(current: float, _maximum: float) -> void:
 	if _prev_hp > 0.0 and current < _prev_hp:
 		_damage_flash_timer = 0.12
 		_set_model_flash(true)
+	elif _prev_hp >= 0.0 and current - _prev_hp >= 3.0 and _damage_flash_timer <= 0.0:
+		# A meaningful heal (orb pickup, Fortify, wave-clear, Guardian save) gets a
+		# brief green flash — symmetric to the white damage flash. The 3 HP threshold
+		# skips the per-frame regen trickle so the model doesn't strobe.
+		_damage_flash_timer = 0.14
+		_set_model_flash(true, Color(0.2, 1.0, 0.4), 7.0)
 	_prev_hp = current
 
 func _update_damage_flash(delta: float) -> void:
@@ -1086,13 +1119,13 @@ func _update_damage_flash(delta: float) -> void:
 		if _damage_flash_timer <= 0.0:
 			_set_model_flash(false)
 
-func _set_model_flash(flash_on: bool) -> void:
+func _set_model_flash(flash_on: bool, color: Color = Color.WHITE, energy: float = 8.0) -> void:
 	var model := get_node_or_null("Model")
 	var mesh := get_node_or_null("Mesh")
 	var target: Node = model if model else mesh
 	if not target:
 		return
-	_apply_flash_recursive(target, flash_on)
+	_apply_flash_recursive(target, flash_on, color, energy)
 
 func _on_upgrade_burst() -> void:
 	# Golden "powered up" burst at the player on level-up — a tactile world-space
@@ -1117,35 +1150,80 @@ func _on_guardian_save() -> void:
 	VFX.spawn_shockwave(container, position, Color(save_color.r, save_color.g, save_color.b, 0.6), 3.4, 0.5, 0.05)
 	VFX.spawn_spark_burst(container, position + Vector3(0, 0.8, 0), save_color, 26, 6.5, 0.5)
 	VFX.spawn_impact_flash(container, position + Vector3(0, 0.9, 0), Color(0.9, 0.98, 1.0), 3.4, 0.3)
+	GameState.request_camera_punch(2.0)
+
+func _on_kill_streak(count: int) -> void:
+	# At big streak milestones, punch a gold/orange world burst at the player so a
+	# hot streak reads in the arena, not just on the HUD banner + audio sting.
+	if count != 10 and count != 15 and count != 20 and count != 25 and count != 30:
+		return
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var VFX := preload("res://scripts/vfx.gd")
+	var streak_color := Color(1.0, 0.65, 0.1)
+	VFX.spawn_shockwave(container, position, Color(streak_color.r, streak_color.g, streak_color.b, 0.5), 3.0, 0.4, 0.08)
+	VFX.spawn_spark_burst(container, position + Vector3(0, 0.7, 0), streak_color, 18, 5.5, 0.4)
+	GameState.request_camera_punch(1.4)
+
+func _on_vampire_heal() -> void:
+	# Rate-limited green spark above the player when lifesteal lands a heal, so the
+	# Vampire build's payoff is visible. Capped to ~2/sec to stay allocation-cheap
+	# in dense waves (matches the project's other rate-limited cues).
+	if _vampire_spark_cd > 0.0:
+		return
+	_vampire_spark_cd = 0.45
+	var container := get_parent().get_node_or_null("Projectiles")
+	if not container:
+		return
+	var p := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.12
+	p.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.5, 1.0, 0.3, 0.85)
+	mat.emission_enabled = true
+	mat.emission = Color(0.3, 1.0, 0.2)
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	p.material_override = mat
+	p.position = global_position + Vector3(0, 1.1, 0)
+	container.add_child(p)
+	var tw := p.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(p, "position:y", p.position.y + 1.0, 0.45).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.45)
+	tw.set_parallel(false)
+	tw.tween_callback(p.queue_free)
 
 func _on_iframes_started() -> void:
 	# Disabled: per-hit shockwave allocated a shader plane + tween on every
 	# damage event. Shield-ring visual + HP flash already convey i-frames.
 	pass
 
-func _apply_flash_recursive(node: Node, flash_on: bool) -> void:
+func _apply_flash_recursive(node: Node, flash_on: bool, color: Color = Color.WHITE, energy: float = 8.0) -> void:
 	if node is MeshInstance3D:
 		var mi: MeshInstance3D = node
 		var mat := mi.material_override as StandardMaterial3D
 		if mat:
-			_flash_material(mat, flash_on)
+			_flash_material(mat, flash_on, color, energy)
 		else:
 			for i in mi.get_surface_override_material_count():
 				var smat := mi.get_surface_override_material(i) as StandardMaterial3D
 				if smat:
-					_flash_material(smat, flash_on)
+					_flash_material(smat, flash_on, color, energy)
 	for child in node.get_children():
-		_apply_flash_recursive(child, flash_on)
+		_apply_flash_recursive(child, flash_on, color, energy)
 
-func _flash_material(mat: StandardMaterial3D, flash_on: bool) -> void:
+func _flash_material(mat: StandardMaterial3D, flash_on: bool, color: Color = Color.WHITE, energy: float = 8.0) -> void:
 	if flash_on:
 		# Cache the original emission once so the model's neon look is restored
 		# exactly after the flash, instead of being permanently recolored.
 		if not mat.has_meta("_orig_emission"):
 			mat.set_meta("_orig_emission", mat.emission)
 			mat.set_meta("_orig_emission_energy", mat.emission_energy_multiplier)
-		mat.emission = Color.WHITE
-		mat.emission_energy_multiplier = 8.0
+		mat.emission = color
+		mat.emission_energy_multiplier = energy
 	elif mat.has_meta("_orig_emission"):
 		mat.emission = mat.get_meta("_orig_emission")
 		mat.emission_energy_multiplier = mat.get_meta("_orig_emission_energy")

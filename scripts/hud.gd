@@ -290,7 +290,7 @@ func _build_title_screen() -> void:
 		center.add_child(best)
 
 	var version := Label.new()
-	version.text = "v0.4"
+	version.text = "v0.5"
 	version.add_theme_color_override("font_color", Color(0.4, 0.35, 0.55, 0.4))
 	version.add_theme_font_size_override("font_size", 11)
 	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

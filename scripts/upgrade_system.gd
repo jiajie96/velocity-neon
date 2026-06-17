@@ -40,6 +40,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		# Overclock removed — too punishing without guaranteed healing upgrade
 		Upgrade.new("dash_charge", "PHASE CHARGE", "+1 dash charge (bank an extra dash)", Color(0.3, 0.9, 1.0), ">>", 3),
+		Upgrade.new("phase_blades", "PHASE BLADES", "Phase Dash hits harder & carves wider", Color(0.2, 0.95, 1.0), "//", 2),
 		# Weapon upgrades
 		Upgrade.new("railgun", "RAILGUN", "Piercing beam every 2s", Color(0.3, 0.5, 1.0), "==", 3),
 		Upgrade.new("signal_arrow", "SIGNAL ARROW", "Homing arrow darts enemy to enemy", Color(0.95, 0.15, 0.12), "}>"),
@@ -98,6 +99,9 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+0.9 HP/sec (%.1f -> %.1f)" % [cur, cur + 0.9]
 		"dash_charge":
 			return "+1 dash charge (%d -> %d)" % [GameState.dash_max_charges, GameState.dash_max_charges + 1]
+		"phase_blades":
+			var cur := GameState.dash_damage_mult
+			return "+80%% Phase Dash damage & wider carve (x%.1f -> x%.1f)" % [cur, cur + 0.8]
 		"crit_surge":
 			var cur := GameState.crit_chance * 100.0
 			return "+5%% crit chance (%d%%->%d%%), +15%% crit dmg (%.2fx->%.2fx)" % [int(cur), int(cur + 5), GameState.crit_damage, GameState.crit_damage + 0.15]
@@ -187,6 +191,8 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.dash_charges += 1
 			# Banking a dash also speeds up its recharge (floor 0.8s)
 			GameState.dash_cooldown = maxf(GameState.dash_cooldown * 0.92, 0.8)
+		"phase_blades":
+			GameState.dash_damage_mult += 0.8
 		"railgun":
 			GameState.railgun_level += 1
 		"signal_arrow":

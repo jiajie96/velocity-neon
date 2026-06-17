@@ -14,6 +14,7 @@ var _wave_active: bool = false
 var _spawn_interval: float = SPAWN_INTERVAL_BASE
 var _arena_ring: Node3D = null  # parent holding the boss-arena wall meshes
 var _was_boss_wave: bool = false
+var _warn_sfx_cd: float = 0.0   # rate-limit the dangerous-spawn audio cue
 
 func _ready() -> void:
 	GameState.wave_changed.connect(_on_wave_changed)
@@ -42,6 +43,9 @@ func _on_wave_changed(wave: int) -> void:
 func _process(delta: float) -> void:
 	if GameState.game_over or GameState.paused_for_upgrade or not GameState.game_started:
 		return
+
+	if _warn_sfx_cd > 0.0:
+		_warn_sfx_cd -= delta
 
 	if not _wave_active:
 		_wave_timer -= delta
@@ -280,6 +284,13 @@ func _spawn_warning(pos: Vector3, type: String) -> void:
 	var scale_factor: float = threat_scale.get(type, 1.0)
 	var VFX := preload("res://scripts/vfx.gd")
 	VFX.spawn_warning_pulse(container, pos, color, scale_factor)
+	# Audible telegraph for the dangerous types so an off-screen threat can be reacted
+	# to by ear. Rate-limited so a burst of spawns doesn't machine-gun the cue; lower
+	# pitch for the heaviest threats (necromancer/golem) reads as "more dangerous".
+	if type in ["necromancer", "exploder", "teleporter", "healer", "golem"] and _warn_sfx_cd <= 0.0:
+		_warn_sfx_cd = 0.35
+		var warn_pitch := 0.7 if type in ["necromancer", "golem"] else 1.0
+		Audio.sfx_spawn_warn(warn_pitch)
 
 func _create_enemy(type: String, pos: Vector3) -> Node3D:
 	var container := get_parent().get_node_or_null("Enemies")

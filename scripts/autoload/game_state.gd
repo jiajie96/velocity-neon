@@ -37,6 +37,9 @@ signal damage_iframes_started
 # can play a protective burst.
 @warning_ignore("unused_signal")
 signal guardian_save
+# A quick camera zoom-kick on big moments (ultimate, boss kill, clutch save).
+@warning_ignore("unused_signal")
+signal camera_punch(strength: float)
 
 # Player stats
 var hp: float = 80.0
@@ -67,6 +70,7 @@ var adrenaline: bool = false    # Deal more damage the lower the player's HP get
 var xp_gain_mult: float = 1.0   # Greed upgrade — scales all XP gained
 var revive_available: bool = false  # Guardian Angel — one-time fatal-hit save
 var thorns: float = 0.0         # Thorns — fraction of contact damage reflected back
+var dash_damage_mult: float = 1.0   # Phase Blades — scales Phase Dash carve damage
 var boss_damage_mult: float = 1.0   # Giant Slayer — bonus damage multiplier vs bosses
 var health_drop_mult: float = 1.0   # Scavenger — multiplies health-orb drop chance/count
 var health_heal_mult: float = 1.0   # Scavenger — multiplies the heal from health orbs
@@ -325,6 +329,11 @@ func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
 	if direction.length_squared() > 0.01:
 		shake_direction = direction.normalized()
 
+func request_camera_punch(strength: float = 1.0) -> void:
+	# Fire a quick camera zoom-kick. The camera rig owns the actual offset + snap-back;
+	# this just forwards the request so any system can trigger one cheaply.
+	camera_punch.emit(strength)
+
 func request_hit_stop(_duration: float = 0.04) -> void:
 	# Still disabled: hit-stop drives Engine.time_scale and tangled with the
 	# level-up pause, so it stays off. Screen shake above carries the impact.
@@ -357,6 +366,7 @@ func reset() -> void:
 	xp_gain_mult = 1.0
 	revive_available = false
 	thorns = 0.0
+	dash_damage_mult = 1.0
 	boss_damage_mult = 1.0
 	health_drop_mult = 1.0
 	health_heal_mult = 1.0
