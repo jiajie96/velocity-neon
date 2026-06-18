@@ -114,6 +114,8 @@ func _collect() -> void:
 	GameState.heal(heal_amount)
 	GameState.health_pickup.emit(heal_amount)
 	Audio.sfx_health_pickup()
+	# Small zoom-kick so grabbing a heal in a tight spot feels rewarding, not silent.
+	GameState.request_camera_punch(0.8)
 	_spawn_collect_vfx()
 	_spawn_heal_text()
 	var mesh := get_node_or_null("Mesh")

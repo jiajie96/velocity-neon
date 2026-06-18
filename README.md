@@ -29,13 +29,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
-### Weapons & Upgrades (28 upgrades)
+### Weapons & Upgrades (29 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard (orbiting damage orbs)
 - **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
-- **Defense**: Nano Shield (with visible blue shield ring), Regeneration (+0.9 HP/sec per stack, with heal particle VFX), Vampire (1.75 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
+- **Defense**: Nano Shield (with visible blue shield ring), Titanium Plating (+18% max HP **and** an instant heal per stack, up to 3 — a percentage boost that keeps scaling into late waves where flat Fortify falls off), Regeneration (+1.1 HP/sec per stack, with heal particle VFX), Vampire (2.25 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
 - **Mobility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Phase Blades (+80% Phase Dash carve damage per stack **and** a wider carve radius, up to 2 — finally a payoff for a dash-centric build)
-- **Utility**: Gravity Well (slowed enemies also take +12% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
+- **Utility**: Gravity Well (slowed enemies also take +18% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
 - **Slaying**: Giant Slayer (+22% damage to bosses per stack, up to 3 — helps an under-geared build close out a long golem fight)
 
 ### Enemies (9 types)
@@ -202,6 +202,13 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Titanium Plating upgrade** — a new percentage-based defensive pick: each stack adds +18% max HP and an instant heal, so it keeps scaling into the late game where flat Fortify falls off.
+- **Wider auto-aim** — primary fire, Railgun, and Signal Arrow now lock on at 40 units (up from 30) so the gun no longer goes quiet on enemies that are still clearly on screen.
+- **Snappier Ultimate** — base cooldown trimmed from 10s to 8.5s so the panic button comes back around more often.
+- **Boss enrage juice** — when the Golem hits its sub-30% enrage phase it now triggers a camera zoom-kick, a stronger screen shake, and an angry red shockwave so the phase change is impossible to miss mid-swarm.
+- **More recoil weight** — Railgun shots add a quick camera punch, and grabbing a health orb gives a small zoom-kick so heals feel rewarding.
+- **More forgiving dash** — the post-dash invincibility grace window is a touch longer (0.2s) for more reliable phase-through escapes.
+- **Balance pass** — Regeneration buffed to +1.1 HP/sec per stack, Vampire to 2.25 HP per kill, and Gravity Well's damage vulnerability raised to +18%.
 - **Phase Blades upgrade** — a new dash-build payoff: each stack adds +80% Phase Dash carve damage and widens the carve radius, so a mobility build can actually delete packs by dashing through them.
 - **Camera punch** — Ultimate, boss kills, and Guardian Angel saves now land a quick camera zoom-kick for extra impact (a previously dormant camera feature, now wired up).
 - **Kill-streak world burst** — hitting a big streak milestone (10/15/20/25) pops a gold shockwave + sparks at your feet, so a hot streak reads in the arena and not just on the HUD.
@@ -225,9 +232,9 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **No more wasted heals** — health orbs no longer magnetize or get collected while you're at full HP; a drop waits (or fades) until you actually take damage.
 - **Boss enrage roar** — the golem's sub-30% enrage now has its own deep, snarling stinger instead of recycling the slam sound, so the phase change reads audibly.
 - **Exploder fairness** — exploder blasts deal distance-scaled damage (full at the center, 40% at the edge), rewarding spacing and removing the binary edge-clip one-shots.
-- **Ultimate feel** — base cooldown trimmed to 10s, and pressing Q while it's still recharging now plays a quiet "not ready" blip so the input registers.
+- **Ultimate feel** — pressing Q while it's still recharging now plays a quiet "not ready" blip so the input registers.
 - **Low-HP danger glow** — the player's own light bleeds red and pulses faster below 25% HP, an at-a-glance companion to the heartbeat and the screen vignette.
-- **Balance pass** — Regeneration buffed to +0.9 HP/sec per stack and Orbital Guard buffed (10 damage, 0.45s hit cooldown).
+- **Balance pass** — Orbital Guard buffed (10 damage, 0.45s hit cooldown).
 - **Healer enemy** — a new support enemy (wave 4+) hangs back and pulses healing into nearby wounded enemies; the green ring, shimmer SFX, and glinting heal targets teach you to focus it down first.
 - **Upgrade reroll** — every level-up screen gets one reroll (button or R key) that swaps all three choices, so a whiffed offer no longer forces an off-build pick.
 - **Best-run record** — your deepest run (wave + kills) is saved to disk: the title screen shows your personal best and beating it earns a pulsing gold "★ NEW RECORD ★" banner + victory sting on the game over screen.

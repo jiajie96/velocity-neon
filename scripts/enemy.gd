@@ -560,8 +560,15 @@ func _process(delta: float) -> void:
 			# First time entering enrage — announce it dramatically
 			if enraged and not _golem_enraged:
 				_golem_enraged = true
-				GameState.request_shake(3.0)
+				GameState.request_shake(4.0)
 				GameState.request_hit_stop(0.08)
+				# Zoom-kick + an angry red shockwave so the phase change is a real "oh no"
+				# beat, not just an audio cue the player might miss mid-swarm.
+				GameState.request_camera_punch(2.2)
+				var enrage_container := get_parent()
+				if enrage_container:
+					var VFX := preload("res://scripts/vfx.gd")
+					VFX.spawn_shockwave(enrage_container, global_position, Color(1.0, 0.18, 0.05, 0.6), 4.5, 0.5, 0.12)
 				Audio.sfx_boss_enrage()
 				GameState.golem_enraged.emit()
 			var boss_spd := spd * (1.6 if enraged else 1.0)
@@ -1520,7 +1527,7 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	# Gravity Well vulnerability — enemies caught in the well take extra damage,
 	# giving the slow an offensive payoff instead of pure crowd control.
 	if _gravity_slowed:
-		final_amount *= 1.12
+		final_amount *= 1.18
 	# Executioner bonus — extra damage to enemies below 30% HP
 	var _execute_proc := false
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:

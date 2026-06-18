@@ -157,6 +157,9 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Enemy knockback on hit
 - [x] Player weapon flash/muzzle on fire
 - [x] XP orb collection burst particles
+- [x] Boss enrage juice — camera punch + stronger shake + red shockwave burst on the sub-30% phase change
+- [x] Railgun camera punch (zoom-kick recoil on the piercing beam)
+- [x] Health-orb pickup camera punch (small zoom-kick on heal)
 - [x] Level-up screen flash + brief invincibility
 - [x] Boss HP bar (separate from wave UI)
 - [x] Floating damage numbers (color-coded, big hit scaling)
@@ -338,7 +341,11 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] GREED upgrade — +20% XP from all sources, stackable to 3
 - [x] Ricochet rework — bolts now phase through enemies and keep bouncing off walls until bounces are spent (was near-useless, died on first contact)
 - [x] Critical Surge now also scales crit damage (+0.15x per stack on top of +5% crit chance)
-- [x] Gravity Well vulnerability — slowed enemies take +12% damage (offensive payoff for the slow)
+- [x] Gravity Well vulnerability — slowed enemies take +18% damage (offensive payoff for the slow)
+- [x] Titanium Plating upgrade — +18% max HP & heal per stack (percentage HP that scales into late waves)
+- [x] Auto-aim lock range widened (30 -> 40 units) so the gun doesn't go quiet on on-screen foes
+- [x] Ultimate base cooldown trimmed (10s -> 8.5s)
+- [x] Regeneration buffed (0.9 -> 1.1 HP/sec per stack); Vampire buffed (1.75 -> 2.25 HP/kill)
 - [x] Phase Charge also trims dash cooldown (~8% per stack, floor 0.8s)
 - [x] Damage-scaled enemy knockback — heavier hits shove enemies further (capped; bosses resist)
 - [x] Crit screen-shake escalates with the active kill streak (roadmap shake formula)

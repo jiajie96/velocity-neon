@@ -2,7 +2,7 @@ extends Node3D
 
 const DASH_DURATION := 0.2
 const DASH_TRAIL_COUNT := 3
-const ULTIMATE_COOLDOWN := 10.0
+const ULTIMATE_COOLDOWN := 8.5
 const ULTIMATE_RADIUS := 8.0
 const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
@@ -16,7 +16,7 @@ const ORBITAL_HIT_CD := 0.45
 const DASH_AFTERIMAGE_INTERVAL := 0.09
 const DASH_DAMAGE := 15.0
 const DASH_HIT_RADIUS := 1.5
-const DASH_IFRAME_GRACE := 0.15
+const DASH_IFRAME_GRACE := 0.2
 
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
@@ -764,6 +764,8 @@ func _shoot_railgun(delta: float) -> void:
 	Audio.sfx_shoot_railgun()
 	_spawn_railgun_beam(origin, dir)
 	GameState.request_shake(2.5, -dir)
+	# Quick zoom-kick so the piercing beam lands with real recoil weight, not just shake.
+	GameState.request_camera_punch(1.0)
 	GameState.request_hit_stop(0.05)
 
 func _spawn_railgun_beam(origin: Vector3, dir: Vector3) -> void:
@@ -992,7 +994,10 @@ func _spawn_ult_vfx() -> void:
 func _find_nearest_enemy() -> Node3D:
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest: Node3D = null
-	var min_dist := 30.0
+	# Lock range bumped to roughly match the visible play area — at the old 30u the
+	# player would stop firing at foes that were still clearly on screen, which read
+	# like the gun jamming. 40u keeps auto-fire engaging anything in view.
+	var min_dist := 40.0
 	for e in enemies:
 		# Skip corpses: a dying enemy lingers in the group until it's freed at the end
 		# of the frame, so without this guard auto-aim (and the reticle) can lock onto
