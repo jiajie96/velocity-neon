@@ -1,12 +1,12 @@
 extends Node3D
 
 const COLLECT_DISTANCE := 0.8
-const MAGNET_SPEED := 12.0
+const MAGNET_SPEED := 15.0
 const BOB_SPEED := 3.0
 const BOB_HEIGHT := 0.3
 const LIFETIME := 20.0
 const FADE_TIME := 3.0
-const AUTO_MAGNET_DELAY := 4.0  # Orbs drift to the player after this long so XP isn't lost in chaos
+const AUTO_MAGNET_DELAY := 3.0  # Orbs drift to the player after this long so XP isn't lost in chaos
 
 var xp_value: float = 10.0
 var _magnetized: bool = false
@@ -102,8 +102,11 @@ func _process(delta: float) -> void:
 		_burst_timer -= delta
 		position += _burst_velocity * delta
 		_burst_velocity *= 0.85  # Rapid deceleration
-		position.x = clampf(position.x, -48.0, 48.0)
-		position.z = clampf(position.z, -48.0, 48.0)
+		# Clamp to the *active* arena bound (shrinks during boss duels) so a kill's
+		# orbs don't fling out past the visible boss-fight walls and strand the XP.
+		var burst_bound: float = GameState.arena_radius
+		position.x = clampf(position.x, -burst_bound, burst_bound)
+		position.z = clampf(position.z, -burst_bound, burst_bound)
 		position.y = 0.0
 
 	var player: Node3D = get_tree().get_first_node_in_group("player_node") as Node3D

@@ -3,12 +3,12 @@ extends Node3D
 ## restores HP when collected, with a green flash and chime.
 
 const COLLECT_DISTANCE := 0.9
-const MAGNET_SPEED := 10.0
+const MAGNET_SPEED := 13.0
 const BOB_SPEED := 3.0
 const BOB_HEIGHT := 0.32
 const LIFETIME := 18.0
 const FADE_TIME := 3.0
-const AUTO_MAGNET_DELAY := 5.0  # a wounded player pulls in stray heal orbs after a bit
+const AUTO_MAGNET_DELAY := 3.5  # a wounded player pulls in stray heal orbs after a bit
 
 var heal_amount: float = 15.0
 var _time: float = 0.0

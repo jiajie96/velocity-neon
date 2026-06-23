@@ -1527,7 +1527,7 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	# Gravity Well vulnerability — enemies caught in the well take extra damage,
 	# giving the slow an offensive payoff instead of pure crowd control.
 	if _gravity_slowed:
-		final_amount *= 1.18
+		final_amount *= 1.25
 	# Executioner bonus — extra damage to enemies below 30% HP
 	var _execute_proc := false
 	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:

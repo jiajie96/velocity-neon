@@ -2,7 +2,7 @@ extends Node3D
 
 const DASH_DURATION := 0.2
 const DASH_TRAIL_COUNT := 3
-const ULTIMATE_COOLDOWN := 8.5
+const ULTIMATE_COOLDOWN := 8.0
 const ULTIMATE_RADIUS := 8.0
 const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
@@ -323,8 +323,18 @@ func _update_target_reticle(delta: float) -> void:
 	_reticle_pulse_t += delta * 4.0
 	var pulse := (sin(_reticle_pulse_t) + 1.0) * 0.5
 	var a := lerpf(0.3, 0.7, pulse)
+	# Flag priority support enemies: the reticle bleeds green on a healer and purple on
+	# a necromancer so the player learns to focus the foes that undo their damage /
+	# refill the swarm, rather than just whatever's nearest.
+	var rcol := Color(0.2, 0.85, 1.0)
+	match str(target.get("enemy_type")):
+		"healer":
+			rcol = Color(0.2, 1.0, 0.5)
+		"necromancer":
+			rcol = Color(0.7, 0.3, 1.0)
 	for mat in _reticle_mats:
-		mat.albedo_color.a = a
+		mat.albedo_color = Color(rcol.r, rcol.g, rcol.b, a)
+		mat.emission = rcol
 		mat.emission_energy_multiplier = lerpf(2.0, 4.0, pulse)
 
 func _update_shield_ring(delta: float) -> void:
@@ -712,10 +722,20 @@ func _spawn_muzzle_flash(dir: Vector3) -> void:
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.22
 	flash.mesh = sphere
+	# Tint the muzzle flash to match the active build (same palette as the bolts:
+	# Piercing -> white-cyan, Ricochet -> lime-green, both -> blended) so the gun's
+	# flash reads as part of the current build at a glance.
+	var flash_col := Color(0.3, 0.8, 1.0)
+	if GameState.piercing_level > 0 and GameState.ricochet_level > 0:
+		flash_col = Color(0.7, 1.0, 0.7)
+	elif GameState.piercing_level > 0:
+		flash_col = Color(0.75, 0.95, 1.0)
+	elif GameState.ricochet_level > 0:
+		flash_col = Color(0.7, 1.0, 0.35)
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.3, 0.8, 1.0, 0.75)
+	mat.albedo_color = Color(flash_col.r, flash_col.g, flash_col.b, 0.75)
 	mat.emission_enabled = true
-	mat.emission = Color(0.25, 0.75, 0.95)
+	mat.emission = flash_col
 	mat.emission_energy_multiplier = 6.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	flash.material_override = mat
@@ -931,6 +951,18 @@ func _do_ultimate() -> void:
 	GameState.request_shake(6.0)
 	GameState.request_hit_stop(0.08)
 	GameState.request_camera_punch(2.4)
+	# The ult is the panic button, so give a brief i-frame window — pressing Q while
+	# swarmed should actually buy an escape instead of eating a contact hit on the next
+	# tick. Only grants it if not already invincible (e.g. a wave-clear window) so it
+	# can't cut another invuln short.
+	if not GameState.invincible:
+		GameState.invincible = true
+		var ult_tree := get_tree()
+		if ult_tree:
+			ult_tree.create_timer(0.55).timeout.connect(func():
+				if not GameState.game_over:
+					GameState.invincible = false
+			)
 	# Ultimate scales with player damage so it stays relevant in later waves
 	var ult_dmg := ULTIMATE_DAMAGE + GameState.damage * 3.0
 	# Radius grows gently with level so the panic-button still clears breathing room

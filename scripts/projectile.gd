@@ -57,11 +57,14 @@ func _build_visual() -> void:
 		sphere.height = 0.2
 		mesh_inst.mesh = sphere
 	elif weapon_type == "pulse":
-		# Thin laser bolt — elongated cylinder pointing in travel direction
+		# Thin laser bolt — elongated cylinder pointing in travel direction. Scale it
+		# up a touch with damage so a stacked Power Shot build fires visibly chunkier,
+		# longer bolts — your shots *look* like they hit harder as you level damage.
+		var dmg_scale := clampf(damage / 7.0, 1.0, 2.2)
 		var bolt := CylinderMesh.new()
-		bolt.top_radius = 0.03
-		bolt.bottom_radius = 0.03
-		bolt.height = 0.8
+		bolt.top_radius = 0.03 * dmg_scale
+		bolt.bottom_radius = 0.03 * dmg_scale
+		bolt.height = 0.8 * dmg_scale
 		mesh_inst.mesh = bolt
 		# Rotate cylinder to lie along travel direction
 		mesh_inst.rotation.x = PI / 2.0
@@ -196,6 +199,15 @@ func _process(delta: float) -> void:
 		if bounced:
 			_bounce_count += 1
 			_pierced_enemies.clear()  # Can hit same enemies again after bouncing
+			# Spark the bounce so a ricochet reads in the world instead of silently
+			# changing direction. Wall hits are infrequent, so this stays perf-cheap.
+			var container := get_parent()
+			if container:
+				var bounce_col: Color = _colors.get(weapon_type, Color(0.8, 1.0, 0.4))
+				var VFX := preload("res://scripts/vfx.gd")
+				VFX.spawn_impact_flash(container, global_position + Vector3(0, 0.4, 0), bounce_col, 1.3, 0.12)
+				VFX.spawn_spark_burst(container, global_position + Vector3(0, 0.4, 0), bounce_col, 5, 2.5, 0.2)
+			GameState.request_shake(0.8)
 
 func _on_hit(area: Area3D) -> void:
 	var enemy := area.get_parent()

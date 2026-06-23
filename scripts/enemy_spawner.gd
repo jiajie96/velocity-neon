@@ -36,6 +36,11 @@ func _on_wave_changed(wave: int) -> void:
 		# Now that elites add per-enemy threat, raw counts ease off a touch in the
 		# late game. Wave 1: 20, Wave 5: 64, Wave 10: 137, Wave 15: 233, Wave 20: 352
 		_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 8 + int(wave * wave * 0.45)
+		# Gentler onboarding for the first two waves so a fresh run (base stats, no
+		# upgrades yet) isn't an instant wall — mid/late scaling is untouched.
+		# Wave 1: 16, Wave 2: 20 (was 20 / 29).
+		if wave <= 2:
+			_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 4
 		_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
 		_spawn_timer = 0.1
 		_wave_timer = 0.0

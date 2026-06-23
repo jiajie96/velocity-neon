@@ -98,8 +98,8 @@ static func _stat_preview(u: Upgrade) -> String:
 		"regen":
 			var cur := GameState.hp_regen
 			return "+1.1 HP/sec (%.1f -> %.1f)" % [cur, cur + 1.1]
-			"bulwark":
-				return "+18%% max HP & heal (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp * 1.18)]
+		"bulwark":
+			return "+18%% max HP & heal (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp * 1.18)]
 		"dash_charge":
 			return "+1 dash charge (%d -> %d)" % [GameState.dash_max_charges, GameState.dash_max_charges + 1]
 		"phase_blades":

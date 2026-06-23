@@ -147,8 +147,10 @@ func sfx_enemy_death() -> void:
 func sfx_player_hit() -> void:
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", -2.0, randf_range(0.9, 1.0))
 
-func sfx_wave_start() -> void:
-	play_sfx("res://assets/audio/sfx/wave_start.ogg", -3.0)
+func sfx_wave_start(pitch: float = 1.0) -> void:
+	# Pitch climbs gently with wave depth so deeper waves announce themselves with a
+	# tenser, higher horn — an audible "this is getting serious" cue.
+	play_sfx("res://assets/audio/sfx/wave_start.ogg", -3.0, pitch)
 
 func sfx_level_up() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -2.0)

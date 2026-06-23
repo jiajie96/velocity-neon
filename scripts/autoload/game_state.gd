@@ -51,7 +51,7 @@ var projectile_count: int = 1
 var projectile_speed: float = 38.0
 var magnet_range: float = 4.2
 var hp_regen: float = 0.0
-var dash_cooldown: float = 1.5
+var dash_cooldown: float = 1.4
 var dash_speed: float = 25.0
 var dash_max_charges: int = 1   # how many dashes can be banked
 var dash_charges: int = 1       # currently available dashes
@@ -166,7 +166,7 @@ func _process(delta: float) -> void:
 var _wave_damage_taken: bool = false
 
 var _damage_immunity_timer: float = 0.0
-const DAMAGE_IMMUNITY_DURATION := 0.2
+const DAMAGE_IMMUNITY_DURATION := 0.25
 
 func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	if invincible or game_over:
@@ -239,17 +239,25 @@ func add_xp(amount: float) -> void:
 	if gained_level:
 		Audio.sfx_level_up()
 		xp_magnet_pulse.emit()
+		# A quick zoom-kick + light shake so hitting a new level lands physically, not
+		# just as a screen flash — the level-up should feel like a real power spike.
+		request_camera_punch(1.4)
+		request_shake(1.6)
 		leveled_up.emit(level)
 
 func next_wave() -> void:
 	# Award bonus XP for surviving previous wave without taking damage
 	if wave > 0 and not _wave_damage_taken:
-		var bonus := 20.0 + wave * 5.0
+		var bonus := 25.0 + wave * 6.0
 		add_xp(bonus)
 		perfect_wave.emit(bonus)
+		# A flawless wave is worth a little tactile reward on top of the chime + banner:
+		# a quick camera punch and a light shake so a no-damage clear actually *lands*.
+		request_camera_punch(1.6)
+		request_shake(2.0)
 	_wave_damage_taken = false
 	wave += 1
-	Audio.sfx_wave_start()
+	Audio.sfx_wave_start(1.0 + minf(wave * 0.015, 0.3))
 	wave_changed.emit(wave)
 	if wave % 5 == 0:
 		# Use epic_boss for wave 10+ bosses, cyberpunk_battle for early bosses
@@ -292,12 +300,12 @@ func add_kill(enemy_type: String = "") -> void:
 func add_damage_dealt(amount: float) -> void:
 	total_damage_dealt += amount
 
-# Active kill streaks grant an escalating damage bonus (up to +24%), making the
+# Active kill streaks grant an escalating damage bonus (up to +30%), making the
 # combo system mechanically meaningful instead of just a banner.
 func get_combo_damage_mult() -> float:
 	if _streak_count < 3:
 		return 1.0
-	return 1.0 + minf(float(_streak_count - 2) * 0.03, 0.24)
+	return 1.0 + minf(float(_streak_count - 2) * 0.035, 0.30)
 
 func get_combo_bonus_pct() -> int:
 	return int(round((get_combo_damage_mult() - 1.0) * 100.0))
@@ -349,7 +357,7 @@ func reset() -> void:
 	projectile_speed = 38.0
 	magnet_range = 4.2
 	hp_regen = 0.0
-	dash_cooldown = 1.5
+	dash_cooldown = 1.4
 	dash_speed = 25.0
 	dash_max_charges = 1
 	dash_charges = 1
