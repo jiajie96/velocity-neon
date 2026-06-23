@@ -21,11 +21,14 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 ## Features
 
 ### Combat
-- Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto
+- Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto — the reticle bleeds green on a healer and purple on a necromancer so you can spot a priority support target at a glance
+- Build-tinted muzzle flash — the gun's flash matches the active bolt palette (Piercing → white-cyan, Ricochet → lime-green, both → blended)
 - Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra screen shake so they land hard)
-- Kill streaks grant an escalating combo damage bonus (up to +24%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
-- Phase Dash with afterimage trail, invincibility (plus a brief i-frame grace window past the dash for a reliable escape), contact damage scaling with speed, and audio-visual ready cue — carving through a pack now lands a meaty thud + a small camera kick the first time the dash connects
-- Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push)
+- Kill streaks grant an escalating combo damage bonus (up to +30%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
+- Laser bolts grow chunkier and longer as you stack damage, so a heavy Power Shot build *looks* as hard-hitting as it plays
+- Phase Dash with afterimage trail, invincibility (plus a brief i-frame grace window past the dash for a reliable escape), contact damage scaling with speed, and audio-visual ready cue — carving through a pack now lands a meaty thud + a small camera kick the first time the dash connects; a slightly shorter base cooldown (1.4s) keeps you mobile
+- Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push) — grants a reliable i-frame window on cast (0.55s) so pressing Q while swarmed actually buys an escape, with a base cooldown of 8.0s
+- Gravity Well isn't just crowd control — slowed enemies also take +25% damage, so the slow field has a real offensive payoff
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
 
@@ -66,6 +69,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Perfect wave chime (bright ascending fanfare when the no-damage bonus lands)
 - Healer pulse shimmer (soft restorative cue when a healer mends the swarm — audible even offscreen)
 - Full UI sound effects (clicks, hovers, upgrade selection, wave start, level-up)
+- Wave-start horn pitch climbs with wave depth — deeper waves announce themselves with a tenser, higher tone
 - XP pickup pitch scaling (pentatonic climb on rapid collection)
 - Big XP batch collection chime (satisfying sound when collecting many orbs at once)
 - Dash ready audio cue when cooldown completes
@@ -129,7 +133,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Ultimate ready screen flash (purple screen-edge pulse when ult comes off cooldown)
 - Title screen neon color cycle (animated title text with shifting neon colors)
 - Enemy projectiles despawn at arena boundaries (prevents stale node buildup)
-- Player shots ricochet and despawn against the *active* arena edge, so Ricochet bounces correctly off the shrunken boss-fight walls instead of passing through them
+- Player shots ricochet and despawn against the *active* arena edge, so Ricochet bounces correctly off the shrunken boss-fight walls instead of passing through them — each wall bounce now sparks (impact flash + spark burst + a tiny shake) so the ricochet reads instead of silently changing direction
 - Dash-colored damage numbers (cyan) when hitting enemies during Phase Dash
 - Scatter shot cone flash (brief orange cone showing pellet spread direction)
 - Gravity Well purple tint on slowed enemies (visual feedback for slow field)
@@ -152,7 +156,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Live DPS meter, enemy count, survival timer
 - Wave announcements with boss wave callouts
 - Kill streak and milestone announcements, plus a draining combo-streak timer bar under the banner that shows how long the kill-streak window (and its damage bonus) has left
-- No-damage wave indicator
+- No-damage wave indicator — a perfect (no-damage) wave clear now also lands a quick camera punch + shake on top of the chime and banner so the bonus feels earned
 - Pause menu (resume/restart/mute/quit) with a live MUTE/UNMUTE toggle button and an at-a-glance run summary plus a full build sheet (damage, fire rate, projectiles, crit, DR, regen, lifesteal, XP bonus, Guardian status)
 - Upgrade reroll — one per level-up screen (button or R key) swaps all three choices
 - Guardian Angel HUD badge while the death save is still banked
@@ -175,7 +179,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Mini HP bars above elite enemies for target prioritization
 
 ### Game Systems
-- Wave-based progression with aggressive scaling (enemy contact damage scales with wave); late-game wave sizes use a softened quadratic curve so the highest waves stay intense without becoming a slog
+- Wave-based progression with aggressive scaling (enemy contact damage scales with wave); late-game wave sizes use a softened quadratic curve so the highest waves stay intense without becoming a slog, and the first two waves are eased (16 / 20 enemies) so a fresh run with base stats isn't an instant wall
 - Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime; heal orbs no longer magnetize or collect while you're at full HP, so a drop isn't wasted when you don't need it
 - Exploder blasts deal distance-scaled damage (full at the blast center, falling to 40% at the edge) so positioning matters and an edge clip is no longer a near-one-shot
 - Multi-level-up: large XP gains (boss bonus, batched orbs) award every level crossed, offering each upgrade in turn instead of banking the overflow
@@ -202,6 +206,8 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Game feel & QoL pass** — Leveling up now lands a camera punch + shake so a new level feels like a power spike, not just a flash. Kill-streak combo damage ceiling raised to +30% and the no-damage wave bonus pays out more XP, so aggressive flawless play is better rewarded. XP orbs and (when you're hurt) health orbs pull in faster and from closer, so loot isn't stranded mid-fight. Post-hit i-frames widened slightly (0.25s) so a tight swarm stacks fewer hits, the Ultimate's panic i-frame window is more reliable (0.55s), and Phase Dash recharges a touch quicker (1.4s). Laser bolts scale up with your damage, and Gravity Well now amplifies damage on slowed enemies by +25%.
+- **Polish & feel pass** — Fixed the Titanium Plating upgrade card so it shows its concrete HP before/after preview (it was silently falling back to the generic text). Ultimate now grants a brief i-frame window on cast (real panic-button escape) and its base cooldown is 8.0s. The auto-aim reticle tints green/purple when locked onto a healer/necromancer so you learn to focus supports. Muzzle flash tints to your build. Ricochet bounces now spark off the walls, perfect (no-damage) waves land a camera punch, the wave-start horn pitches up with depth, and the first two waves are eased so a fresh run isn't an instant wall.
 - **Titanium Plating upgrade** — a new percentage-based defensive pick: each stack adds +18% max HP and an instant heal, so it keeps scaling into the late game where flat Fortify falls off.
 - **Wider auto-aim** — primary fire, Railgun, and Signal Arrow now lock on at 40 units (up from 30) so the gun no longer goes quiet on enemies that are still clearly on screen.
 - **Snappier Ultimate** — base cooldown trimmed from 10s to 8.5s so the panic button comes back around more often.

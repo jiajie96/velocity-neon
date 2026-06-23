@@ -391,6 +391,26 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Ultimate blast radius scales gently with level (capped) so the panic button stays relevant in dense late waves
 - [x] Per-instance enemy speed jitter (±10%) so a swarm reads as individuals instead of a lockstep grid
 - [x] Vampire lifesteal world spark — rate-limited green pop above the player when a lifesteal heal lands
+- [x] Fixed Titanium Plating upgrade card preview (the `bulwark` stat-preview arm was mis-indented dead code, so the card silently fell back to the generic description instead of the concrete HP before/after)
+- [x] Ultimate grants a brief i-frame window on cast (0.55s) so the panic button can actually save a surrounded player; only applied when not already invincible so it can't cut a wave-clear window short
+- [x] Ultimate base cooldown trimmed (8.5s -> 8.0s)
+- [x] Priority-target reticle tint — the auto-aim reticle bleeds green on a healer / purple on a necromancer so the player learns to focus supports
+- [x] Build-tinted muzzle flash (Piercing -> white-cyan, Ricochet -> lime-green, both -> blended) to match the bolt palette
+- [x] Ricochet wall-bounce spark — each wall bounce flashes + spark-bursts + a tiny shake so the ricochet reads instead of silently turning
+- [x] Perfect (no-damage) wave clear lands a camera punch + shake on top of the chime/banner
+- [x] Wave-start horn pitch climbs gently with wave depth (audible escalation)
+- [x] Gentler first-two-wave onboarding (16 / 20 enemies) so a fresh run with base stats isn't an instant wall; mid/late scaling untouched
+- [x] XP-orb spawn burst clamps to the *active* arena radius so a kill's orbs don't fling out past the shrunken boss-fight walls
+- [x] Level-up lands a camera punch + light shake so a new level reads as a tactile power spike, not just a screen flash
+- [x] Kill-streak combo damage ceiling raised (+24% -> +30%, slightly steeper per-kill ramp) so deep streaks matter more
+- [x] No-damage wave bonus XP buffed (20 + 5×wave -> 25 + 6×wave) to better reward flawless aggressive play
+- [x] Phase Dash base cooldown trimmed (1.5s -> 1.4s) for snappier mobility
+- [x] Post-hit i-frame window widened (0.20s -> 0.25s) so a tight swarm stacks fewer simultaneous hits
+- [x] Snappier XP-orb collection (magnet speed 12 -> 15, auto-magnet delay 4s -> 3s) so earned XP isn't left lying around mid-fight
+- [x] Wounded players pull heal orbs in faster and sooner (magnet speed 10 -> 13, auto-magnet delay 5s -> 3.5s)
+- [x] Ultimate panic i-frame window lengthened (0.4s -> 0.55s) so the escape is reliable even at low frame times
+- [x] Laser bolt size scales with damage (clamped) so a stacked Power Shot build fires visibly chunkier, longer bolts
+- [x] Gravity Well vulnerability bumped (+18% -> +25% damage on slowed enemies) so the slow field has a stronger offensive payoff
 
 ---
 
