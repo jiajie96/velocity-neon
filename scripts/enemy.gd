@@ -1530,7 +1530,7 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		final_amount *= 1.25
 	# Executioner bonus — extra damage to enemies below 30% HP
 	var _execute_proc := false
-	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.3:
+	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.35:
 		final_amount *= (1.0 + GameState.execute_bonus)
 		_execute_proc = true
 	# Giant Slayer — bonus damage against bosses so under-geared players can still
@@ -1787,6 +1787,7 @@ func _die() -> void:
 	Audio.sfx_enemy_death_typed(enemy_type)
 	_spawn_xp()
 	_maybe_drop_health()
+	_maybe_split()
 	# Necromancer death kills its summoned minions
 	if enemy_type == "necromancer":
 		for ref in _necro_minions:
@@ -1867,7 +1868,7 @@ func _maybe_drop_health() -> void:
 	if drop_count <= 0:
 		return
 	# Scavenger also makes each orb heal for more.
-	var heal_amt := maxf(8.0, GameState.max_hp * 0.12) * GameState.health_heal_mult
+	var heal_amt := maxf(9.0, GameState.max_hp * 0.14) * GameState.health_heal_mult
 	for i in drop_count:
 		var orb := Node3D.new()
 		orb.name = "HealthOrb"
@@ -1876,6 +1877,32 @@ func _maybe_drop_health() -> void:
 		orb.position = global_position + offset
 		orb.set_meta("heal_amount", heal_amt)
 		orb_container.add_child(orb)
+
+func _maybe_split() -> void:
+	# Splitting elites — a slain elite bursts into a pair of fresh minions, so a gold
+	# target you ignore can refill the swarm. Only elites split (the spawned minions are
+	# never elite, so there's no runaway recursion), and we respect the alive-enemy cap
+	# so a packed late wave can't lag from the extra bodies.
+	if not _elite or is_boss:
+		return
+	var container := get_parent()
+	if not container:
+		return
+	if get_tree().get_nodes_in_group("enemies").size() >= 90:
+		return
+	var spawn_wave: int = get_meta("_enemy_wave", GameState.wave)
+	for i in 2:
+		var minion := Node3D.new()
+		minion.name = "Enemy_minion"
+		minion.set_script(load("res://scripts/enemy.gd"))
+		var offset := Vector3(randf_range(-1.0, 1.0), 0, randf_range(-1.0, 1.0))
+		var spawn_pos := global_position + offset
+		spawn_pos.x = clampf(spawn_pos.x, -GameState.arena_radius, GameState.arena_radius)
+		spawn_pos.z = clampf(spawn_pos.z, -GameState.arena_radius, GameState.arena_radius)
+		minion.position = spawn_pos
+		minion.set_meta("_enemy_type", "minion")
+		minion.set_meta("_enemy_wave", spawn_wave)
+		container.add_child(minion)
 
 func _death_vfx() -> void:
 	var container := get_parent()
@@ -1962,6 +1989,9 @@ func setup(type: String, wave: int) -> void:
 			hp = 55.0 * wave_scale
 			speed = 3.8 + wave * 0.08
 			xp_value = 15.0
+			# Heavy melee — warriors should hit harder on contact than a basic minion
+			# (both previously fell back to the default 10) so closing with one bites.
+			contact_damage = 18.0
 			is_boss = false
 		"mage":
 			hp = 40.0 * wave_scale

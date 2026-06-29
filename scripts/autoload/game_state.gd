@@ -49,7 +49,7 @@ var fire_rate: float = 2.2
 var damage: float = 7.0
 var projectile_count: int = 1
 var projectile_speed: float = 38.0
-var magnet_range: float = 4.2
+var magnet_range: float = 4.6
 var hp_regen: float = 0.0
 var dash_cooldown: float = 1.4
 var dash_speed: float = 25.0
@@ -61,7 +61,7 @@ var invincible: bool = false
 var has_shatter: bool = false
 var gravity_well_strength: float = 0.0
 var overclock_active: bool = false
-var crit_chance: float = 0.10
+var crit_chance: float = 0.12
 var crit_damage: float = 2.0    # Crit multiplier; Critical Surge raises it per stack
 var lifesteal: float = 0.0
 var damage_reduction: float = 0.0
@@ -86,7 +86,7 @@ var ricochet_level: int = 0
 # Progression
 var xp: float = 0.0
 var level: int = 1
-var xp_to_next: float = 80.0
+var xp_to_next: float = 70.0
 var pending_levelups: int = 0  # Queued upgrades when one XP gain crosses multiple levels
 
 # Session
@@ -355,7 +355,7 @@ func reset() -> void:
 	damage = 7.0
 	projectile_count = 1
 	projectile_speed = 38.0
-	magnet_range = 4.2
+	magnet_range = 4.6
 	hp_regen = 0.0
 	dash_cooldown = 1.4
 	dash_speed = 25.0
@@ -365,7 +365,7 @@ func reset() -> void:
 	has_shatter = false
 	gravity_well_strength = 0.0
 	overclock_active = false
-	crit_chance = 0.10
+	crit_chance = 0.12
 	crit_damage = 2.0
 	lifesteal = 0.0
 	damage_reduction = 0.0
@@ -386,7 +386,7 @@ func reset() -> void:
 	ricochet_level = 0
 	xp = 0.0
 	level = 1
-	xp_to_next = 80.0
+	xp_to_next = 70.0
 	pending_levelups = 0
 	wave = 0
 	kills = 0

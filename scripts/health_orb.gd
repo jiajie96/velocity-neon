@@ -114,6 +114,17 @@ func _collect() -> void:
 	GameState.heal(heal_amount)
 	GameState.health_pickup.emit(heal_amount)
 	Audio.sfx_health_pickup()
+	# Brief i-frames on pickup so a clutch heal grab mid-swarm isn't instantly eaten by
+	# the next contact tick. Only granted if not already invincible (e.g. a wave-clear or
+	# dash window) so it can't cut a longer existing invuln short.
+	if not GameState.invincible and not GameState.game_over:
+		GameState.invincible = true
+		var tree := get_tree()
+		if tree:
+			tree.create_timer(0.5).timeout.connect(func():
+				if not GameState.game_over:
+					GameState.invincible = false
+			)
 	# Small zoom-kick so grabbing a heal in a tight spot feels rewarding, not silent.
 	GameState.request_camera_punch(0.8)
 	_spawn_collect_vfx()

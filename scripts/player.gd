@@ -2,7 +2,7 @@ extends Node3D
 
 const DASH_DURATION := 0.2
 const DASH_TRAIL_COUNT := 3
-const ULTIMATE_COOLDOWN := 8.0
+const ULTIMATE_COOLDOWN := 7.0
 const ULTIMATE_RADIUS := 8.0
 const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
@@ -44,6 +44,7 @@ var _overclock_pulse_t: float = 0.0
 var _gravity_ring: MeshInstance3D
 var _gravity_ring_mat: StandardMaterial3D
 var _ult_denied_cd: float = 0.0
+var _dash_denied_cd: float = 0.0
 var _heartbeat_timer: float = 0.0
 var _damage_flash_timer: float = 0.0
 var _shield_ring: MeshInstance3D
@@ -528,6 +529,7 @@ func _move(delta: float) -> void:
 	position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
 
 func _dash(delta: float) -> void:
+	_dash_denied_cd = maxf(_dash_denied_cd - delta, 0.0)
 	# Brief i-frame grace right after a dash ends so the final frame of phasing
 	# through a pack doesn't immediately eat a hit
 	if _dash_grace_timer > 0.0:
@@ -579,7 +581,19 @@ func _dash(delta: float) -> void:
 			is_dashing = false
 			# Keep invincibility briefly past the dash for a forgiving escape window
 			_dash_grace_timer = DASH_IFRAME_GRACE
+			# Landing puff — a small cyan shockwave + spark where the dash stops, so the
+			# slide ends with a tactile beat instead of just halting mid-stride.
+			var land_container := get_parent().get_node_or_null("Projectiles")
+			if land_container:
+				var VFX := preload("res://scripts/vfx.gd")
+				VFX.spawn_shockwave(land_container, position, Color(0.3, 0.8, 1.0, 0.35), 1.4, 0.22, 0.05)
+				VFX.spawn_spark_burst(land_container, position + Vector3(0, 0.3, 0), Color(0.3, 0.85, 1.0), 8, 3.5, 0.28)
 		return
+	# Pressed dash with nothing banked — a quiet, rate-limited "denied" blip so the
+	# input registers instead of feeling unresponsive (mirrors the ultimate cue).
+	if Input.is_action_just_pressed("dash") and GameState.dash_charges < 1 and _dash_denied_cd <= 0.0:
+		_dash_denied_cd = 0.5
+		Audio.sfx_denied()
 	if Input.is_action_just_pressed("dash") and GameState.dash_charges >= 1:
 		var dir := Vector3.ZERO
 		if Input.is_action_pressed("move_up"):
