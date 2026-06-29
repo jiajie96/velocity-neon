@@ -76,7 +76,7 @@
 - ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
 - ~~**Teleporter**: Blinks to new position periodically, unpredictable movement~~ DONE — teleporters blink every ~2.5s to random positions near the player
 - ~~**Healer**: Restores HP to nearby enemies, priority target~~ DONE — hangs back (wave 4+), pulses 18% max-HP heals to up to 3 wounded enemies every 4s with a green ring + shimmer SFX telegraph
-- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Distinct named-prefix effects (Vampiric, Splitting, etc.) still pending
+- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Elites now also **Split** — every elite bursts into 2 fresh minions on death (capped to the alive-enemy limit; spawned minions are never elite). Other distinct named-prefix effects (Vampiric, Armored, etc.) still pending
 
 ### Boss Design
 - ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow)
@@ -115,7 +115,7 @@
 - **Settings screen**: Volume sliders, resolution, fullscreen toggle, VFX quality, camera sensitivity — PARTIAL: master mute toggle (M key, plus a MUTE button in the pause menu) is implemented; full settings still pending
 - **Save system**: ~~Save best run stats~~ PARTIAL — best run (deepest wave + kills) persists to disk, shown on title screen with a NEW RECORD banner on game over; unlocked upgrades and settings still pending
 - **Run statistics**: ~~Post-run summary (DPS over time, damage taken, upgrades chosen, XP graph)~~ PARTIAL — game over screen shows kills/min, avg DPS, total damage, time survived, performance rating (RECRUIT→LEGENDARY), and full upgrade build summary
-- **Minimap**: Optional corner minimap showing enemy positions
+- ~~**Minimap**: Optional corner minimap showing enemy positions~~ DONE — corner radar plots the swarm relative to the player (bosses orange, elites gold, off-radar contacts clamp to the edge)
 - ~~**Damage numbers**: Floating damage text above enemies on hit~~ DONE
 
 ### Networking
@@ -411,6 +411,13 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Ultimate panic i-frame window lengthened (0.4s -> 0.55s) so the escape is reliable even at low frame times
 - [x] Laser bolt size scales with damage (clamped) so a stacked Power Shot build fires visibly chunkier, longer bolts
 - [x] Gravity Well vulnerability bumped (+18% -> +25% damage on slowed enemies) so the slow field has a stronger offensive payoff
+
+- [x] Corner minimap radar (player-centered; bosses orange, elites gold, off-radar contacts clamp to the edge)
+- [x] Splitting elites — a slain gold elite bursts into 2 fresh minions (capped to the alive limit; minions are never elite, so no runaway)
+- [x] Health-orb pickup grants a brief 0.5s i-frame window (clutch heal in a swarm isn't instantly re-eaten)
+- [x] Fixed Regeneration to grant the +1.3 HP/sec its card promised (was a silent +1.1); Vampire to +2.5 HP/kill (was +2.25)
+- [x] Base crit chance raised (10% -> 12%); Executioner window widened (sub-30% -> sub-35% HP)
+- [x] Ultimate base cooldown trimmed (7.5s -> 7.0s); base pickup range bumped (4.2 -> 4.6); faster first level-up (80 -> 70 XP)
 
 ---
 

@@ -23,11 +23,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 ### Combat
 - Auto-aim primary weapon with laser bolt visuals and trail effects, plus a target reticle that marks the enemy you're currently locked onto — the reticle bleeds green on a healer and purple on a necromancer so you can spot a priority support target at a glance
 - Build-tinted muzzle flash — the gun's flash matches the active bolt palette (Piercing → white-cyan, Ricochet → lime-green, both → blended)
-- Critical hits (10% base chance, ★ damage text, orange screen flash, crisp crit ping + extra screen shake so they land hard)
+- Critical hits (12% base chance, ★ damage text, orange screen flash, crisp crit ping + extra screen shake so they land hard)
 - Kill streaks grant an escalating combo damage bonus (up to +30%) shown live on the streak banner (DOUBLE KILL through UNSTOPPABLE)
 - Laser bolts grow chunkier and longer as you stack damage, so a heavy Power Shot build *looks* as hard-hitting as it plays
 - Phase Dash with afterimage trail, invincibility (plus a brief i-frame grace window past the dash for a reliable escape), contact damage scaling with speed, and audio-visual ready cue — carving through a pack now lands a meaty thud + a small camera kick the first time the dash connects; a slightly shorter base cooldown (1.4s) keeps you mobile
-- Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push) — grants a reliable i-frame window on cast (0.55s) so pressing Q while swarmed actually buys an escape, with a base cooldown of 8.0s
+- Ultimate ability with screen-clearing AoE, multi-ring VFX, damage scaling with upgrades, and outward knockback that shoves enemies away for a panic-button "clear space" feel (bosses resist most of the push) — grants a reliable i-frame window on cast (0.55s) so pressing Q while swarmed actually buys an escape, with a base cooldown of 7.0s
 - Gravity Well isn't just crowd control — slowed enemies also take +25% damage, so the slow field has a real offensive payoff
 - Tiered hit VFX: chip hits get a cheap point-light flash while kills earn the full shockwave + spark burst, so sustained fire in dense waves stays smooth without losing impact on the moments that matter
 - Heavy Multi-Shot volleys (3+ projectiles) fire a chunkier "scatter" report instead of the single-bolt pulse, so a stacked build sounds as big as it hits
@@ -35,10 +35,10 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 ### Weapons & Upgrades (29 upgrades)
 - **Primary Stats**: Rapid Fire, Power Shot, Fortify, Swift, Multi-Shot, Magnet
 - **Weapons**: Railgun (piercing beam), Signal Arrow (homing Yaka-style arrow that darts enemy-to-enemy — faster and harder-hitting each level), Chain Arc, Orbital Guard (orbiting damage orbs)
-- **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to low-HP enemies with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
-- **Defense**: Nano Shield (with visible blue shield ring), Titanium Plating (+18% max HP **and** an instant heal per stack, up to 3 — a percentage boost that keeps scaling into late waves where flat Fortify falls off), Regeneration (+1.1 HP/sec per stack, with heal particle VFX), Vampire (2.25 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
+- **Combat**: Piercing Rounds, Ricochet (bolts now phase through enemies and keep bouncing off the walls until their bounces are spent — they ricochet around the arena instead of dying on first contact), Shatter Point, Critical Surge (each stack adds +5% crit chance **and** +0.15× crit damage), Velocity Rounds, Executioner (bonus damage to enemies under 35% HP, with red execution flash), Adrenaline (outgoing damage rises as *your* HP falls — up to +30% near death, a risk/reward boost that pairs with Vampire and dash i-frames)
+- **Defense**: Nano Shield (with visible blue shield ring), Titanium Plating (+18% max HP **and** an instant heal per stack, up to 3 — a percentage boost that keeps scaling into late waves where flat Fortify falls off), Regeneration (+1.3 HP/sec per stack, with heal particle VFX), Vampire (2.5 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst and a moment of invincibility), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
 - **Mobility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Phase Blades (+80% Phase Dash carve damage per stack **and** a wider carve radius, up to 2 — finally a payoff for a dash-centric build)
-- **Utility**: Gravity Well (slowed enemies also take +18% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
+- **Utility**: Gravity Well (slowed enemies also take +25% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
 - **Slaying**: Giant Slayer (+22% damage to bosses per stack, up to 3 — helps an under-geared build close out a long golem fight)
 
 ### Enemies (9 types)
@@ -51,7 +51,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Teleporter** — blinks to random positions near the player, unpredictable (blink frequency scales with wave)
 - **Healer** — hangs back behind the swarm and pulses healing into nearby wounded enemies (green ring + shimmer telegraph the pulse, mended enemies glint green) — a priority target that undoes your chip damage if left alive (wave 4+)
 - **Skeleton Golem** (Boss, every 5th wave) — multi-phase with slam, rock throw with ground target indicator (3-rock spread when enraged, fiery trail particles, distinct throw SFX), charge (with knockback, ground impact VFX), and enrage below 30% HP. Boss speed scales with wave progression. Defeating a boss awards bonus XP with dramatic gold flash
-- **Elite variants** (wave 6+) — any regular enemy has a small, wave-scaling chance to spawn as a tougher, higher-value Elite: ~1.9× HP, faster, hits harder, drops ~2.2× XP and is much likelier to drop a heal orb. Marked with a gold rim glow, a floating gold chevron, a larger build, and an always-on HP bar so they read as priority/reward targets
+- **Elite variants** (wave 6+) — any regular enemy has a small, wave-scaling chance to spawn as a tougher, higher-value Elite: ~1.9× HP, faster, hits harder, drops ~2.2× XP and is much likelier to drop a heal orb. Marked with a gold rim glow, a floating gold chevron, a larger build, and an always-on HP bar so they read as priority/reward targets. **Splitting** — every elite bursts into two fresh minions when killed, so ignoring a gold target lets it refill the swarm (the split is capped to respect the alive-enemy limit, and the spawned minions are never elite so there's no runaway)
 - Non-minion enemies (and all elites) display mini HP bars for target prioritization
 
 ### Audio
@@ -149,6 +149,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - Build-tinted bolts — your pulse shots shift color with your build (Piercing → white-cyan, Ricochet → lime-green, both → blended) so upgrades read at a glance
 
 ### HUD & UI
+- Corner minimap radar — plots the swarm relative to you (you're the cyan dot at center), with bosses shown in orange and elites in gold; off-radar contacts clamp to the edge so a distant threat still shows its bearing
 - HP bar with color shift (cyan → red at low HP), overclock drain indicator
 - XP bar with level counter, upgrade count, and a numeric current/next-XP readout so progress to the next upgrade is visible
 - Boss HP bar with wave-specific label ("SKELETON GOLEM — WAVE X"), color shift (green → yellow → red), and enrage warning ("ENRAGED" + pulsing red)
@@ -180,7 +181,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ### Game Systems
 - Wave-based progression with aggressive scaling (enemy contact damage scales with wave); late-game wave sizes use a softened quadratic curve so the highest waves stay intense without becoming a slog, and the first two waves are eased (16 / 20 enemies) so a fresh run with base stats isn't an instant wall
-- Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime; heal orbs no longer magnetize or collect while you're at full HP, so a drop isn't wasted when you don't need it
+- Health pickups: enemies have a small chance to drop heal orbs (elites likelier, bosses guaranteed) that restore HP scaled to max HP, with green VFX and a chime; heal orbs no longer magnetize or collect while you're at full HP, so a drop isn't wasted when you don't need it; grabbing one also grants a brief 0.5s i-frame window so a clutch heal in a swarm isn't instantly undone by the next contact hit
 - Exploder blasts deal distance-scaled damage (full at the blast center, falling to 40% at the edge) so positioning matters and an edge clip is no longer a near-one-shot
 - Multi-level-up: large XP gains (boss bonus, batched orbs) award every level crossed, offering each upgrade in turn instead of banking the overflow
 - Kill-streak combo damage bonus that ramps with the streak and decays when it ends
@@ -206,6 +207,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 
 ## Recent Changes
 
+- **Radar, splitting elites & a balance pass** — Added a corner **minimap radar** that plots the swarm relative to you (bosses orange, elites gold, off-radar contacts clamp to the edge so you can read a distant threat's bearing). **Elites now split** — a slain gold elite bursts into two fresh minions, so a high-value target you ignore can refill the swarm (capped so a packed wave won't lag). **Health orbs grant a brief i-frame window (0.5s) on pickup**, so a clutch heal grab in a tight spot isn't instantly eaten by the next contact hit. Balance: fixed **Regeneration** (now actually grants the +1.3 HP/sec its card promised, up from a silent +1.1) and **Vampire** (now the +2.5 HP/kill the card shows, up from +2.25); raised base **crit chance** to 12%, widened **Executioner**'s window to enemies under 35% HP, trimmed the **Ultimate** base cooldown to 7.0s, bumped base **pickup range** to 4.6, and eased the **first level-up** (70 XP) so the opening upgrade lands sooner.
 - **Game feel & QoL pass** — Leveling up now lands a camera punch + shake so a new level feels like a power spike, not just a flash. Kill-streak combo damage ceiling raised to +30% and the no-damage wave bonus pays out more XP, so aggressive flawless play is better rewarded. XP orbs and (when you're hurt) health orbs pull in faster and from closer, so loot isn't stranded mid-fight. Post-hit i-frames widened slightly (0.25s) so a tight swarm stacks fewer hits, the Ultimate's panic i-frame window is more reliable (0.55s), and Phase Dash recharges a touch quicker (1.4s). Laser bolts scale up with your damage, and Gravity Well now amplifies damage on slowed enemies by +25%.
 - **Polish & feel pass** — Fixed the Titanium Plating upgrade card so it shows its concrete HP before/after preview (it was silently falling back to the generic text). Ultimate now grants a brief i-frame window on cast (real panic-button escape) and its base cooldown is 8.0s. The auto-aim reticle tints green/purple when locked onto a healer/necromancer so you learn to focus supports. Muzzle flash tints to your build. Ricochet bounces now spark off the walls, perfect (no-damage) waves land a camera punch, the wave-start horn pitches up with depth, and the first two waves are eased so a fresh run isn't an instant wall.
 - **Titanium Plating upgrade** — a new percentage-based defensive pick: each stack adds +18% max HP and an instant heal, so it keeps scaling into the late game where flat Fortify falls off.
@@ -263,11 +265,11 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 ```
 scripts/
   player.gd          — Player movement, dash, weapons
-  enemy.gd           — Enemy AI (8 types + boss)
+  enemy.gd           — Enemy AI (8 types + boss, with splitting elite variants)
   enemy_spawner.gd   — Wave logic and spawn system
   main.gd            — Scene setup
   hud.gd             — All UI rendering
-  upgrade_system.gd  — 24 upgrade definitions
+  upgrade_system.gd  — 29 upgrade definitions
   projectile.gd      — Bullet physics and VFX
   xp_orb.gd          — XP pickup mechanics
   camera_rig.gd      — Camera follow, shake, zoom
