@@ -130,6 +130,7 @@ func _ready() -> void:
 	_build_mute_indicator()
 	_build_streak_bar()
 	_build_guardian_indicator()
+	_build_minimap()
 
 	GameState.hp_changed.connect(_on_hp_changed)
 	GameState.xp_changed.connect(_on_xp_changed)
@@ -980,6 +981,68 @@ func _build_wave_progress_label() -> void:
 	_wave_progress_label.custom_minimum_size = Vector2(150, 20)
 	_wave_progress_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_wave_progress_label)
+
+# === MINIMAP ===
+const MINIMAP_SIZE := 150.0
+const MINIMAP_HALF_RANGE := 42.0  # world units shown from the player (center) to each edge
+var _minimap: Control
+
+func _build_minimap() -> void:
+	# Corner radar so the player can read where the swarm is forming even off-screen.
+	# Player sits at the center; enemies plot relative to them, off-radar contacts clamp
+	# to the edge so a distant threat still shows its bearing.
+	_minimap = Control.new()
+	_minimap.name = "Minimap"
+	_minimap.anchor_left = 1.0
+	_minimap.anchor_top = 1.0
+	_minimap.anchor_right = 1.0
+	_minimap.anchor_bottom = 1.0
+	_minimap.offset_left = -MINIMAP_SIZE - 16.0
+	_minimap.offset_top = -MINIMAP_SIZE - 16.0
+	_minimap.offset_right = -16.0
+	_minimap.offset_bottom = -16.0
+	_minimap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_minimap.visible = false
+	_minimap.draw.connect(_draw_minimap)
+	add_child(_minimap)
+
+func _update_minimap() -> void:
+	if not _minimap:
+		return
+	var show: bool = GameState.game_started and not GameState.game_over
+	_minimap.visible = show
+	if show:
+		_minimap.queue_redraw()
+
+func _draw_minimap() -> void:
+	var s := MINIMAP_SIZE
+	var center := Vector2(s, s) * 0.5
+	# Backplate + neon border frame
+	_minimap.draw_rect(Rect2(Vector2.ZERO, Vector2(s, s)), Color(0.02, 0.015, 0.05, 0.5), true)
+	_minimap.draw_rect(Rect2(Vector2.ZERO, Vector2(s, s)), Color(0.0, 0.55, 0.8, 0.5), false, 1.5)
+	var player := get_tree().get_first_node_in_group("player_node") as Node3D
+	if not player:
+		return
+	var ppos := player.global_position
+	var radar_scale := (s * 0.5) / MINIMAP_HALF_RANGE
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if not (e is Node3D) or e.get("_dead"):
+			continue
+		var rel: Vector3 = (e as Node3D).global_position - ppos
+		var p := center + Vector2(rel.x, rel.z) * radar_scale
+		p.x = clampf(p.x, 2.5, s - 2.5)
+		p.y = clampf(p.y, 2.5, s - 2.5)
+		var col := Color(1.0, 0.25, 0.4)
+		var r := 2.0
+		if e.get("is_boss"):
+			col = Color(1.0, 0.5, 0.0)
+			r = 4.5
+		elif e.get("_elite"):
+			col = Color(1.0, 0.85, 0.2)
+			r = 3.0
+		_minimap.draw_circle(p, r, col)
+	# Player marker last so it sits on top
+	_minimap.draw_circle(center, 3.5, Color(0.2, 0.9, 1.0))
 
 func _build_guardian_indicator() -> void:
 	# Small cyan badge while the Guardian Angel death-save is banked, so the player
@@ -1908,9 +1971,10 @@ func _process(delta: float) -> void:
 	_update_time_label()
 	_update_wave_progress()
 	_update_streak_bar()
+	_update_minimap()
 	Audio.update_hum_pitch()
 
-const ULT_VISUAL_CD := 12.0  # base ultimate cooldown for the radial fill — see player.ULTIMATE_COOLDOWN
+const ULT_VISUAL_CD := 7.0  # base ultimate cooldown for the radial fill — matches player.ULTIMATE_COOLDOWN
 
 func _update_indicators() -> void:
 	if _guardian_label:
