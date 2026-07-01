@@ -418,6 +418,12 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Fixed Regeneration to grant the +1.3 HP/sec its card promised (was a silent +1.1); Vampire to +2.5 HP/kill (was +2.25)
 - [x] Base crit chance raised (10% -> 12%); Executioner window widened (sub-30% -> sub-35% HP)
 - [x] Ultimate base cooldown trimmed (7.5s -> 7.0s); base pickup range bumped (4.2 -> 4.6); faster first level-up (80 -> 70 XP)
+- [x] Rate-limited primary-fire + per-hit impact SFX so a high-fire-rate/Multi-Shot build no longer floods and starves the 16-voice SFX pool (crit/death/streak cues stay audible)
+- [x] Fixed Signal Arrow fizzling — seek range 32 -> 42 to match the 40u auto-aim lock (arrows fired at a 33-40u target no longer find nothing and despawn instantly); arrow despawn bound now respects the active (boss) arena radius
+- [x] Softened the wave-3 difficulty spike (~30 enemies instead of 40) so the first full-scaling wave isn't a wall; between-wave breathing-room invuln extended (1.0s -> 1.2s)
+- [x] Auto-aim reticle priority tints — orange-red on exploders (kill before the fuse), gold on elites (high-value splitting target), on top of the existing healer/necro tints
+- [x] Orbital Guard base damage 10 -> 12; Chain Arc reach 8.0 -> 9.5 for more reliable chaining
+- [x] Ultimate SFX gets a low-end sub-boom layer; level-up chime pitch climbs gently with level for a more triumphant deep run
 
 ---
 
