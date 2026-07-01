@@ -11,7 +11,7 @@ const RAILGUN_COOLDOWN := 2.0
 const SIGNAL_ARROW_COOLDOWN := 1.6
 const ORBITAL_RADIUS := 2.5
 const ORBITAL_SPEED := 3.0
-const ORBITAL_DAMAGE := 10.0
+const ORBITAL_DAMAGE := 12.0
 const ORBITAL_HIT_CD := 0.45
 const DASH_AFTERIMAGE_INTERVAL := 0.09
 const DASH_DAMAGE := 15.0
@@ -328,11 +328,19 @@ func _update_target_reticle(delta: float) -> void:
 	# a necromancer so the player learns to focus the foes that undo their damage /
 	# refill the swarm, rather than just whatever's nearest.
 	var rcol := Color(0.2, 0.85, 1.0)
+	# Elites are high-value splitting targets — gold-tint the reticle so an ignored gold
+	# enemy stands out. Support/exploder tints below take priority since those are the
+	# foes you most want to focus regardless of elite status.
+	if target.get("_elite"):
+		rcol = Color(1.0, 0.85, 0.25)
 	match str(target.get("enemy_type")):
 		"healer":
 			rcol = Color(0.2, 1.0, 0.5)
 		"necromancer":
 			rcol = Color(0.7, 0.3, 1.0)
+		"exploder":
+			# Orange-red danger tint — kill it before the fuse lights.
+			rcol = Color(1.0, 0.45, 0.1)
 	for mat in _reticle_mats:
 		mat.albedo_color = Color(rcol.r, rcol.g, rcol.b, a)
 		mat.emission = rcol

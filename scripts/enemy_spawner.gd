@@ -41,6 +41,10 @@ func _on_wave_changed(wave: int) -> void:
 		# Wave 1: 16, Wave 2: 20 (was 20 / 29).
 		if wave <= 2:
 			_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 4
+		elif wave == 3:
+			# Bridge the jump from wave 2 (20) to full scaling (wave 3 would be 40) so the
+			# first full-difficulty wave isn't a wall right after onboarding. Wave 3: 30.
+			_target_this_wave = ENEMIES_PER_WAVE_BASE + wave * 6
 		_spawn_interval = maxf(0.06, SPAWN_INTERVAL_BASE / (1.0 + wave * 0.5))
 		_spawn_timer = 0.1
 		_wave_timer = 0.0
@@ -86,11 +90,13 @@ func _process(delta: float) -> void:
 				GameState.heal(wave_heal)
 				Audio.sfx_wave_heal()
 				GameState.wave_heal.emit(wave_heal)
-			# Brief invulnerability on wave clear — breathing room between waves
+			# Brief invulnerability on wave clear — breathing room between waves. A touch
+			# longer (1.2s) so recovery after a brutal late wave doesn't get clipped by a
+			# straggler that spawns right as the next wave ramps.
 			GameState.invincible = true
 			var tree := get_tree()
 			if tree:
-				tree.create_timer(1.0).timeout.connect(func():
+				tree.create_timer(1.2).timeout.connect(func():
 					if not GameState.game_over:
 						GameState.invincible = false
 				)

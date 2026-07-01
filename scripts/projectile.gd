@@ -263,7 +263,7 @@ func _do_chain(source_enemy: Node3D, bounces: int) -> void:
 
 	for _i in bounces:
 		var nearest: Node3D = null
-		var min_dist := 8.0
+		var min_dist := 9.5  # slightly wider reach so a chain build connects across gaps
 		for e in enemies:
 			if e is Node3D and e not in chained and e.has_method("take_damage"):
 				var d := current.global_position.distance_to(e.global_position)

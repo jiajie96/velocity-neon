@@ -120,14 +120,29 @@ func play_sfx(path: String, vol_db: float = 0.0, pitch: float = 1.0) -> void:
 			p.play()
 			return
 
+# Rate-limited SFX for high-frequency sounds (primary fire, per-hit impacts). Without
+# this, a stacked fire-rate + multi-shot build fires dozens of shoot/hit sounds a
+# second, which fills all 16 voices and starves the sounds that actually matter (crit
+# ping, enemy death, streak chimes). Keyed calls collapse to at most one per interval.
+var _sfx_throttle: Dictionary = {}
+
+func play_sfx_throttled(key: String, path: String, vol_db: float = 0.0, pitch: float = 1.0, min_interval: float = 0.05) -> void:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	var last: float = _sfx_throttle.get(key, -999.0)
+	if now - last < min_interval:
+		return
+	_sfx_throttle[key] = now
+	play_sfx(path, vol_db, pitch)
+
 func sfx_shoot() -> void:
-	play_sfx("res://assets/audio/sfx/shoot_generic.ogg", -8.0, randf_range(0.9, 1.1))
+	# Throttled so an overclocked / high-fire-rate build doesn't machine-gun the pool.
+	play_sfx_throttled("shoot", "res://assets/audio/sfx/shoot_generic.ogg", -8.0, randf_range(0.9, 1.1), 0.05)
 
 func sfx_shoot_railgun() -> void:
 	play_sfx("res://assets/audio/sfx/shoot_bone_marksman.ogg", -4.0, 0.7)
 
 func sfx_shoot_scatter() -> void:
-	play_sfx("res://assets/audio/sfx/shoot_inferno_warlock.ogg", -6.0, randf_range(0.95, 1.05))
+	play_sfx_throttled("shoot", "res://assets/audio/sfx/shoot_inferno_warlock.ogg", -6.0, randf_range(0.95, 1.05), 0.05)
 
 func sfx_shoot_chain() -> void:
 	play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -5.0, randf_range(0.9, 1.1))
@@ -152,11 +167,16 @@ func sfx_wave_start(pitch: float = 1.0) -> void:
 	# tenser, higher horn — an audible "this is getting serious" cue.
 	play_sfx("res://assets/audio/sfx/wave_start.ogg", -3.0, pitch)
 
-func sfx_level_up() -> void:
-	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -2.0)
+func sfx_level_up(pitch: float = 1.0) -> void:
+	# Pitch climbs gently with level so deeper runs' level-ups sound more triumphant
+	# (mirrors the wave-start horn treatment).
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -2.0, pitch)
 
 func sfx_ultimate() -> void:
+	# Two-layer blast — the pulse plus a down-pitched sub thud so the panic button
+	# lands with real low-end weight instead of a single mid tone.
 	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", 0.0)
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -3.0, 0.4)
 
 func sfx_dash() -> void:
 	play_sfx("res://assets/audio/sfx/pact_accept.ogg", -6.0, 1.5)
@@ -209,15 +229,19 @@ func sfx_xp_pickup() -> void:
 	play_sfx("res://assets/audio/sfx/ui_select.ogg", -12.0, pitch)
 
 func sfx_hit_impact(weapon_type: String = "pulse") -> void:
+	# Per-hit impacts are the biggest audio flood — 5 pellets x a fast fire rate can
+	# fire 40+ hit sounds a second. Throttle per weapon type so the mix stays punchy
+	# without every single bullet impact eating a voice (crits/deaths use their own,
+	# un-throttled cues so the moments that matter still cut through).
 	match weapon_type:
 		"railgun":
-			play_sfx("res://assets/audio/sfx/shoot_bone_marksman.ogg", -6.0, randf_range(1.2, 1.5))
+			play_sfx_throttled("hit_railgun", "res://assets/audio/sfx/shoot_bone_marksman.ogg", -6.0, randf_range(1.2, 1.5), 0.05)
 		"scatter":
-			play_sfx("res://assets/audio/sfx/shoot_inferno_warlock.ogg", -10.0, randf_range(1.3, 1.6))
+			play_sfx_throttled("hit_scatter", "res://assets/audio/sfx/shoot_inferno_warlock.ogg", -10.0, randf_range(1.3, 1.6), 0.05)
 		"chain":
-			play_sfx("res://assets/audio/sfx/shoot_soul_reaper.ogg", -8.0, randf_range(1.1, 1.4))
+			play_sfx_throttled("hit_chain", "res://assets/audio/sfx/shoot_soul_reaper.ogg", -8.0, randf_range(1.1, 1.4), 0.05)
 		_:
-			play_sfx("res://assets/audio/sfx/core_hit.ogg", -10.0, randf_range(1.1, 1.4))
+			play_sfx_throttled("hit_pulse", "res://assets/audio/sfx/core_hit.ogg", -10.0, randf_range(1.1, 1.4), 0.05)
 
 func sfx_golem_slam() -> void:
 	play_sfx("res://assets/audio/sfx/core_hit.ogg", 0.0, 0.55)

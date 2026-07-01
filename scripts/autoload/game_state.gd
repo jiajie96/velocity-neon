@@ -237,7 +237,7 @@ func add_xp(amount: float) -> void:
 		gained_level = true
 	xp_changed.emit(xp, xp_to_next)
 	if gained_level:
-		Audio.sfx_level_up()
+		Audio.sfx_level_up(1.0 + minf(level * 0.01, 0.25))
 		xp_magnet_pulse.emit()
 		# A quick zoom-kick + light shake so hitting a new level lands physically, not
 		# just as a screen flash — the level-up should feel like a real power spike.

@@ -6,7 +6,9 @@ extends Node3D
 const TURN_RATE := 9.0       # how sharply it curves toward its target
 const HIT_RADIUS := 0.95
 const LIFETIME := 4.5
-const SEEK_RANGE := 32.0
+const SEEK_RANGE := 42.0    # match the primary weapon's 40u auto-aim lock (was 32,
+                            # which let an arrow fired at a 33-40u target find nothing
+                            # and despawn instantly, silently wasting the cooldown)
 const TRAIL_INTERVAL := 0.03
 
 var speed: float = 24.0
@@ -181,8 +183,10 @@ func _process(delta: float) -> void:
 		_hit(_target)
 		return
 
-	# Safety bounds
-	if absf(position.x) > 52.0 or absf(position.z) > 52.0:
+	# Safety bounds — respect the active arena (shrinks during boss duels) so a stray
+	# arrow that loses its target is cleaned up at the wall instead of flying far past it.
+	var bound: float = GameState.arena_radius + 4.0
+	if absf(position.x) > bound or absf(position.z) > bound:
 		_despawn()
 
 func _target_valid(t) -> bool:
