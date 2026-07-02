@@ -16,7 +16,7 @@ const ORBITAL_HIT_CD := 0.45
 const DASH_AFTERIMAGE_INTERVAL := 0.09
 const DASH_DAMAGE := 15.0
 const DASH_HIT_RADIUS := 1.5
-const DASH_IFRAME_GRACE := 0.2
+const DASH_IFRAME_GRACE := 0.28
 
 var fire_timer: float = 0.0
 var dash_timer: float = 0.0
@@ -1210,6 +1210,25 @@ func _on_guardian_save() -> void:
 	VFX.spawn_spark_burst(container, position + Vector3(0, 0.8, 0), save_color, 26, 6.5, 0.5)
 	VFX.spawn_impact_flash(container, position + Vector3(0, 0.9, 0), Color(0.9, 0.98, 1.0), 3.4, 0.3)
 	GameState.request_camera_punch(2.0)
+	# Clear space around the revive — a one-per-run save that leaves you pinned in the
+	# same swarm often just re-kills you the next tick. Shove nearby enemies outward
+	# (clamped to the active arena) so cheating death actually buys a breath to recover.
+	var clear_radius := 7.0
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e is Node3D:
+			var dist := global_position.distance_to(e.global_position)
+			if dist < clear_radius:
+				var push_dir: Vector3 = e.global_position - global_position
+				push_dir.y = 0.0
+				if push_dir.length_squared() < 0.01:
+					push_dir = Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
+				push_dir = push_dir.normalized()
+				var falloff := 1.0 - clampf(dist / clear_radius, 0.0, 1.0)
+				var push_force: float = (1.5 if e.get("is_boss") else 6.0) * (0.4 + falloff)
+				e.position += push_dir * push_force
+				var bound: float = GameState.arena_radius - 1.0
+				e.position.x = clampf(e.position.x, -bound, bound)
+				e.position.z = clampf(e.position.z, -bound, bound)
 
 func _on_kill_streak(count: int) -> void:
 	# At big streak milestones, punch a gold/orange world burst at the player so a

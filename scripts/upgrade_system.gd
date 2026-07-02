@@ -147,7 +147,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			var cur := GameState.execute_bonus
 			return "+25%% dmg to low HP enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
 		"adrenaline":
-			return "Up to +30%% damage as your HP drops (scales with missing HP)"
+			return "Up to +40%% damage as your HP drops (scales with missing HP)"
 		"greed":
 			var gcur := (GameState.xp_gain_mult - 1.0) * 100.0
 			return "+20%% XP gained (%d%% -> %d%%)" % [int(round(gcur)), int(round(gcur + 20))]

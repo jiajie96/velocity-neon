@@ -45,7 +45,7 @@ var _exploder_fuse_lit: bool = false
 var _exploded: bool = false
 var _exploder_warn_timer: float = 0.3
 const EXPLODER_DETONATE_RANGE := 1.8
-const EXPLODER_FUSE_TIME := 0.45  # armed window before a contact blast — gives a dash-out chance
+const EXPLODER_FUSE_TIME := 0.55  # armed window before a contact blast — gives a dash-out chance
 const EXPLODER_DAMAGE := 40.0
 const EXPLODER_RADIUS := 4.0
 
@@ -1863,6 +1863,13 @@ func _maybe_drop_health() -> void:
 		if _elite:
 			chance = maxf(chance, 0.20)
 		chance = minf(chance * GameState.health_drop_mult, 0.5)
+		# Comeback mercy drops — when the player is critically low, enemies are more
+		# likely to cough up a heal so a desperate run gets a lifeline instead of a
+		# death spiral. Scales in as HP falls; capped so it never becomes a fountain.
+		var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
+		if hp_ratio < 0.35:
+			var mercy: float = lerpf(0.18, 0.0, hp_ratio / 0.35)
+			chance = minf(chance + mercy, 0.6)
 		if randf() < chance:
 			drop_count = 1
 	if drop_count <= 0:

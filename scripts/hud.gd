@@ -1131,6 +1131,16 @@ func _build_pause_menu() -> void:
 			_mute_button = btn
 	_update_mute_button_label()
 
+	# A compact controls reference so the pause screen doubles as a quick reminder of
+	# the keybinds — handy after stepping away mid-run.
+	var controls := Label.new()
+	controls.text = "WASD move   •   SPACE dash   •   Q ultimate   •   ESC pause   •   M mute"
+	controls.add_theme_font_size_override("font_size", 10)
+	controls.add_theme_color_override("font_color", Color(0.45, 0.6, 0.85, 0.7))
+	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(controls)
+
 	_pause_panel.visible = false
 	_pause_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	_pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP

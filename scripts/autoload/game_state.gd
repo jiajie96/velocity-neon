@@ -112,7 +112,7 @@ var total_dashes: int = 0
 # Kill streak tracking
 var _streak_count: int = 0
 var _streak_timer: float = 0.0
-const STREAK_WINDOW := 2.0
+const STREAK_WINDOW := 2.5
 
 # Screen shake
 var shake_amount: float = 0.0
@@ -177,8 +177,14 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 	# Emit signal so player can flash during i-frames
 	if not is_self_damage:
 		damage_iframes_started.emit()
-	# Apply damage reduction from Nano Shield (not for self-inflicted damage like overclock)
-	var reduced := amount * maxf(0.0, 1.0 - (0.0 if is_self_damage else damage_reduction))
+	# Apply damage reduction from Nano Shield (not for self-inflicted damage like overclock).
+	# Last Stand: when critically wounded (<20% HP), incoming hits are softened a little
+	# extra so a desperate run has a fighting chance to claw back instead of getting
+	# instantly finished off. Capped so it can't stack into near-invulnerability.
+	var eff_dr := 0.0 if is_self_damage else damage_reduction
+	if not is_self_damage and hp < max_hp * 0.20:
+		eff_dr = minf(eff_dr + 0.15, 0.6)
+	var reduced := amount * maxf(0.0, 1.0 - eff_dr)
 	hp = clampf(hp - reduced, 0.0, max_hp)
 	total_damage_taken += reduced
 	if not is_self_damage:
@@ -250,6 +256,10 @@ func next_wave() -> void:
 	if wave > 0 and not _wave_damage_taken:
 		var bonus := 25.0 + wave * 6.0
 		add_xp(bonus)
+		# A flawless wave also patches you up a little — a clean clear should feel
+		# rewarded defensively too, not just with XP and a chime.
+		if hp < max_hp:
+			heal(max_hp * 0.10)
 		perfect_wave.emit(bonus)
 		# A flawless wave is worth a little tactile reward on top of the chime + banner:
 		# a quick camera punch and a light shake so a no-damage clear actually *lands*.
@@ -305,7 +315,7 @@ func add_damage_dealt(amount: float) -> void:
 func get_combo_damage_mult() -> float:
 	if _streak_count < 3:
 		return 1.0
-	return 1.0 + minf(float(_streak_count - 2) * 0.035, 0.30)
+	return 1.0 + minf(float(_streak_count - 2) * 0.045, 0.40)
 
 func get_combo_bonus_pct() -> int:
 	return int(round((get_combo_damage_mult() - 1.0) * 100.0))
@@ -325,7 +335,7 @@ func get_adrenaline_mult() -> float:
 	if not adrenaline:
 		return 1.0
 	var missing := 1.0 - (hp / maxf(max_hp, 1.0))
-	return 1.0 + 0.30 * clampf(missing, 0.0, 1.0)
+	return 1.0 + 0.40 * clampf(missing, 0.0, 1.0)
 
 func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
 	# Gentle, allocation-free camera shake. Moving the camera costs nothing — the
