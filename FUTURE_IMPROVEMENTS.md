@@ -63,7 +63,7 @@
 ### Combat
 - **Weapon types**: Swap between weapon archetypes (railgun, shotgun, laser beam, homing missiles) each with different auto-aim behavior
 - ~~**Critical hits**: Random chance for 2x damage with distinct VFX~~ DONE — 10% crit chance, 2x damage, orange CRIT text
-- ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ DONE — kill streaks grant an escalating damage bonus (up to +24%) shown live on the streak banner
+- ~~**Combo system**: Rapid kills within time window increase damage multiplier~~ DONE — kill streaks grant an escalating damage bonus (up to +40%) shown live on the streak banner; the streak window is a forgiving 2.5s
 - ~~**Ricochet upgrade**: Projectiles bounce off arena boundaries~~ DONE — stackable upgrade (2 levels); bolts phase through enemies and keep bouncing off the walls until their bounces are spent, re-hitting foes on each pass
 - ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
@@ -90,6 +90,7 @@
 - **Skill tree**: In-run skill tree branching from upgrade choices — synergies between certain upgrade combinations
 - **Artifact system**: Rare drops that provide powerful passive effects for the current run
 - **Achievement system**: Track milestones (wave 20 reached, 1000 kills, no-hit wave, etc.)
+- ~~**Comeback / anti-death-spiral mechanics**~~ DONE — Last Stand (extra ~15% damage reduction under 20% HP), mercy health-orb drops that scale up as HP falls, a ~10% heal on flawless waves, and a Guardian Angel revive that now shoves the swarm back to buy recovery room
 
 ### Map & Environment
 - **Map collapse mechanic**: Every 5 waves, arena shrinks (walls close in), forcing tighter play. Pinch-to-zoom out to see new boundaries
