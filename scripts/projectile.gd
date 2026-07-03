@@ -48,6 +48,13 @@ func _build_visual() -> void:
 			color = Color(0.75, 0.95, 1.0)
 		elif ricochet > 0:
 			color = Color(0.7, 1.0, 0.35)
+		# Adrenaline tell — while the low-HP damage buff is live, bleed the bolt toward a
+		# hot orange-red so the "empowered by danger" state reads on-screen (blend scales
+		# with how much bonus damage is actually active).
+		if GameState.adrenaline:
+			var adr: float = clampf((GameState.get_adrenaline_mult() - 1.0) / 0.40, 0.0, 1.0)
+			if adr > 0.05:
+				color = color.lerp(Color(1.0, 0.35, 0.1), 0.4 + 0.5 * adr)
 	var mesh_inst := MeshInstance3D.new()
 	mesh_inst.name = "Mesh"
 
@@ -314,6 +321,9 @@ func _spawn_shatter_fragments() -> void:
 	var container := get_parent()
 	if not container:
 		return
+	# Brittle crack when the bolt bursts — throttled inside the mixer so a rapid Shatter
+	# build doesn't machine-gun the cue.
+	Audio.sfx_shatter()
 	for i in 3:
 		var frag := Node3D.new()
 		frag.name = "Fragment"

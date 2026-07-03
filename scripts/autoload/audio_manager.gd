@@ -136,7 +136,11 @@ func play_sfx_throttled(key: String, path: String, vol_db: float = 0.0, pitch: f
 
 func sfx_shoot() -> void:
 	# Throttled so an overclocked / high-fire-rate build doesn't machine-gun the pool.
-	play_sfx_throttled("shoot", "res://assets/audio/sfx/shoot_generic.ogg", -8.0, randf_range(0.9, 1.1), 0.05)
+	# Spool-up: the shot pitch climbs a touch as fire rate stacks, so a heavy Rapid Fire
+	# build audibly sounds hotter/faster instead of the same blip at 2/sec and 8/sec.
+	var rate_ratio: float = GameState.fire_rate / 2.2
+	var spool: float = clampf((rate_ratio - 1.0) * 0.16, 0.0, 0.35)
+	play_sfx_throttled("shoot", "res://assets/audio/sfx/shoot_generic.ogg", -8.0, randf_range(0.9, 1.05) + spool, 0.05)
 
 func sfx_shoot_railgun() -> void:
 	play_sfx("res://assets/audio/sfx/shoot_bone_marksman.ogg", -4.0, 0.7)
@@ -281,6 +285,28 @@ func sfx_exploder_boom() -> void:
 
 func sfx_kill_milestone() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -1.0, 1.2)
+
+func sfx_thorns() -> void:
+	# Sharp metallic "clang" when Thorns reflects a melee hit back into the attacker —
+	# a crisp, bright ping so a tanky reflect build hears its counter-damage land.
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -6.0, randf_range(1.7, 2.0))
+	play_sfx("res://assets/audio/sfx/ui_click.ogg", -12.0, 1.8)
+
+func sfx_execute() -> void:
+	# Heavy down-pitched "finisher" thud when Executioner lands the killing blow on a
+	# low-HP enemy — a distinct, satisfying punctuation separate from the crit ping.
+	play_sfx("res://assets/audio/sfx/enemy_death_02.ogg", -2.0, 0.55)
+	play_sfx("res://assets/audio/sfx/core_hit.ogg", -4.0, 0.6)
+
+func sfx_shatter() -> void:
+	# Brittle "crack" as a Shatter Point bolt bursts into fragments — a short, glassy
+	# scatter so the split reads by ear, not just as extra sparks.
+	play_sfx_throttled("shatter", "res://assets/audio/sfx/shoot_inferno_warlock.ogg", -8.0, randf_range(1.5, 1.8), 0.06)
+
+func sfx_streak_lost() -> void:
+	# Soft descending "combo lost" blip when a kill streak times out — a quiet down-note
+	# so dropping a hot streak (and its damage bonus) registers without being punishing.
+	play_sfx("res://assets/audio/sfx/ui_click.ogg", -12.0, 0.7)
 
 func sfx_crit() -> void:
 	# Bright, crisp two-layer ping so crits cut through the mix

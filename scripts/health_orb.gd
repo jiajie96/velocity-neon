@@ -14,6 +14,8 @@ var heal_amount: float = 15.0
 var _time: float = 0.0
 var _collected: bool = false
 var _magnetized: bool = false
+var _orb_light: OmniLight3D = null
+var _orb_mat: StandardMaterial3D = null
 
 func _ready() -> void:
 	add_to_group("health_orbs")
@@ -41,6 +43,7 @@ func _build_visual() -> void:
 	mat.emission_enabled = true
 	mat.emission = green
 	mat.emission_energy_multiplier = 4.0
+	_orb_mat = mat
 	_tint_glb(holder, mat)
 	var light := OmniLight3D.new()
 	light.light_color = green
@@ -49,6 +52,7 @@ func _build_visual() -> void:
 	light.omni_attenuation = 2.0
 	light.position.y = 0.6
 	add_child(light)
+	_orb_light = light
 
 func _tint_glb(root: Node, mat: StandardMaterial3D) -> void:
 	for child in root.get_children():
@@ -65,10 +69,27 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 
+	# Wounded-player emphasis — the lower the player's HP, the more urgently the orb
+	# throbs (brighter glow, faster/taller bob) so a needed heal stands out in a swarm
+	# instead of blending into the neon chaos. No effect while the player is healthy.
+	var urgency := 0.0
+	if _time <= LIFETIME:
+		var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
+		urgency = clampf(1.0 - hp_ratio / 0.6, 0.0, 1.0)
+
 	var mesh := get_node_or_null("Mesh") as Node3D
 	if mesh:
-		mesh.position.y = 0.55 + sin(_time * BOB_SPEED) * BOB_HEIGHT
-		mesh.rotation.y += delta * 1.5
+		var bob_speed := BOB_SPEED * (1.0 + urgency * 1.2)
+		var bob_height := BOB_HEIGHT * (1.0 + urgency * 0.6)
+		mesh.position.y = 0.55 + sin(_time * bob_speed) * bob_height
+		mesh.rotation.y += delta * (1.5 + urgency * 2.0)
+		if urgency > 0.05:
+			var throb := (sin(_time * (5.0 + urgency * 6.0)) + 1.0) * 0.5
+			if _orb_mat:
+				_orb_mat.emission_energy_multiplier = lerpf(4.0, 6.5 + urgency * 4.0, throb)
+			if _orb_light:
+				_orb_light.light_energy = lerpf(1.1, 1.8 + urgency * 1.6, throb)
+				_orb_light.omni_range = 3.0 + urgency * 1.5
 		if _time > LIFETIME:
 			var fade_ratio := 1.0 - (_time - LIFETIME) / FADE_TIME
 			_fade_glb(mesh, fade_ratio)

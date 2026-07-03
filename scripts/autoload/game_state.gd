@@ -15,6 +15,10 @@ signal hit_stop_requested(duration: float)
 @warning_ignore("unused_signal")
 signal boss_defeated
 signal kill_streak(count: int)
+# Fired when an active kill streak (of 3+) expires, so the HUD can play a soft
+# "combo lost" cue instead of the streak just silently vanishing.
+@warning_ignore("unused_signal")
+signal streak_lost(count: int)
 signal xp_magnet_pulse
 signal perfect_wave(bonus_xp: float)
 @warning_ignore("unused_signal")
@@ -160,6 +164,10 @@ func _process(delta: float) -> void:
 		if _streak_timer > 0.0:
 			_streak_timer -= delta
 			if _streak_timer <= 0.0:
+				# Only announce the drop for streaks that were actually meaningful
+				# (3+ grants a live damage bonus) so ending a 2-kill blip stays silent.
+				if _streak_count >= 3:
+					streak_lost.emit(_streak_count)
 				_streak_count = 0
 
 # Wave damage tracking (for no-damage bonus)

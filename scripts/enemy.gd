@@ -103,6 +103,10 @@ var _enrage_dust_timer: float = 0.0
 var _gravity_slowed: bool = false
 # Elite modifier — a rare, tougher, higher-value variant (set in setup()).
 var _elite: bool = false
+# How hard the killing blow overshot the enemy's remaining HP (0 = clean kill, 1 = the
+# final hit dealt a full max-HP of overkill). Read by _death_vfx so a big overkill pops
+# harder — a chunky finisher should feel chunkier.
+var _overkill: float = 0.0
 
 var _hp_bar: MeshInstance3D
 var _hp_bar_mat: StandardMaterial3D
@@ -367,16 +371,26 @@ func _update_hp_bar() -> void:
 	var ratio := clampf(hp / maxf(max_hp, 1.0), 0.0, 1.0)
 	_hp_bar.scale.x = ratio
 	_hp_bar.position.x = -(1.0 - ratio) * 0.5
-	# Color shifts from green (full) to red (low)
-	if ratio > 0.5:
+	# "Finish me" tell — when the player owns Executioner and this enemy has dropped into
+	# the execute window, pulse the bar bright crimson-white so it's obvious which wounded
+	# foes are worth the extra damage. Otherwise fall back to the normal green→red ramp.
+	if not is_boss and GameState.execute_bonus > 0.0 and ratio < 0.35:
+		var ex_pulse := (sin(GameState.time_survived * 12.0) + 1.0) * 0.5
+		_hp_bar_mat.albedo_color = Color(1.0, 0.1, 0.15, 0.9)
+		_hp_bar_mat.emission = Color(1.0, 0.15, 0.2).lerp(Color(1.0, 0.85, 0.85), ex_pulse)
+		_hp_bar_mat.emission_energy_multiplier = lerpf(3.0, 6.0, ex_pulse)
+	elif ratio > 0.5:
 		_hp_bar_mat.albedo_color = Color(0.2, 1.0, 0.4, 0.85)
 		_hp_bar_mat.emission = Color(0.1, 1.0, 0.3)
+		_hp_bar_mat.emission_energy_multiplier = 2.0
 	elif ratio > 0.25:
 		_hp_bar_mat.albedo_color = Color(1.0, 0.8, 0.1, 0.85)
 		_hp_bar_mat.emission = Color(1.0, 0.7, 0.0)
+		_hp_bar_mat.emission_energy_multiplier = 2.0
 	else:
 		_hp_bar_mat.albedo_color = Color(1.0, 0.15, 0.1, 0.85)
 		_hp_bar_mat.emission = Color(1.0, 0.1, 0.0)
+		_hp_bar_mat.emission_energy_multiplier = 2.0
 	# Face camera — billboard the HP bar
 	var cam := get_viewport().get_camera_3d()
 	if cam and _hp_bar_bg:
@@ -1578,7 +1592,14 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		# heavy hits used to shove enemies visibly through the neon walls.
 		position.x = clampf(position.x, -GameState.arena_radius, GameState.arena_radius)
 		position.z = clampf(position.z, -GameState.arena_radius, GameState.arena_radius)
+	if hp <= 0.0:
+		# Track how badly the finishing hit overshot, so a huge overkill pops bigger.
+		_overkill = clampf(-hp / maxf(max_hp, 1.0), 0.0, 1.0)
 	_spawn_damage_number(final_amount, is_crit, weapon_hint)
+	# Executioner finisher — a distinct heavy thud when the execute bonus actually lands
+	# the killing blow, so the "finish the wounded" upgrade has an audible payoff.
+	if _execute_proc and hp <= 0.0:
+		Audio.sfx_execute()
 	if hp <= 0.0:
 		if enemy_type == "exploder":
 			# Killing an exploder still detonates it (chain reactions); _explode is
@@ -1947,6 +1968,12 @@ func _death_vfx() -> void:
 	container.add_child(pop)
 	var pop_dur := 0.22 if not is_boss else 0.4
 	var pop_scale := 3.2 if not is_boss else 5.5
+	# Overkill bonus — a hit that massively overshoots the enemy's HP pops noticeably
+	# bigger (and gives a small extra shake), so landing a big finisher feels weighty.
+	if not is_boss and _overkill > 0.35:
+		pop_scale *= 1.0 + minf(_overkill, 1.0) * 0.7
+		pop_mat.emission_energy_multiplier *= 1.3
+		GameState.request_shake(0.8 + _overkill * 1.2)
 	var ptw := pop.create_tween()
 	ptw.set_parallel(true)
 	ptw.tween_property(pop, "scale", Vector3(pop_scale, pop_scale, pop_scale), pop_dur).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)

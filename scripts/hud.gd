@@ -140,6 +140,7 @@ func _ready() -> void:
 	GameState.player_died.connect(_on_player_died)
 	GameState.boss_defeated.connect(_on_boss_defeated)
 	GameState.kill_streak.connect(_on_kill_streak)
+	GameState.streak_lost.connect(_on_streak_lost)
 	GameState.perfect_wave.connect(_on_perfect_wave)
 	GameState.wave_cleared.connect(_on_wave_cleared)
 	GameState.kill_milestone.connect(_on_kill_milestone)
@@ -291,7 +292,7 @@ func _build_title_screen() -> void:
 		center.add_child(best)
 
 	var version := Label.new()
-	version.text = "v0.5"
+	version.text = "v0.6"
 	version.add_theme_color_override("font_color", Color(0.4, 0.35, 0.55, 0.4))
 	version.add_theme_font_size_override("font_size", 11)
 	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1301,6 +1302,21 @@ func _on_kill_streak(count: int) -> void:
 	tw.tween_property(_streak_label, "modulate:a", 0.9, 0.1).set_ease(Tween.EASE_OUT)
 	tw.tween_interval(0.6)
 	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
+
+func _on_streak_lost(count: int) -> void:
+	# Soft "combo lost" note + a quick greyed banner when a meaningful streak times out,
+	# so dropping a hot combo (and its damage bonus) registers instead of vanishing.
+	Audio.sfx_streak_lost()
+	if not _streak_label:
+		return
+	_streak_label.text = "COMBO LOST  x%d" % count
+	_streak_label.add_theme_font_size_override("font_size", 20)
+	_streak_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.68, 0.75))
+	_streak_label.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(_streak_label, "modulate:a", 0.7, 0.1).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.35)
+	tw.tween_property(_streak_label, "modulate:a", 0.0, 0.4).set_ease(Tween.EASE_IN)
 
 func _on_perfect_wave(bonus_xp: float) -> void:
 	# A flawless wave gets its own bright chime — it used to be text-only

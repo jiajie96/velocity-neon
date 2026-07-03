@@ -411,9 +411,15 @@ func _update_gravity_ring() -> void:
 		_gravity_ring.visible = true
 		# Gentle pulse animation
 		var pulse := (sin(GameState.time_survived * 2.0) + 1.0) * 0.5
-		var alpha: float = lerpf(0.08, 0.18, pulse) * minf(GameState.gravity_well_strength / 0.7, 1.0)
-		_gravity_ring_mat.albedo_color.a = alpha
-		_gravity_ring_mat.emission_energy_multiplier = lerpf(1.0, 2.5, pulse)
+		# Stack read: the ring gets brighter, more opaque and a deeper violet as more
+		# Gravity Well stacks are taken (strength 0.35 / 0.70 / 1.05), so a maxed well
+		# looks visibly stronger rather than identical to a single pick.
+		var strength_ratio: float = clampf(GameState.gravity_well_strength / 1.05, 0.0, 1.0)
+		var alpha: float = lerpf(0.08, 0.22, pulse) * (0.5 + 0.5 * strength_ratio)
+		var deep := Color(0.5, 0.2, 1.0).lerp(Color(0.65, 0.05, 1.0), strength_ratio)
+		_gravity_ring_mat.albedo_color = Color(deep.r, deep.g, deep.b, alpha)
+		_gravity_ring_mat.emission = deep
+		_gravity_ring_mat.emission_energy_multiplier = lerpf(1.0, 2.5 + strength_ratio * 2.0, pulse)
 	else:
 		_gravity_ring.visible = false
 
@@ -754,6 +760,11 @@ func _spawn_muzzle_flash(dir: Vector3) -> void:
 		flash_col = Color(0.75, 0.95, 1.0)
 	elif GameState.ricochet_level > 0:
 		flash_col = Color(0.7, 1.0, 0.35)
+	# Match the bolts: hot-orange muzzle flash while the Adrenaline low-HP buff is live.
+	if GameState.adrenaline:
+		var adr := clampf((GameState.get_adrenaline_mult() - 1.0) / 0.40, 0.0, 1.0)
+		if adr > 0.05:
+			flash_col = flash_col.lerp(Color(1.0, 0.35, 0.1), 0.4 + 0.5 * adr)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(flash_col.r, flash_col.g, flash_col.b, 0.75)
 	mat.emission_enabled = true
@@ -1082,6 +1093,14 @@ func _check_contact_damage(delta: float) -> void:
 		# that touched us, so a tanky brawler build can punish melee swarms.
 		if GameState.thorns > 0.0 and enemy and enemy.has_method("take_damage"):
 			enemy.take_damage(dmg * GameState.thorns)
+			# Feedback so the reflect isn't silent/invisible — a metallic clang plus a
+			# small spark burst at the attacker. Contact is on an 0.8s cooldown, so this
+			# can't spam the pool even when surrounded.
+			Audio.sfx_thorns()
+			var reflect_container := get_parent().get_node_or_null("Projectiles")
+			if reflect_container and enemy is Node3D:
+				var VFX := preload("res://scripts/vfx.gd")
+				VFX.spawn_spark_burst(reflect_container, (enemy as Node3D).global_position + Vector3(0, 0.5, 0), Color(0.8, 0.9, 1.0), 6, 3.0, 0.2)
 		# Contact pushback removed — player no longer gets shoved by creep contact.
 		# Special attacks (warrior lunge, golem slam/charge) still apply their own
 		# knockback because those are telegraphed, intentional hits.
