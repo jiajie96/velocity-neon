@@ -55,6 +55,10 @@
 - **Boss music**: ~~Dedicated intense track for boss waves (every 5th)~~ DONE — cyberpunk_battle for early bosses, epic_boss for wave 10+
 - ~~**Ambient neon hum**: Low background drone that changes pitch with player HP~~ DONE — hum shifts pitch and volume based on HP ratio
 - **UI sounds**: ~~Click, hover, upgrade selection, wave start horn, level-up chime~~ DONE — all wired up including hover SFX on upgrade cards
+- ~~**Upgrade payoff cues**: distinct SFX for Thorns reflect, Executioner finisher, Shatter split~~ DONE — Thorns clangs off the attacker, Executioner kills land a heavy finisher thud, Shatter bolts crack on split
+- ~~**Combo lost cue**: audible note when a meaningful kill streak times out~~ DONE — soft descending blip + "COMBO LOST" banner
+- ~~**Fire-rate spool-up**: primary-fire pitch climbs as fire rate stacks~~ DONE
+- **Positional audio (still pending)**: 3D audio for enemy approach sounds — hear them coming from specific directions
 
 ---
 
