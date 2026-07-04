@@ -76,6 +76,7 @@ var revive_available: bool = false  # Guardian Angel — one-time fatal-hit save
 var thorns: float = 0.0         # Thorns — fraction of contact damage reflected back
 var dash_damage_mult: float = 1.0   # Phase Blades — scales Phase Dash carve damage
 var boss_damage_mult: float = 1.0   # Giant Slayer — bonus damage multiplier vs bosses
+var ult_cd_mult: float = 1.0        # Coolant — scales the ultimate cooldown down per stack
 var health_drop_mult: float = 1.0   # Scavenger — multiplies health-orb drop chance/count
 var health_heal_mult: float = 1.0   # Scavenger — multiplies the heal from health orbs
 
@@ -311,7 +312,7 @@ func add_kill(enemy_type: String = "") -> void:
 		heal(lifesteal)
 		vampire_heal.emit()
 	# Kill milestone announcements with celebratory SFX
-	if kills in [100, 250, 500, 1000, 2000]:
+	if kills in [50, 100, 250, 500, 750, 1000, 1500, 2000]:
 		Audio.sfx_kill_milestone()
 		kill_milestone.emit(kills)
 
@@ -394,6 +395,7 @@ func reset() -> void:
 	thorns = 0.0
 	dash_damage_mult = 1.0
 	boss_damage_mult = 1.0
+	ult_cd_mult = 1.0
 	health_drop_mult = 1.0
 	health_heal_mult = 1.0
 	railgun_level = 0

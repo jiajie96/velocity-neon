@@ -84,7 +84,7 @@ var _healer_pulse_timer: float = 2.5
 const HEALER_PULSE_CD := 4.0
 const HEALER_RANGE := 7.0
 const HEALER_KEEP_RANGE := 9.0
-const HEALER_HEAL_PCT := 0.18
+const HEALER_HEAL_PCT := 0.14
 const HEALER_MAX_TARGETS := 3
 
 # Golem charge/dash
@@ -1838,6 +1838,13 @@ func _die() -> void:
 				if not GameState.game_over:
 					Audio.play_music(resume_track, -5.0)
 			)
+	elif _elite:
+		# Cracking a gold elite is a high-value moment — give it extra kick and its own
+		# audio flourish so it reads as a real payoff, not just another minion pop (on
+		# top of the split it already spawns).
+		GameState.request_shake(2.2)
+		GameState.request_camera_punch(1.2)
+		Audio.sfx_elite_death()
 	else:
 		GameState.request_shake(1.0)
 	if enemy_type == "teleporter":

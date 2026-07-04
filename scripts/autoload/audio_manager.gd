@@ -343,6 +343,13 @@ func sfx_enemy_death_typed(enemy_type: String) -> void:
 			pitch = randf_range(0.4, 0.55)
 	play_sfx(paths[randi() % paths.size()], -4.0, pitch)
 
+func sfx_elite_death() -> void:
+	# Weightier, brighter death flourish for a slain gold elite — a heavy thud layered
+	# with a crisp chime so cracking a high-value target lands harder than a minion pop.
+	play_sfx("res://assets/audio/sfx/enemy_death_02.ogg", -1.0, 0.6)
+	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -8.0, 1.5)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -10.0, 1.9)
+
 func sfx_orbital_hit() -> void:
 	play_sfx("res://assets/audio/sfx/ui_click.ogg", -14.0, randf_range(1.8, 2.2))
 

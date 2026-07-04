@@ -72,6 +72,7 @@
 - ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
 - **Mine layer**: Drop proximity mines during dash trail
+- ~~**Hybrid / ability upgrades**~~ DONE (first pass) — **Frenzy** (+15% fire rate & +8% move speed/stack, aggression hybrid) and **Coolant** (−12% Ultimate cooldown/stack, floored) added to the pool for more build variety
 
 ### Enemy Variety
 - ~~**Skeleton Rogue**: Fast enemy that dodges projectiles by side-stepping~~ DONE — rogues sidestep every ~1.8s
@@ -79,8 +80,8 @@
 - **Shield Bearer**: Front-facing shield blocks projectiles — must be hit from behind or with area damage
 - ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
 - ~~**Teleporter**: Blinks to new position periodically, unpredictable movement~~ DONE — teleporters blink every ~2.5s to random positions near the player
-- ~~**Healer**: Restores HP to nearby enemies, priority target~~ DONE — hangs back (wave 4+), pulses 18% max-HP heals to up to 3 wounded enemies every 4s with a green ring + shimmer SFX telegraph
-- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Elites now also **Split** — every elite bursts into 2 fresh minions on death (capped to the alive-enemy limit; spawned minions are never elite). Other distinct named-prefix effects (Vampiric, Armored, etc.) still pending
+- ~~**Healer**: Restores HP to nearby enemies, priority target~~ DONE — hangs back (wave 4+), pulses 14% max-HP heals to up to 3 wounded enemies every 4s with a green ring + shimmer SFX telegraph (heal % trimmed from 18% so packed waves are less of a grind)
+- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Elites now also **Split** — every elite bursts into 2 fresh minions on death (capped to the alive-enemy limit; spawned minions are never elite). Elite kills now land distinct feedback too — an extra shake + camera punch and their own weighty death flourish. Other distinct named-prefix effects (Vampiric, Armored, etc.) still pending
 
 ### Boss Design
 - ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow)

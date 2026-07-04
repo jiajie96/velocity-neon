@@ -34,6 +34,8 @@ static func _ensure_init() -> void:
 		Upgrade.new("fortify", "FORTIFY", "+15 max HP, heal 15", Color(0.3, 1.0, 0.5), "++"),
 		Upgrade.new("bulwark", "TITANIUM PLATING", "+18% max HP & heal", Color(0.4, 0.95, 0.7), "[]", 3),
 		Upgrade.new("swift", "SWIFT", "+12% move speed", Color(0.3, 0.8, 1.0), "~~"),
+		Upgrade.new("frenzy", "FRENZY", "+15% fire rate & +8% move speed", Color(1.0, 0.55, 0.15), "><", 3),
+		Upgrade.new("coolant", "COOLANT", "-12% ultimate cooldown", Color(0.3, 0.9, 1.0), "QQ", 3),
 		Upgrade.new("multi_shot", "MULTI-SHOT", "+1 projectile", Color(0.9, 0.5, 1.0), "**", 5),
 		Upgrade.new("magnet", "MAGNET", "+50% pickup range", Color(0.5, 1.0, 0.8), "<>"),
 		Upgrade.new("regen", "REGENERATION", "+1.3 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
@@ -90,6 +92,12 @@ static func _stat_preview(u: Upgrade) -> String:
 		"swift":
 			var cur := GameState.speed
 			return "+12%% move speed (%.1f -> %.1f)" % [cur, cur * 1.12]
+		"frenzy":
+			var fr := GameState.fire_rate
+			return "+15%% fire rate & +8%% speed (fire %.1f -> %.1f)" % [fr, fr * 1.15]
+		"coolant":
+			var cur := (1.0 - GameState.ult_cd_mult) * 100.0
+			return "-12%% ultimate cooldown (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 12))]
 		"multi_shot":
 			return "+1 projectile (%d -> %d)" % [GameState.projectile_count, GameState.projectile_count + 1]
 		"magnet":
@@ -110,7 +118,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+5%% crit chance (%d%%->%d%%), +15%% crit dmg (%.2fx->%.2fx)" % [int(cur), int(cur + 5), GameState.crit_damage, GameState.crit_damage + 0.15]
 		"vampire":
 			var cur := GameState.lifesteal
-			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 2.5]
+			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 3.0]
 		"nano_shield":
 			var cur := GameState.damage_reduction * 100.0
 			return "-12%% incoming damage (%d%% -> %d%%)" % [int(cur), mini(int(cur + 12), 48)]
@@ -145,7 +153,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "Slow nearby enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.35) * 100]
 		"executioner":
 			var cur := GameState.execute_bonus
-			return "+25%% dmg to low HP enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
+			return "+25%% dmg to enemies below 35%% HP (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
 		"adrenaline":
 			return "Up to +40%% damage as your HP drops (scales with missing HP)"
 		"greed":
@@ -158,7 +166,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "Reflect contact damage (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
 		"giant_slayer":
 			var cur := (GameState.boss_damage_mult - 1.0) * 100.0
-			return "+22%% damage to bosses (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 22))]
+			return "+25%% damage to bosses (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
 		"scavenger":
 			var drop := GameState.health_drop_mult
 			return "Health orbs drop +60%% more often & heal +25%% (drop x%.1f -> x%.1f)" % [drop, drop + 0.6]
@@ -181,6 +189,12 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.heal(GameState.max_hp * 0.18)
 		"swift":
 			GameState.speed *= 1.12
+		"frenzy":
+			GameState.fire_rate *= 1.15
+			GameState.speed *= 1.08
+		"coolant":
+			# Trim the ultimate cooldown; floored so a maxed stack still leaves a real gap.
+			GameState.ult_cd_mult = maxf(GameState.ult_cd_mult * 0.88, 0.6)
 		"multi_shot":
 			GameState.projectile_count += 1
 		"magnet":
@@ -215,7 +229,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.crit_chance += 0.05
 			GameState.crit_damage += 0.15
 		"vampire":
-			GameState.lifesteal += 2.5
+			GameState.lifesteal += 3.0
 		"nano_shield":
 			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.48)
 		"velocity_rounds":
@@ -231,7 +245,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"thorns":
 			GameState.thorns = minf(GameState.thorns + 0.25, 0.5)
 		"giant_slayer":
-			GameState.boss_damage_mult += 0.22
+			GameState.boss_damage_mult += 0.25
 		"scavenger":
 			GameState.health_drop_mult += 0.6
 			GameState.health_heal_mult += 0.25

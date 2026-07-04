@@ -966,11 +966,18 @@ func _ultimate(delta: float) -> void:
 	elif _ult_was_on_cd:
 		_ult_was_on_cd = false
 		Audio.sfx_ult_ready()
+		# A subtle world-space pulse when the ultimate refills, mirroring the dash-ready
+		# ring, so the panic button coming back online reads in the arena, not just by ear.
+		var ready_container := get_parent().get_node_or_null("Projectiles")
+		if ready_container:
+			var VFX := preload("res://scripts/vfx.gd")
+			VFX.spawn_shockwave(ready_container, position, Color(0.2, 0.85, 1.0, 0.32), 1.6, 0.28, 0.05)
 	if Input.is_action_just_pressed("ultimate"):
 		if ult_cd_timer <= 0.0:
 			# Scale cooldown down slightly as player levels up (min 5s at level 20+)
 			var cd_scale := maxf(0.5, 1.0 - (GameState.level - 1) * 0.025)
-			ult_cd_timer = ULTIMATE_COOLDOWN * cd_scale
+			# Coolant upgrade trims the cooldown further on top of the level scaling.
+			ult_cd_timer = ULTIMATE_COOLDOWN * cd_scale * GameState.ult_cd_mult
 			_do_ultimate()
 		elif _ult_denied_cd <= 0.0:
 			# Pressed while still recharging — give a quiet "not ready" blip so the
