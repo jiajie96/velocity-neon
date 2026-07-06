@@ -430,6 +430,14 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Auto-aim reticle priority tints — orange-red on exploders (kill before the fuse), gold on elites (high-value splitting target), on top of the existing healer/necro tints
 - [x] Orbital Guard base damage 10 -> 12; Chain Arc reach 8.0 -> 9.5 for more reliable chaining
 - [x] Ultimate SFX gets a low-end sub-boom layer; level-up chime pitch climbs gently with level for a more triumphant deep run
+- [x] Boss HP bar numeric readout (live "cur / max HP" alongside the % so a boss fight reads as a DPS check)
+- [x] Wave 30 "APEX" milestone banner + victory sting (deep runs past MYTHIC were previously unmarked)
+- [x] Game-over "APEX" top performance tier for reaching wave 30+
+- [x] Guardian Angel HUD save banner (bright "★ GUARDIAN ANGEL — SAVED ★" callout + cyan flash when the death-save triggers, so it isn't missed in the chaos)
+- [x] Overkill finisher SFX (a deep "obliterated" thud when a killing blow massively overshoots an enemy's HP, layered on the existing bigger death pop; rate-limited)
+- [x] Kill-streak audio sting extended to a 30-kill milestone (matches the existing 30-streak world burst)
+- [x] Pause menu shows saved best run + an "ON PACE FOR A RECORD" flag when the current run is beating it
+- [x] Card clarity fixes — Vampire reads its true +3 HP/kill, Executioner spells out its "under 35% HP" window, and Coolant's preview shows the real multiplicative (floored) cooldown reduction instead of a misleading flat number
 
 ---
 

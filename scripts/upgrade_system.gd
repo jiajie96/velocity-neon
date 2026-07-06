@@ -52,10 +52,10 @@ static func _ensure_init() -> void:
 		Upgrade.new("piercing", "PIERCING ROUNDS", "Shots pass through enemies", Color(0.9, 0.9, 1.0), "->", 3),
 		Upgrade.new("ricochet", "RICOCHET", "Shots bounce off arena walls", Color(0.8, 1.0, 0.3), "<>", 2),
 		Upgrade.new("crit_surge", "CRITICAL SURGE", "+5% crit chance & +15% crit damage", Color(1.0, 0.5, 0.0), "!!", 4),
-		Upgrade.new("vampire", "VAMPIRE", "Heal 2.5 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
+		Upgrade.new("vampire", "VAMPIRE", "Heal 3 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 		Upgrade.new("velocity_rounds", "VELOCITY ROUNDS", "+20% projectile speed", Color(0.9, 1.0, 0.3), "=>", 3),
-		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to low-HP enemies", Color(0.9, 0.1, 0.2), "XX", 3),
+		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to enemies under 35% HP", Color(0.9, 0.1, 0.2), "XX", 3),
 		Upgrade.new("adrenaline", "ADRENALINE", "More damage the lower your HP", Color(1.0, 0.25, 0.1), "AD", 1),
 		Upgrade.new("greed", "GREED", "+20% XP from all sources", Color(1.0, 0.8, 0.1), "$$", 3),
 		Upgrade.new("guardian", "GUARDIAN ANGEL", "Survive one fatal hit per run", Color(0.6, 0.9, 1.0), "++", 1),
@@ -96,8 +96,13 @@ static func _stat_preview(u: Upgrade) -> String:
 			var fr := GameState.fire_rate
 			return "+15%% fire rate & +8%% speed (fire %.1f -> %.1f)" % [fr, fr * 1.15]
 		"coolant":
-			var cur := (1.0 - GameState.ult_cd_mult) * 100.0
-			return "-12%% ultimate cooldown (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 12))]
+			# Coolant is multiplicative (x0.88) with a 0.6 floor, so a flat "+12 points"
+			# preview drifts from reality at higher stacks. Show the true next total.
+			var cur_mult := GameState.ult_cd_mult
+			var next_mult := maxf(cur_mult * 0.88, 0.6)
+			var cur := (1.0 - cur_mult) * 100.0
+			var nxt := (1.0 - next_mult) * 100.0
+			return "-%d%% ultimate cooldown (%d%% -> %d%% total)" % [int(round(nxt - cur)), int(round(cur)), int(round(nxt))]
 		"multi_shot":
 			return "+1 projectile (%d -> %d)" % [GameState.projectile_count, GameState.projectile_count + 1]
 		"magnet":
