@@ -1981,6 +1981,10 @@ func _death_vfx() -> void:
 		pop_scale *= 1.0 + minf(_overkill, 1.0) * 0.7
 		pop_mat.emission_energy_multiplier *= 1.3
 		GameState.request_shake(0.8 + _overkill * 1.2)
+		# A truly massive overshoot earns a deep "obliterated" thud on top of the bigger
+		# pop, so a heavy finisher lands by ear too (rate-limited inside the AudioManager).
+		if _overkill > 0.5:
+			Audio.sfx_overkill()
 	var ptw := pop.create_tween()
 	ptw.set_parallel(true)
 	ptw.tween_property(pop, "scale", Vector3(pop_scale, pop_scale, pop_scale), pop_dur).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)

@@ -286,6 +286,13 @@ func sfx_exploder_boom() -> void:
 func sfx_kill_milestone() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -1.0, 1.2)
 
+func sfx_overkill() -> void:
+	# Heavy, deep double-thud when a killing blow massively overshoots an enemy's HP —
+	# a satisfying "obliterated" punctuation to match the bigger overkill death pop.
+	# Rate-limited so a stacked build mowing a pack doesn't machine-gun the low end.
+	play_sfx_throttled("overkill", "res://assets/audio/sfx/enemy_death_01.ogg", 0.0, 0.42, 0.12)
+	play_sfx_throttled("overkill_sub", "res://assets/audio/sfx/core_hit.ogg", -2.0, 0.3, 0.12)
+
 func sfx_thorns() -> void:
 	# Sharp metallic "clang" when Thorns reflects a melee hit back into the attacker —
 	# a crisp, bright ping so a tanky reflect build hears its counter-damage land.

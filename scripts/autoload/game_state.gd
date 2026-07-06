@@ -305,7 +305,7 @@ func add_kill(enemy_type: String = "") -> void:
 	if _streak_count == 5 or _streak_count == 8:
 		request_hit_stop(0.06)
 	# Escalating audio sting at streak milestones — pitch climbs as the streak grows
-	if _streak_count in [3, 5, 8, 12, 16, 20, 25]:
+	if _streak_count in [3, 5, 8, 12, 16, 20, 25, 30]:
 		var streak_pitch := 1.0 + minf(float(_streak_count) * 0.04, 1.0)
 		Audio.sfx_streak(streak_pitch)
 	if lifesteal > 0.0 and hp < max_hp:

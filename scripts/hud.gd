@@ -151,6 +151,7 @@ func _ready() -> void:
 	GameState.health_pickup.connect(_on_health_pickup)
 	GameState.golem_enraged.connect(_on_golem_enraged)
 	GameState.death_by_overclock.connect(_on_death_by_overclock)
+	GameState.guardian_save.connect(_on_guardian_save_banner)
 
 	_ult_was_on_cd = false
 	_on_hp_changed(GameState.hp, GameState.max_hp)
@@ -1188,6 +1189,13 @@ func _update_pause_stats() -> void:
 	lines.append("Wave %d   •   %d kills   •   %d:%02d" % [
 		GameState.wave, GameState.kills, secs / 60, secs % 60
 	])
+	# Best-run context while paused — motivates the push for a new personal record.
+	if GameState.best_wave > 0:
+		var beating := GameState.wave > GameState.best_wave or (GameState.wave == GameState.best_wave and GameState.kills > GameState.best_kills)
+		if beating:
+			lines.append("Best: Wave %d  —  ON PACE FOR A RECORD" % GameState.best_wave)
+		else:
+			lines.append("Best: Wave %d  •  %d kills" % [GameState.best_wave, GameState.best_kills])
 	# Full build sheet so pausing answers "how strong am I right now?"
 	lines.append("DMG %.1f  •  %.1f shots/s  •  %d proj  •  Crit %d%% x%.2f" % [
 		GameState.damage, GameState.fire_rate, GameState.projectile_count,
@@ -1388,6 +1396,28 @@ func _on_health_pickup(_amount: float) -> void:
 	var tw := create_tween()
 	tw.tween_property(_levelup_flash, "color:a", 0.0, 0.2).set_ease(Tween.EASE_OUT)
 
+func _on_guardian_save_banner() -> void:
+	# When Guardian Angel cheats death, the player already gets a world burst + save
+	# chime, but the HUD stayed silent — so a clutch revive could be missed in the chaos.
+	# Pop a bright center banner + a cyan screen-edge flash so the second chance reads.
+	if wave_announce:
+		wave_announce.text = "★ GUARDIAN ANGEL — SAVED ★"
+		wave_announce.add_theme_color_override("font_color", Color(0.6, 0.92, 1.0, 0.95))
+		wave_announce.add_theme_font_size_override("font_size", 30)
+		wave_announce.scale = Vector2(1.3, 1.3)
+		wave_announce.modulate.a = 0.0
+		var tw := create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(wave_announce, "modulate:a", 0.95, 0.15).set_ease(Tween.EASE_OUT)
+		tw.tween_property(wave_announce, "scale", Vector2(1.0, 1.0), 0.3).set_ease(Tween.EASE_OUT)
+		tw.set_parallel(false)
+		tw.tween_interval(1.4)
+		tw.tween_property(wave_announce, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN)
+	if _levelup_flash:
+		_levelup_flash.color = Color(0.5, 0.9, 1.0, 0.18)
+		var ftw := create_tween()
+		ftw.tween_property(_levelup_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)
+
 func _on_golem_enraged() -> void:
 	if not wave_announce:
 		return
@@ -1494,11 +1524,14 @@ func _update_boss_bar() -> void:
 		var is_enraged := hp_ratio < 0.3
 		if boss_pct_label:
 			var pct := int(hp_ratio * 100.0)
+			# Numeric HP readout alongside the percentage so a boss fight reads as a real
+			# DPS check ("how much is left?"), not just a shrinking bar.
+			var hp_txt := "%d / %d HP" % [int(ceil(maxf(boss.hp, 0.0))), int(boss.max_hp)]
 			if is_enraged:
-				boss_pct_label.text = "%d%% — ENRAGED" % pct
+				boss_pct_label.text = "%d%%  ·  %s — ENRAGED" % [pct, hp_txt]
 				boss_pct_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.1, 0.9))
 			else:
-				boss_pct_label.text = "%d%%" % pct
+				boss_pct_label.text = "%d%%  ·  %s" % [pct, hp_txt]
 				boss_pct_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.4, 0.8))
 		# Boss bar color shifts green→yellow→red as HP drops
 		var fill := boss_bar.get_theme_stylebox("fill") as StyleBoxFlat
@@ -1713,7 +1746,7 @@ func _on_wave_changed(wave: int) -> void:
 		var pulse_tw := create_tween()
 		pulse_tw.tween_property(_levelup_flash, "color:a", 0.0, 0.3).set_ease(Tween.EASE_OUT)
 	# Victory sting on major wave milestones
-	if wave in [10, 15, 20, 25]:
+	if wave in [10, 15, 20, 25, 30]:
 		Audio.play_victory_sting()
 		_show_wave_milestone(wave)
 	if wave_announce:
@@ -1909,7 +1942,9 @@ func _on_player_died() -> void:
 			upgrades_text = "\nBuild: " + ", ".join(parts)
 		# Performance rating based on wave reached
 		var rating := "RECRUIT"
-		if GameState.wave >= 25:
+		if GameState.wave >= 30:
+			rating = "APEX"
+		elif GameState.wave >= 25:
 			rating = "LEGENDARY"
 		elif GameState.wave >= 20:
 			rating = "ELITE"
@@ -2278,7 +2313,7 @@ func _xp_bar_level_pulse() -> void:
 		tw.tween_property(style, "bg_color", orig_color, 0.5).set_ease(Tween.EASE_OUT)
 
 func _show_wave_milestone(wave: int) -> void:
-	var milestones := {10: "VETERAN", 15: "ELITE", 20: "LEGENDARY", 25: "MYTHIC"}
+	var milestones := {10: "VETERAN", 15: "ELITE", 20: "LEGENDARY", 25: "MYTHIC", 30: "APEX"}
 	if wave not in milestones:
 		return
 	var title_text := "WAVE %d — %s" % [wave, milestones[wave]]
