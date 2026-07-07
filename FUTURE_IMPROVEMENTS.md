@@ -84,7 +84,7 @@
 - ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Elites now also **Split** — every elite bursts into 2 fresh minions on death (capped to the alive-enemy limit; spawned minions are never elite). Elite kills now land distinct feedback too — an extra shake + camera punch and their own weighty death flourish. Other distinct named-prefix effects (Vampiric, Armored, etc.) still pending
 
 ### Boss Design
-- ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow)
+- ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow), plus a halfway-point beat (shake + zoom-kick the first time the boss drops past 50% HP) so the fight has a clear midpoint before enrage
 - **Necromancer Lord**: Summons waves, creates projectile barriers, teleports
 - **Bone Dragon**: Flies overhead (breaks 2D constraint temporarily), strafes with beam attack
 - **Unique boss mechanics**: Each boss should introduce a mechanic the player hasn't seen (dodgeable projectile patterns, safe zones, DPS checks)
@@ -95,7 +95,7 @@
 - **Skill tree**: In-run skill tree branching from upgrade choices — synergies between certain upgrade combinations
 - **Artifact system**: Rare drops that provide powerful passive effects for the current run
 - **Achievement system**: Track milestones (wave 20 reached, 1000 kills, no-hit wave, etc.)
-- ~~**Comeback / anti-death-spiral mechanics**~~ DONE — Last Stand (extra ~15% damage reduction under 20% HP), mercy health-orb drops that scale up as HP falls, a ~10% heal on flawless waves, and a Guardian Angel revive that now shoves the swarm back to buy recovery room
+- ~~**Comeback / anti-death-spiral mechanics**~~ DONE — Last Stand (extra ~15% damage reduction under 20% HP), mercy health-orb drops that scale up as HP falls, a ~10% heal on flawless waves, a small heal on every level-up (~6% max HP) and a ~25% heal after each boss kill so climbing/surviving both buy recovery room, a kill-streak window that stretches while critically wounded so a desperate push can keep its combo, and a Guardian Angel revive that shoves the swarm back to buy recovery room
 
 ### Map & Environment
 - **Map collapse mechanic**: Every 5 waves, arena shrinks (walls close in), forcing tighter play. Pinch-to-zoom out to see new boundaries
