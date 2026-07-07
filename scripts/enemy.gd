@@ -98,6 +98,8 @@ var _golem_charge_dir: Vector3 = Vector3.ZERO
 var _golem_charge_elapsed: float = 0.0
 var _golem_enraged: bool = false
 var _enrage_dust_timer: float = 0.0
+# One-shot flag so the boss's halfway-point beat (shake + cue) fires exactly once.
+var _boss_half_announced: bool = false
 # True while this enemy is inside the player's Gravity Well — read by take_damage so
 # slowed foes also take a vulnerability bonus, giving Gravity Well offensive value.
 var _gravity_slowed: bool = false
@@ -1553,6 +1555,14 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		final_amount *= GameState.boss_damage_mult
 	hp -= final_amount
 	GameState.add_damage_dealt(final_amount)
+	# Boss halfway beat — the first time a boss drops past 50% HP, punctuate it with a
+	# shake + zoom-kick so a long fight has a clear "you're getting there" midpoint before
+	# the sub-30% enrage. Fires once, and only if the hit didn't outright kill the boss.
+	if is_boss and not _boss_half_announced and hp > 0.0 and hp <= max_hp * 0.5:
+		_boss_half_announced = true
+		GameState.request_shake(2.6)
+		GameState.request_camera_punch(1.4)
+		Audio.sfx_kill_milestone()
 	if is_crit:
 		GameState.crit_landed.emit()
 		# Crisp audio + a touch more freeze/shake so the 10% crit moments land
@@ -1827,6 +1837,13 @@ func _die() -> void:
 		GameState.add_xp(boss_bonus)
 		GameState.boss_bonus_xp.emit(boss_bonus)
 		GameState.boss_defeated.emit()
+		# Surviving a boss should feel like earning a breather — patch the player up a
+		# solid chunk (scaled to max HP so it stays relevant late) before the swarm resumes.
+		if GameState.hp < GameState.max_hp:
+			var boss_heal := GameState.max_hp * 0.25
+			GameState.heal(boss_heal)
+			GameState.wave_heal.emit(boss_heal)
+			Audio.sfx_wave_heal()
 		# Pull all XP orbs to player after boss kill for satisfying collection
 		GameState.xp_magnet_pulse.emit()
 		# Brief victory moment before resuming wave-appropriate music.
@@ -1864,14 +1881,22 @@ func _spawn_xp() -> void:
 	if not orb_container:
 		queue_free()
 		return
-	var count := 1 if not is_boss else 5
+	# Bosses scatter a handful of orbs; elites burst into a small cluster too so cracking
+	# a gold target visibly showers XP (its xp_value is already ~2.2x a normal foe, split
+	# across the cluster so total XP is unchanged — it just reads as a richer payoff).
+	var count := 1
+	if is_boss:
+		count = 5
+	elif _elite:
+		count = 3
+	var per_orb_xp: float = xp_value / float(count)
 	for i in count:
 		var orb := Node3D.new()
 		orb.name = "XPOrb"
 		orb.set_script(load("res://scripts/xp_orb.gd"))
 		var offset := Vector3(randf_range(-0.5, 0.5), 0, randf_range(-0.5, 0.5))
 		orb.position = global_position + offset
-		orb.set_meta("xp_value", xp_value)
+		orb.set_meta("xp_value", per_orb_xp if not is_boss else xp_value)
 		orb_container.add_child(orb)
 
 func _maybe_drop_health() -> void:

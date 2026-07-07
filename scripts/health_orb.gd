@@ -131,6 +131,9 @@ func _fade_glb(root: Node, alpha: float) -> void:
 
 func _collect() -> void:
 	_collected = true
+	# Grabbing a heal while critically wounded is a relief moment — give it extra punch and
+	# a distinct chime so a clutch pickup mid-swarm reads as "phew" instead of a quiet tick.
+	var was_clutch := GameState.hp < GameState.max_hp * 0.25
 	# Only heal if it actually helps — but still consume the orb for feedback
 	GameState.heal(heal_amount)
 	GameState.health_pickup.emit(heal_amount)
@@ -147,7 +150,12 @@ func _collect() -> void:
 					GameState.invincible = false
 			)
 	# Small zoom-kick so grabbing a heal in a tight spot feels rewarding, not silent.
-	GameState.request_camera_punch(0.8)
+	# A clutch grab (picked up near death) gets a bigger kick + a relief chime on top.
+	if was_clutch:
+		GameState.request_camera_punch(1.6)
+		Audio.sfx_wave_heal()
+	else:
+		GameState.request_camera_punch(0.8)
 	_spawn_collect_vfx()
 	_spawn_heal_text()
 	var mesh := get_node_or_null("Mesh")

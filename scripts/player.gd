@@ -595,6 +595,12 @@ func _dash(delta: float) -> void:
 			is_dashing = false
 			# Keep invincibility briefly past the dash for a forgiving escape window
 			_dash_grace_timer = DASH_IFRAME_GRACE
+			# Reward a big carve: phasing through a whole pack in one dash earns a
+			# zoom-kick + extra shake so a satisfying 3+ enemy slice lands with weight
+			# instead of feeling the same as clipping a single straggler.
+			if _dash_hit_enemies.size() >= 3:
+				GameState.request_camera_punch(1.2 + minf(_dash_hit_enemies.size() * 0.1, 1.2))
+				GameState.request_shake(2.2, dash_dir)
 			# Landing puff — a small cyan shockwave + spark where the dash stops, so the
 			# slide ends with a tactile beat instead of just halting mid-stride.
 			var land_container := get_parent().get_node_or_null("Projectiles")
@@ -740,6 +746,11 @@ func _fire_projectile(container: Node, dir: Vector3, weapon_type: String) -> voi
 	proj.set_meta("chain_level", GameState.chain_level)
 	proj.set_meta("piercing", GameState.piercing_level)
 	proj.set_meta("ricochet", GameState.ricochet_level)
+	# Ricochet bolts need to live long enough to actually complete their wall bounces —
+	# the default 2.5s lifetime could expire mid-flight on a big arena and waste the
+	# upgrade. Give each banked bounce extra airtime so a ricochet build reliably pays off.
+	if GameState.ricochet_level > 0:
+		proj.set_meta("lifetime", 2.5 + GameState.ricochet_level * 1.2)
 	container.add_child(proj)
 
 func _spawn_muzzle_flash(dir: Vector3) -> void:
@@ -1095,7 +1106,12 @@ func _check_contact_damage(delta: float) -> void:
 		if enemy and enemy.get("contact_damage"):
 			dmg = enemy.contact_damage
 		contact_cd = CONTACT_COOLDOWN
-		GameState.take_damage(dmg)
+		# Bias the damage shake toward whoever hit us so a contact hit reads directionally.
+		var hit_dir := Vector3.ZERO
+		if enemy is Node3D:
+			hit_dir = (enemy as Node3D).global_position - global_position
+			hit_dir.y = 0.0
+		GameState.take_damage(dmg, false, hit_dir)
 		# Thorns — reflect a slice of the contact damage straight back into the enemy
 		# that touched us, so a tanky brawler build can punish melee swarms.
 		if GameState.thorns > 0.0 and enemy and enemy.has_method("take_damage"):

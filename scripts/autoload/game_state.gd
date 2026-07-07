@@ -177,7 +177,7 @@ var _wave_damage_taken: bool = false
 var _damage_immunity_timer: float = 0.0
 const DAMAGE_IMMUNITY_DURATION := 0.25
 
-func take_damage(amount: float, is_self_damage: bool = false) -> void:
+func take_damage(amount: float, is_self_damage: bool = false, source_dir: Vector3 = Vector3.ZERO) -> void:
 	if invincible or game_over:
 		return
 	# Brief i-frames after taking a hit to prevent stacked damage from multiple enemies
@@ -200,9 +200,11 @@ func take_damage(amount: float, is_self_damage: bool = false) -> void:
 		_wave_damage_taken = true
 		_damage_immunity_timer = DAMAGE_IMMUNITY_DURATION
 		# Brief camera kick so taking a hit actually reads. i-frame gated, so this
-		# fires at most ~5x/sec even when surrounded.
+		# fires at most ~5x/sec even when surrounded. Bias the shake toward the
+		# attacker when the source direction is known, so a hit reads as coming
+		# *from* the threat instead of a generic rumble.
 		if reduced > 0.0:
-			request_shake(1.1 + minf(reduced * 0.05, 1.4))
+			request_shake(1.1 + minf(reduced * 0.05, 1.4), source_dir)
 	if amount >= 5.0:
 		Audio.sfx_player_hit()
 	if hp <= 0.0:
@@ -253,6 +255,11 @@ func add_xp(amount: float) -> void:
 	xp_changed.emit(xp, xp_to_next)
 	if gained_level:
 		Audio.sfx_level_up(1.0 + minf(level * 0.01, 0.25))
+		# A small heal on each level-up so climbing the XP curve also patches you up a
+		# little — leveling should feel like a power spike *and* a breather, and it
+		# smooths the difficulty when a swarm is chipping you between upgrades.
+		if hp < max_hp:
+			heal(max_hp * 0.06)
 		xp_magnet_pulse.emit()
 		# A quick zoom-kick + light shake so hitting a new level lands physically, not
 		# just as a screen flash — the level-up should feel like a real power spike.
@@ -295,7 +302,13 @@ func add_kill(enemy_type: String = "") -> void:
 		kills_by_type[enemy_type] = kills_by_type.get(enemy_type, 0) + 1
 	kills_changed.emit(kills)
 	_streak_count += 1
-	_streak_timer = STREAK_WINDOW
+	# Comeback grace: when critically wounded, the streak window stretches a little so a
+	# desperate low-HP push can keep a hard-won combo (and its damage bonus) alive instead
+	# of losing it to the slower kills that come with being on the back foot.
+	var streak_window := STREAK_WINDOW
+	if hp < max_hp * 0.35:
+		streak_window += 1.0
+	_streak_timer = streak_window
 	if _streak_count >= 2:
 		kill_streak.emit(_streak_count)
 	# XP magnet pulse on 3+ kill streaks for satisfying orb collection
@@ -314,6 +327,10 @@ func add_kill(enemy_type: String = "") -> void:
 	# Kill milestone announcements with celebratory SFX
 	if kills in [50, 100, 250, 500, 750, 1000, 1500, 2000]:
 		Audio.sfx_kill_milestone()
+		# Give the milestone some tactile weight too — a quick zoom-kick + light shake so
+		# crossing 100/500/1000 kills lands physically, not just as a banner + chime.
+		request_camera_punch(1.6)
+		request_shake(2.0)
 		kill_milestone.emit(kills)
 
 func add_damage_dealt(amount: float) -> void:
