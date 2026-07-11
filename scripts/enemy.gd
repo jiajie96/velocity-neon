@@ -1544,9 +1544,9 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	# giving the slow an offensive payoff instead of pure crowd control.
 	if _gravity_slowed:
 		final_amount *= 1.25
-	# Executioner bonus — extra damage to enemies below 30% HP
+	# Executioner bonus — extra damage to enemies below 40% HP
 	var _execute_proc := false
-	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.35:
+	if GameState.execute_bonus > 0.0 and hp < max_hp * 0.40:
 		final_amount *= (1.0 + GameState.execute_bonus)
 		_execute_proc = true
 	# Giant Slayer — bonus damage against bosses so under-geared players can still
@@ -1907,14 +1907,14 @@ func _maybe_drop_health() -> void:
 		return
 	var drop_count := 0
 	if is_boss:
-		drop_count = 2
+		drop_count = 3
 	else:
 		# Scavenger scales the drop chance (capped so it can't become a guaranteed drop).
 		var chance := 0.05
 		if enemy_type in ["warrior", "mage", "rogue", "necromancer", "teleporter"]:
 			chance = 0.10
 		if _elite:
-			chance = maxf(chance, 0.20)
+			chance = maxf(chance, 0.25)
 		chance = minf(chance * GameState.health_drop_mult, 0.5)
 		# Comeback mercy drops — when the player is critically low, enemies are more
 		# likely to cough up a heal so a desperate run gets a lifeline instead of a
@@ -1928,7 +1928,7 @@ func _maybe_drop_health() -> void:
 	if drop_count <= 0:
 		return
 	# Scavenger also makes each orb heal for more.
-	var heal_amt := maxf(9.0, GameState.max_hp * 0.14) * GameState.health_heal_mult
+	var heal_amt := maxf(10.0, GameState.max_hp * 0.16) * GameState.health_heal_mult
 	for i in drop_count:
 		var orb := Node3D.new()
 		orb.name = "HealthOrb"

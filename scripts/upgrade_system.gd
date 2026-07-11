@@ -38,7 +38,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("coolant", "COOLANT", "-12% ultimate cooldown", Color(0.3, 0.9, 1.0), "QQ", 3),
 		Upgrade.new("multi_shot", "MULTI-SHOT", "+1 projectile", Color(0.9, 0.5, 1.0), "**", 5),
 		Upgrade.new("magnet", "MAGNET", "+50% pickup range", Color(0.5, 1.0, 0.8), "<>"),
-		Upgrade.new("regen", "REGENERATION", "+1.3 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
+		Upgrade.new("regen", "REGENERATION", "+1.6 HP/sec", Color(0.2, 1.0, 0.3), "HP", 3),
 		Upgrade.new("shatter", "SHATTER POINT", "Bullets split on hit", Color(1.0, 0.6, 0.0), "##", 1),
 		Upgrade.new("gravity_well", "GRAVITY WELL", "Slow nearby enemies", Color(0.6, 0.3, 1.0), "()", 3),
 		# Overclock removed — too punishing without guaranteed healing upgrade
@@ -55,7 +55,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("vampire", "VAMPIRE", "Heal 3 HP per enemy kill", Color(0.8, 0.0, 0.3), "VV", 3),
 		Upgrade.new("nano_shield", "NANO SHIELD", "-12% incoming damage", Color(0.3, 0.7, 1.0), "[]", 4),
 		Upgrade.new("velocity_rounds", "VELOCITY ROUNDS", "+20% projectile speed", Color(0.9, 1.0, 0.3), "=>", 3),
-		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to enemies under 35% HP", Color(0.9, 0.1, 0.2), "XX", 3),
+		Upgrade.new("executioner", "EXECUTIONER", "+25% damage to enemies under 40% HP", Color(0.9, 0.1, 0.2), "XX", 3),
 		Upgrade.new("adrenaline", "ADRENALINE", "More damage the lower your HP", Color(1.0, 0.25, 0.1), "AD", 1),
 		Upgrade.new("greed", "GREED", "+20% XP from all sources", Color(1.0, 0.8, 0.1), "$$", 3),
 		Upgrade.new("guardian", "GUARDIAN ANGEL", "Survive one fatal hit per run", Color(0.6, 0.9, 1.0), "++", 1),
@@ -110,7 +110,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "+50%% pickup range (%.1f -> %.1f)" % [cur, cur * 1.5]
 		"regen":
 			var cur := GameState.hp_regen
-			return "+1.3 HP/sec (%.1f -> %.1f)" % [cur, cur + 1.3]
+			return "+1.6 HP/sec (%.1f -> %.1f)" % [cur, cur + 1.6]
 		"bulwark":
 			return "+18%% max HP & heal (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp * 1.18)]
 		"dash_charge":
@@ -158,7 +158,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "Slow nearby enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.35) * 100]
 		"executioner":
 			var cur := GameState.execute_bonus
-			return "+25%% dmg to enemies below 35%% HP (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
+			return "+25%% dmg to enemies below 40%% HP (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
 		"adrenaline":
 			return "Up to +40%% damage as your HP drops (scales with missing HP)"
 		"greed":
@@ -171,7 +171,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "Reflect contact damage (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
 		"giant_slayer":
 			var cur := (GameState.boss_damage_mult - 1.0) * 100.0
-			return "+25%% damage to bosses (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
+			return "+30%% damage to bosses (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 30))]
 		"scavenger":
 			var drop := GameState.health_drop_mult
 			return "Health orbs drop +60%% more often & heal +25%% (drop x%.1f -> x%.1f)" % [drop, drop + 0.6]
@@ -205,7 +205,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"magnet":
 			GameState.magnet_range *= 1.5
 		"regen":
-			GameState.hp_regen += 1.3
+			GameState.hp_regen += 1.6
 		"shatter":
 			GameState.has_shatter = true
 		"gravity_well":
@@ -250,7 +250,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"thorns":
 			GameState.thorns = minf(GameState.thorns + 0.25, 0.5)
 		"giant_slayer":
-			GameState.boss_damage_mult += 0.25
+			GameState.boss_damage_mult += 0.30
 		"scavenger":
 			GameState.health_drop_mult += 0.6
 			GameState.health_heal_mult += 0.25

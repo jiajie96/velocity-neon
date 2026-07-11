@@ -721,7 +721,7 @@ func _shoot(delta: float) -> void:
 			# Tighter per-shot angle, and the total fan narrows as projectile count
 			# grows, so a stacked Multi-Shot build lands most of its pellets on the
 			# target instead of spraying a wide arc that mostly misses.
-			var spread_step := deg_to_rad(14.0) / float(count)
+			var spread_step := deg_to_rad(12.0) / float(count)
 			spread = spread_step * (float(i) - float(count - 1) * 0.5)
 		var shot_dir := dir_to_target.rotated(Vector3.UP, spread)
 		_fire_projectile(container, shot_dir, "pulse")
@@ -1018,7 +1018,7 @@ func _do_ultimate() -> void:
 	var ult_dmg := ULTIMATE_DAMAGE + GameState.damage * 3.0
 	# Radius grows gently with level so the panic-button still clears breathing room
 	# in the late game when enemies are packed tighter (capped so it stays a burst).
-	var ult_radius := ULTIMATE_RADIUS + minf((GameState.level - 1) * 0.12, 3.0)
+	var ult_radius := ULTIMATE_RADIUS + minf((GameState.level - 1) * 0.12, 4.0)
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if enemy is Node3D:

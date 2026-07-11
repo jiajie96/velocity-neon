@@ -91,7 +91,7 @@ var ricochet_level: int = 0
 # Progression
 var xp: float = 0.0
 var level: int = 1
-var xp_to_next: float = 70.0
+var xp_to_next: float = 62.0
 var pending_levelups: int = 0  # Queued upgrades when one XP gain crosses multiple levels
 
 # Session
@@ -259,7 +259,7 @@ func add_xp(amount: float) -> void:
 		# little — leveling should feel like a power spike *and* a breather, and it
 		# smooths the difficulty when a swarm is chipping you between upgrades.
 		if hp < max_hp:
-			heal(max_hp * 0.06)
+			heal(max_hp * 0.08)
 		xp_magnet_pulse.emit()
 		# A quick zoom-kick + light shake so hitting a new level lands physically, not
 		# just as a screen flash — the level-up should feel like a real power spike.
@@ -275,7 +275,7 @@ func next_wave() -> void:
 		# A flawless wave also patches you up a little — a clean clear should feel
 		# rewarded defensively too, not just with XP and a chime.
 		if hp < max_hp:
-			heal(max_hp * 0.10)
+			heal(max_hp * 0.12)
 		perfect_wave.emit(bonus)
 		# A flawless wave is worth a little tactile reward on top of the chime + banner:
 		# a quick camera punch and a light shake so a no-damage clear actually *lands*.
@@ -336,12 +336,12 @@ func add_kill(enemy_type: String = "") -> void:
 func add_damage_dealt(amount: float) -> void:
 	total_damage_dealt += amount
 
-# Active kill streaks grant an escalating damage bonus (up to +30%), making the
+# Active kill streaks grant an escalating damage bonus (up to +45%), making the
 # combo system mechanically meaningful instead of just a banner.
 func get_combo_damage_mult() -> float:
 	if _streak_count < 3:
 		return 1.0
-	return 1.0 + minf(float(_streak_count - 2) * 0.045, 0.40)
+	return 1.0 + minf(float(_streak_count - 2) * 0.05, 0.45)
 
 func get_combo_bonus_pct() -> int:
 	return int(round((get_combo_damage_mult() - 1.0) * 100.0))
@@ -423,7 +423,7 @@ func reset() -> void:
 	ricochet_level = 0
 	xp = 0.0
 	level = 1
-	xp_to_next = 70.0
+	xp_to_next = 62.0
 	pending_levelups = 0
 	wave = 0
 	kills = 0

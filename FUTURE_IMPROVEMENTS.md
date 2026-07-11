@@ -438,6 +438,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Kill-streak audio sting extended to a 30-kill milestone (matches the existing 30-streak world burst)
 - [x] Pause menu shows saved best run + an "ON PACE FOR A RECORD" flag when the current run is beating it
 - [x] Card clarity fixes — Vampire reads its true +3 HP/kill, Executioner spells out its "under 35% HP" window, and Coolant's preview shows the real multiplicative (floored) cooldown reduction instead of a misleading flat number
+- [x] Executioner window widened to enemies under 40% HP (was 35%) — card, preview and code aligned
+- [x] Giant Slayer buffed to +30% boss damage per stack (was +25%) so under-geared slayer builds can still close a golem fight
+- [x] Kill-streak combo ceiling raised to +45% (was +40%) and ramps slightly faster
+- [x] Multi-Shot fan tightened (14° -> 12° total) so a stacked build lands more pellets on target
+- [x] Ultimate late-game blast radius cap raised (+3.0 -> +4.0 units) so the panic button stays relevant in dense waves
+- [x] Level-up heal buffed (~6% -> ~8% max HP) and flawless-wave heal buffed (~10% -> ~12%) for smoother comeback pacing
+- [x] Bosses now drop 3 health orbs on death (was 2); elite heal-drop floor raised (0.20 -> 0.25) for better priority-target payoff
+- [x] Faster onboarding — first level-up lands at 62 XP (was 70) so a fresh run gets its opening upgrade sooner
+- [x] Health orbs heal a bit more (14% -> 16% max HP, floor 9 -> 10) so mercy drops matter more on a shaky run
+- [x] Regeneration buffed to +1.6 HP/sec per stack (was +1.3) — card, preview and code aligned — so the passive-sustain pick holds up in long runs
 
 ---
 
