@@ -376,7 +376,7 @@ func _update_hp_bar() -> void:
 	# "Finish me" tell — when the player owns Executioner and this enemy has dropped into
 	# the execute window, pulse the bar bright crimson-white so it's obvious which wounded
 	# foes are worth the extra damage. Otherwise fall back to the normal green→red ramp.
-	if not is_boss and GameState.execute_bonus > 0.0 and ratio < 0.35:
+	if not is_boss and GameState.execute_bonus > 0.0 and ratio < 0.40:
 		var ex_pulse := (sin(GameState.time_survived * 12.0) + 1.0) * 0.5
 		_hp_bar_mat.albedo_color = Color(1.0, 0.1, 0.15, 0.9)
 		_hp_bar_mat.emission = Color(1.0, 0.15, 0.2).lerp(Color(1.0, 0.85, 0.85), ex_pulse)

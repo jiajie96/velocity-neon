@@ -438,7 +438,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Kill-streak audio sting extended to a 30-kill milestone (matches the existing 30-streak world burst)
 - [x] Pause menu shows saved best run + an "ON PACE FOR A RECORD" flag when the current run is beating it
 - [x] Card clarity fixes — Vampire reads its true +3 HP/kill, Executioner spells out its "under 35% HP" window, and Coolant's preview shows the real multiplicative (floored) cooldown reduction instead of a misleading flat number
-- [x] Executioner window widened to enemies under 40% HP (was 35%) — card, preview and code aligned
+- [x] Executioner window widened to enemies under 40% HP (was 35%) — card, preview, damage code and the enemy HP-bar "finish me" crimson tell all aligned to the new threshold
 - [x] Giant Slayer buffed to +30% boss damage per stack (was +25%) so under-geared slayer builds can still close a golem fight
 - [x] Kill-streak combo ceiling raised to +45% (was +40%) and ramps slightly faster
 - [x] Multi-Shot fan tightened (14° -> 12° total) so a stacked build lands more pellets on target

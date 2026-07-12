@@ -40,7 +40,7 @@ Survive relentless waves of skeleton enemies, level up to choose powerful upgrad
 - **Defense**: Nano Shield (with visible blue shield ring), Titanium Plating (+18% max HP **and** an instant heal per stack, up to 3 — a percentage boost that keeps scaling into late waves where flat Fortify falls off), Regeneration (+1.6 HP/sec per stack, with heal particle VFX), Vampire (3 HP lifesteal per kill, up to 3 stacks), Guardian Angel (one-time death save — a fatal hit instead leaves you at 35% HP with a protective cyan burst, a moment of invincibility, and a shockwave that shoves the surrounding swarm back so the revive actually buys room to recover), Thorns (reflect 25%/50% of contact damage back into enemies that touch you — a brawler pick for tanky builds)
 - **Mobility**: Phase Charge (banks an extra dash **and** speeds up its recharge — stack to hold and chain multiple dashes), Phase Blades (+80% Phase Dash carve damage per stack **and** a wider carve radius, up to 2 — finally a payoff for a dash-centric build)
 - **Utility**: Gravity Well (slowed enemies also take +25% damage), Greed (+20% XP from all sources, up to 3 stacks), Scavenger (health orbs drop more often **and** heal for more — a sustain pick for long runs, up to 2 stacks)
-- **Slaying**: Giant Slayer (+22% damage to bosses per stack, up to 3 — helps an under-geared build close out a long golem fight)
+- **Slaying**: Giant Slayer (+30% damage to bosses per stack, up to 3 — helps an under-geared build close out a long golem fight)
 
 ### Enemies (9 types)
 - **Skeleton Minion** — basic melee rusher
