@@ -448,6 +448,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Faster onboarding — first level-up lands at 62 XP (was 70) so a fresh run gets its opening upgrade sooner
 - [x] Health orbs heal a bit more (14% -> 16% max HP, floor 9 -> 10) so mercy drops matter more on a shaky run
 - [x] Regeneration buffed to +1.6 HP/sec per stack (was +1.3) — card, preview and code aligned — so the passive-sustain pick holds up in long runs
+- [x] Gravity Well card now spells out its +25% damage-taken payoff and shows the slow at its real capped value (was overstating past 100% at 3 stacks)
+- [x] Nano Shield ceiling raised to −50% incoming damage (was −48%) — card, preview and code aligned
+- [x] Coolant floor lowered so a maxed 3-stack reaches −45% ultimate cooldown (was −40%) — apply + preview aligned
+- [x] Guardian Angel now revives at 40% HP (was 35%) for a slightly more survivable one-per-run save — code, card preview and README aligned
+- [x] Level-up heal buffed (~8% -> ~9% max HP) for smoother comeback pacing
+- [x] Between-wave breather extended (wave-clear invuln 1.2s -> 1.35s) and its heal floor raised (8% -> 10% max HP) so recovery after a brutal wave isn't clipped
+- [x] Flawless-wave XP bonus scales better late (25 + wave×6 -> 25 + wave×7) so clean clears stay rewarding deep into a run
+- [x] Mid kill-streak milestones (5 and 8) now land a camera punch + shake instead of the disabled hit-stop no-op — restores tactile feedback below the streak-10 world bursts
+- [x] Executioner finisher (execute bonus landing a killing blow) now punches the camera + shakes so the "finish the wounded" payoff feels weighty, not just audible
+- [x] Fixed stale Adrenaline code comment (+30% -> +40%) to match the actual near-death damage ramp
 
 ---
 
