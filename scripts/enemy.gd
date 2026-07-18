@@ -1610,6 +1610,11 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 	# the killing blow, so the "finish the wounded" upgrade has an audible payoff.
 	if _execute_proc and hp <= 0.0:
 		Audio.sfx_execute()
+		# A small zoom-kick so landing the "finish the wounded" blow feels weighty, not just
+		# audible. The camera punch + shake are both hard-capped in their handlers, so a
+		# stacked build executing several foes at once can't lurch the view into a rumble.
+		GameState.request_camera_punch(0.9)
+		GameState.request_shake(1.2)
 	if hp <= 0.0:
 		if enemy_type == "exploder":
 			# Killing an exploder still detonates it (chain reactions); _explode is

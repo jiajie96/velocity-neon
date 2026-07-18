@@ -99,7 +99,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			# Coolant is multiplicative (x0.88) with a 0.6 floor, so a flat "+12 points"
 			# preview drifts from reality at higher stacks. Show the true next total.
 			var cur_mult := GameState.ult_cd_mult
-			var next_mult := maxf(cur_mult * 0.88, 0.6)
+			var next_mult := maxf(cur_mult * 0.88, 0.55)
 			var cur := (1.0 - cur_mult) * 100.0
 			var nxt := (1.0 - next_mult) * 100.0
 			return "-%d%% ultimate cooldown (%d%% -> %d%% total)" % [int(round(nxt - cur)), int(round(cur)), int(round(nxt))]
@@ -126,7 +126,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "Heal per kill (+%.1f -> +%.1f)" % [cur, cur + 3.0]
 		"nano_shield":
 			var cur := GameState.damage_reduction * 100.0
-			return "-12%% incoming damage (%d%% -> %d%%)" % [int(cur), mini(int(cur + 12), 48)]
+			return "-12%% incoming damage (%d%% -> %d%%)" % [int(cur), mini(int(cur + 12), 50)]
 		"velocity_rounds":
 			var cur := GameState.projectile_speed
 			return "+20%% projectile speed (%.0f -> %.0f)" % [cur, cur * 1.2]
@@ -155,7 +155,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			return "Bullets split into 3 fragments on hit (55% dmg each)"
 		"gravity_well":
 			var cur := GameState.gravity_well_strength
-			return "Slow nearby enemies (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.35) * 100]
+			return "Slow nearby enemies (%.0f%% -> %.0f%%) & they take +25%% damage" % [minf(cur, 0.7) * 100, minf(cur + 0.35, 0.7) * 100]
 		"executioner":
 			var cur := GameState.execute_bonus
 			return "+25%% dmg to enemies below 40%% HP (%.0f%% -> %.0f%%)" % [cur * 100, (cur + 0.25) * 100]
@@ -165,7 +165,7 @@ static func _stat_preview(u: Upgrade) -> String:
 			var gcur := (GameState.xp_gain_mult - 1.0) * 100.0
 			return "+20%% XP gained (%d%% -> %d%%)" % [int(round(gcur)), int(round(gcur + 20))]
 		"guardian":
-			return "Cheat death once: survive a fatal hit at 35%% HP"
+			return "Cheat death once: survive a fatal hit at 40%% HP"
 		"thorns":
 			var cur := GameState.thorns * 100.0
 			return "Reflect contact damage (%d%% -> %d%%)" % [int(round(cur)), int(round(cur + 25))]
@@ -199,7 +199,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.speed *= 1.08
 		"coolant":
 			# Trim the ultimate cooldown; floored so a maxed stack still leaves a real gap.
-			GameState.ult_cd_mult = maxf(GameState.ult_cd_mult * 0.88, 0.6)
+			GameState.ult_cd_mult = maxf(GameState.ult_cd_mult * 0.88, 0.55)
 		"multi_shot":
 			GameState.projectile_count += 1
 		"magnet":
@@ -236,7 +236,7 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"vampire":
 			GameState.lifesteal += 3.0
 		"nano_shield":
-			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.48)
+			GameState.damage_reduction = minf(GameState.damage_reduction + 0.12, 0.50)
 		"velocity_rounds":
 			GameState.projectile_speed *= 1.20
 		"executioner":

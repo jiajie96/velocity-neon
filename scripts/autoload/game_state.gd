@@ -212,7 +212,7 @@ func take_damage(amount: float, is_self_damage: bool = false, source_dir: Vector
 		# HP with a protective burst and a moment of i-frames instead of dying.
 		if revive_available and not is_self_damage:
 			revive_available = false
-			hp = maxf(max_hp * 0.35, 1.0)
+			hp = maxf(max_hp * 0.40, 1.0)
 			invincible = true
 			_damage_immunity_timer = DAMAGE_IMMUNITY_DURATION
 			guardian_save.emit()
@@ -259,7 +259,7 @@ func add_xp(amount: float) -> void:
 		# little — leveling should feel like a power spike *and* a breather, and it
 		# smooths the difficulty when a swarm is chipping you between upgrades.
 		if hp < max_hp:
-			heal(max_hp * 0.08)
+			heal(max_hp * 0.09)
 		xp_magnet_pulse.emit()
 		# A quick zoom-kick + light shake so hitting a new level lands physically, not
 		# just as a screen flash — the level-up should feel like a real power spike.
@@ -270,7 +270,7 @@ func add_xp(amount: float) -> void:
 func next_wave() -> void:
 	# Award bonus XP for surviving previous wave without taking damage
 	if wave > 0 and not _wave_damage_taken:
-		var bonus := 25.0 + wave * 6.0
+		var bonus := 25.0 + wave * 7.0
 		add_xp(bonus)
 		# A flawless wave also patches you up a little — a clean clear should feel
 		# rewarded defensively too, not just with XP and a chime.
@@ -314,9 +314,12 @@ func add_kill(enemy_type: String = "") -> void:
 	# XP magnet pulse on 3+ kill streaks for satisfying orb collection
 	if _streak_count == 3:
 		xp_magnet_pulse.emit()
-	# Brief slow-mo on big kill streaks for dramatic impact
+	# Mid-streak milestones get a quick tactile punch. (Hit-stop is disabled, so the old
+	# request_hit_stop here was a silent no-op — a camera kick + light shake actually lands
+	# the moment. The bigger world bursts still kick in from streak 10 onward.)
 	if _streak_count == 5 or _streak_count == 8:
-		request_hit_stop(0.06)
+		request_camera_punch(1.3)
+		request_shake(1.5)
 	# Escalating audio sting at streak milestones — pitch climbs as the streak grows
 	if _streak_count in [3, 5, 8, 12, 16, 20, 25, 30]:
 		var streak_pitch := 1.0 + minf(float(_streak_count) * 0.04, 1.0)
@@ -356,7 +359,7 @@ func get_streak_progress() -> float:
 	return clampf(_streak_timer / STREAK_WINDOW, 0.0, 1.0)
 
 # Adrenaline: outgoing damage scales up as the player's HP drops, rewarding
-# risky low-health play. Ranges from +0% at full HP to +30% near death.
+# risky low-health play. Ranges from +0% at full HP to +40% near death.
 func get_adrenaline_mult() -> float:
 	if not adrenaline:
 		return 1.0

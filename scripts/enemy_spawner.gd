@@ -85,18 +85,18 @@ func _process(delta: float) -> void:
 			# Pull all remaining XP orbs to player on wave clear
 			GameState.xp_magnet_pulse.emit()
 			# Heal on wave clear scales with max HP so Fortify stacks stay relevant
-			var wave_heal := maxf(GameState.max_hp * 0.08, minf(5.0 + GameState.wave * 0.5, 15.0))
+			var wave_heal := maxf(GameState.max_hp * 0.10, minf(5.0 + GameState.wave * 0.5, 15.0))
 			if GameState.hp < GameState.max_hp:
 				GameState.heal(wave_heal)
 				Audio.sfx_wave_heal()
 				GameState.wave_heal.emit(wave_heal)
 			# Brief invulnerability on wave clear — breathing room between waves. A touch
-			# longer (1.2s) so recovery after a brutal late wave doesn't get clipped by a
+			# longer (1.35s) so recovery after a brutal late wave doesn't get clipped by a
 			# straggler that spawns right as the next wave ramps.
 			GameState.invincible = true
 			var tree := get_tree()
 			if tree:
-				tree.create_timer(1.2).timeout.connect(func():
+				tree.create_timer(1.35).timeout.connect(func():
 					if not GameState.game_over:
 						GameState.invincible = false
 				)
