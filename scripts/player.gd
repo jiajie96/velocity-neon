@@ -9,7 +9,7 @@ const CONTACT_DAMAGE := 10.0
 const CONTACT_COOLDOWN := 0.8
 const RAILGUN_COOLDOWN := 2.0
 const SIGNAL_ARROW_COOLDOWN := 1.6
-const ORBITAL_RADIUS := 2.5
+const ORBITAL_RADIUS := 2.8
 const ORBITAL_SPEED := 3.0
 const ORBITAL_DAMAGE := 12.0
 const ORBITAL_HIT_CD := 0.45
@@ -550,9 +550,14 @@ func _dash(delta: float) -> void:
 		_dash_grace_timer -= delta
 		if _dash_grace_timer <= 0.0:
 			GameState.invincible = false
-	# Recharge banked dash charges one at a time
+	# Recharge banked dash charges one at a time. While critically wounded (<25% HP) the
+	# dash recharges 50% faster — a comeback-mobility beat that pairs with the game's other
+	# low-HP rescues (Last Stand, mercy drops) so a desperate run can keep escaping.
 	if GameState.dash_charges < GameState.dash_max_charges:
-		dash_cd_timer = maxf(dash_cd_timer - delta, 0.0)
+		var recharge_rate := 1.0
+		if GameState.hp < GameState.max_hp * 0.25:
+			recharge_rate = 1.5
+		dash_cd_timer = maxf(dash_cd_timer - delta * recharge_rate, 0.0)
 		if dash_cd_timer <= 0.0:
 			var was_empty := GameState.dash_charges == 0
 			GameState.dash_charges += 1

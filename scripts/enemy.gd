@@ -126,6 +126,12 @@ var _anim_base_scale: float = 0.5
 # the warning ring instead of popping in fully-formed on top of the player.
 const SPAWN_GROW_TIME := 0.18
 var _spawn_grow_t: float = 0.0
+# Straggler rush — when only a couple of enemies are left alive, they surge toward the
+# player so cleaning up the tail of a wave isn't a slow chase across the whole arena.
+# The alive-count check is throttled (refreshed a few times a second, cached in between)
+# so it stays cheap even in a packed early wave.
+var _straggler_boost: float = 1.0
+var _straggler_check_t: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -474,6 +480,16 @@ func _process(delta: float) -> void:
 		return
 
 	var spd := speed
+	# Straggler rush — refresh the alive-count a few times a second (cached in between) and,
+	# if only a couple of foes remain, speed them up so end-of-wave cleanup stays snappy.
+	# Bosses are exempt; a boss duel has no swarm to straggle anyway.
+	if not is_boss:
+		_straggler_check_t -= delta
+		if _straggler_check_t <= 0.0:
+			_straggler_check_t = 0.3
+			var alive := get_tree().get_nodes_in_group("enemies").size()
+			_straggler_boost = 1.4 if alive <= 2 else (1.15 if alive <= 4 else 1.0)
+		spd *= _straggler_boost
 	_gravity_slowed = false
 	if GameState.gravity_well_strength > 0.0:
 		var dist := global_position.distance_to(player.global_position)
@@ -1424,14 +1440,17 @@ func _explode() -> void:
 			var falloff := 1.0 - clampf(dist / EXPLODER_RADIUS, 0.0, 1.0)
 			GameState.take_damage(scaled_explode_dmg * (0.4 + 0.6 * falloff))
 			GameState.request_shake(3.0)
-	# Also damage nearby enemies (chain reaction potential)
+	# Also damage nearby enemies across the full blast radius (with distance falloff), so
+	# baiting an exploder into a pack is a genuine crowd-clear play — and chain reactions
+	# between exploders trigger far more reliably than the old half-radius check allowed.
 	var chain_hit := false
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for e in enemies:
 		if e != self and e is Node3D and e.has_method("take_damage"):
 			var d := global_position.distance_to(e.global_position)
-			if d < EXPLODER_RADIUS * 0.6:
-				e.take_damage(scaled_explode_dmg * 0.5)
+			if d < EXPLODER_RADIUS:
+				var e_falloff := 1.0 - clampf(d / EXPLODER_RADIUS, 0.0, 1.0)
+				e.take_damage(scaled_explode_dmg * 0.6 * (0.4 + 0.6 * e_falloff))
 				chain_hit = true
 	# Extra hit-stop + XP magnet on chain reactions for dramatic feel and reward
 	if chain_hit:
@@ -1821,6 +1840,11 @@ func _die() -> void:
 	remove_from_group("enemies")
 	GameState.add_kill(enemy_type)
 	Audio.sfx_enemy_death_typed(enemy_type)
+	# Killing a support/priority target (healer or necromancer) is a meaningful moment —
+	# lay a distinct "power-down" cue over the typed death pop so shutting down the enemy
+	# that was mending the swarm / refilling it reads as a real payoff, not just one more kill.
+	if enemy_type == "healer" or enemy_type == "necromancer":
+		Audio.sfx_priority_kill()
 	_spawn_xp()
 	_maybe_drop_health()
 	_maybe_split()
@@ -1849,6 +1873,10 @@ func _die() -> void:
 			GameState.heal(boss_heal)
 			GameState.wave_heal.emit(boss_heal)
 			Audio.sfx_wave_heal()
+		# Surviving a boss should also reset your mobility — refill every banked dash
+		# charge so you re-enter the resuming swarm with your escapes ready instead of
+		# limping out of a long fight on an empty dash meter.
+		GameState.dash_charges = GameState.dash_max_charges
 		# Pull all XP orbs to player after boss kill for satisfying collection
 		GameState.xp_magnet_pulse.emit()
 		# Brief victory moment before resuming wave-appropriate music.
@@ -1913,6 +1941,11 @@ func _maybe_drop_health() -> void:
 	var drop_count := 0
 	if is_boss:
 		drop_count = 3
+	elif enemy_type == "healer":
+		# Healers exist to undo your chip damage, so they're the enemy you most want to
+		# prioritize — guarantee a heal orb on their death so hunting one down actually
+		# pays you back the HP it was denying you.
+		drop_count = 1
 	else:
 		# Scavenger scales the drop chance (capped so it can't become a guaranteed drop).
 		var chance := 0.05

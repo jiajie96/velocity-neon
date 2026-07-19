@@ -31,7 +31,9 @@ static func _ensure_init() -> void:
 		# Stat upgrades
 		Upgrade.new("rapid_fire", "RAPID FIRE", "+25% fire rate", Color(1.0, 0.9, 0.2), ">>"),
 		Upgrade.new("power_shot", "POWER SHOT", "+20% damage", Color(1.0, 0.3, 0.1), "!!"),
-		Upgrade.new("fortify", "FORTIFY", "+15 max HP, heal 15", Color(0.3, 1.0, 0.5), "++"),
+		Upgrade.new("overcharge", "OVERCHARGE", "+18% damage & +10% projectile speed", Color(1.0, 0.4, 0.2), "^^", 3),
+		Upgrade.new("fortify", "FORTIFY", "+20 max HP, heal 20", Color(0.3, 1.0, 0.5), "++"),
+		Upgrade.new("reactive", "REACTIVE PLATING", "+12% max HP & -6% incoming damage", Color(0.4, 0.7, 0.95), "[]", 2),
 		Upgrade.new("bulwark", "TITANIUM PLATING", "+18% max HP & heal", Color(0.4, 0.95, 0.7), "[]", 3),
 		Upgrade.new("swift", "SWIFT", "+12% move speed", Color(0.3, 0.8, 1.0), "~~"),
 		Upgrade.new("frenzy", "FRENZY", "+15% fire rate & +8% move speed", Color(1.0, 0.55, 0.15), "><", 3),
@@ -87,8 +89,14 @@ static func _stat_preview(u: Upgrade) -> String:
 		"power_shot":
 			var cur := GameState.damage
 			return "+20%% damage (%.1f -> %.1f)" % [cur, cur * 1.2]
+		"overcharge":
+			var oc := GameState.damage
+			return "+18%% dmg & +10%% proj speed (dmg %.1f -> %.1f)" % [oc, oc * 1.18]
 		"fortify":
-			return "+15 max HP, heal 15 (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp + 15)]
+			return "+20 max HP, heal 20 (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp + 20)]
+		"reactive":
+			var rdr := GameState.damage_reduction * 100.0
+			return "+12%% max HP & -6%% incoming dmg (HP %d -> %d, DR %d%% -> %d%%)" % [int(GameState.max_hp), int(GameState.max_hp * 1.12), int(rdr), mini(int(rdr + 6), 50)]
 		"swift":
 			var cur := GameState.speed
 			return "+12%% move speed (%.1f -> %.1f)" % [cur, cur * 1.12]
@@ -186,9 +194,16 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 			GameState.fire_rate *= 1.25
 		"power_shot":
 			GameState.damage *= 1.20
+		"overcharge":
+			GameState.damage *= 1.18
+			GameState.projectile_speed *= 1.10
 		"fortify":
-			GameState.max_hp += 15.0
-			GameState.heal(15.0)
+			GameState.max_hp += 20.0
+			GameState.heal(20.0)
+		"reactive":
+			GameState.max_hp *= 1.12
+			GameState.heal(GameState.max_hp * 0.12)
+			GameState.damage_reduction = minf(GameState.damage_reduction + 0.06, 0.50)
 		"bulwark":
 			GameState.max_hp *= 1.18
 			GameState.heal(GameState.max_hp * 0.18)

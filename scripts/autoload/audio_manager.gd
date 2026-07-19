@@ -387,6 +387,13 @@ func sfx_perfect_wave() -> void:
 	play_sfx("res://assets/audio/sfx/hades_buff.ogg", -5.0, 1.5)
 	play_sfx("res://assets/audio/sfx/ui_select.ogg", -8.0, 1.8)
 
+func sfx_priority_kill() -> void:
+	# Distinct descending "power-down" when a support/priority target (healer or
+	# necromancer) is destroyed — a down-pitched pulse plus a crisp confirm chime so
+	# shutting down the enemy that was mending/refilling the swarm feels like a real win.
+	play_sfx("res://assets/audio/sfx/lucifer_pulse.ogg", -6.0, 0.8)
+	play_sfx("res://assets/audio/sfx/ui_select.ogg", -8.0, 1.7)
+
 func sfx_healer_pulse() -> void:
 	# Soft restorative shimmer when a healer mends nearby enemies — audible cue
 	# to hunt the healer down even when it's offscreen.
