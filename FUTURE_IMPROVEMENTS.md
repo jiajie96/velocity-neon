@@ -458,6 +458,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Mid kill-streak milestones (5 and 8) now land a camera punch + shake instead of the disabled hit-stop no-op — restores tactile feedback below the streak-10 world bursts
 - [x] Executioner finisher (execute bonus landing a killing blow) now punches the camera + shakes so the "finish the wounded" payoff feels weighty, not just audible
 - [x] Fixed stale Adrenaline code comment (+30% -> +40%) to match the actual near-death damage ramp
+- [x] OVERCHARGE upgrade — +18% damage & +10% projectile speed per stack (×3), an offensive hybrid for more build variety
+- [x] REACTIVE PLATING upgrade — +12% max HP (with heal) & +6% incoming damage reduction per stack (×2), a defensive hybrid
+- [x] Healer enemies now guaranteed to drop a health orb on death — hunting the support that undoes your chip damage finally pays you back the HP
+- [x] Boss kills refill all banked dash charges — you leave a long golem fight with your escapes ready instead of on an empty dash meter
+- [x] Straggler rush — when only a couple of enemies are left alive they surge ~40% faster toward the player, so end-of-wave cleanup isn't a slow chase (alive-count check throttled to stay cheap)
+- [x] Exploder blast now damages nearby enemies across the *full* radius (with falloff, 60% dmg) instead of only the inner 60% at 50% — baiting an exploder into a pack is a real crowd-clear and chain reactions trigger far more reliably
+- [x] Fortify buffed (+15 -> +20 max HP & heal) so the earliest defensive pick keeps pace with early contact damage
+- [x] Distinct "priority kill" SFX (down-pitched power-down + confirm chime) when a Healer or Necromancer dies, so shutting down a support/summoner target reads as a real win
+- [x] Orbital Guard orbit radius widened (2.5 -> 2.8) so the defensive ring covers more ground
+- [x] Phase Dash recharges 50% faster while critically wounded (<25% HP) — a comeback-mobility beat that pairs with Last Stand and the mercy heal drops
 
 ---
 
