@@ -81,7 +81,7 @@
 - ~~**Exploder**: Runs at player and detonates on death/contact for area damage~~ DONE — fast yellow-glowing enemy, detonates on proximity or death with AoE blast VFX, can chain-react with nearby enemies
 - ~~**Teleporter**: Blinks to new position periodically, unpredictable movement~~ DONE — teleporters blink every ~2.5s to random positions near the player
 - ~~**Healer**: Restores HP to nearby enemies, priority target~~ DONE — hangs back (wave 4+), pulses 14% max-HP heals to up to 3 wounded enemies every 4s with a green ring + shimmer SFX telegraph (heal % trimmed from 18% so packed waves are less of a grind)
-- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Elites now also **Split** — every elite bursts into 2 fresh minions on death (capped to the alive-enemy limit; spawned minions are never elite). Elite kills now land distinct feedback too — an extra shake + camera punch and their own weighty death flourish. Other distinct named-prefix effects (Vampiric, Armored, etc.) still pending
+- ~~**Elite modifiers**: Random prefix modifiers on enemies (Fast, Armored, Vampiric, Splitting)~~ PARTIAL — a basic gold-marked "Elite" tier exists (wave 6+, small wave-scaling chance): ~1.9× HP, faster, +contact damage, ~2.2× XP, likelier heal drop, larger build + gold rim glow + chevron + always-on HP bar. Elites now also **Split** — every elite bursts into 2 fresh minions on death (capped to the alive-enemy limit; spawned minions are never elite). Elite kills now land distinct feedback too — an extra shake + camera punch and their own weighty death flourish. **Named flavors now implemented** — every elite rolls one of **Armored** (steel-blue: ×1.35 HP, ×0.8 speed — a slow tanky wall), **Swift** (cyan: ×0.72 HP, ×1.4 speed — a fragile sprinter), or **Vampiric** (crimson: heals 60% of each contact hit it lands on the player), each flagged by its rim/chevron color. Remaining prefix ideas (Armored-as-flat-damage-soak, etc.) could still be layered on, but the Fast/Armored/Vampiric/Splitting set from the original ask is now covered
 
 ### Boss Design
 - ~~**Skeleton Golem V2**: Multi-phase fight — phase 1 charges, phase 2 throws rocks, phase 3 enrages~~ PARTIAL — enrage phase implemented (below 30% HP: faster movement, rapid slams, pulsing red glow), plus a halfway-point beat (shake + zoom-kick the first time the boss drops past 50% HP) so the fight has a clear midpoint before enrage
@@ -152,6 +152,7 @@
 ### Screen Shake Formula Enhancement
 Current: `S = α · log₁₀(D + 1)`
 Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where combo_multiplier rises with kill streak
+~~DONE~~ — `request_shake` now multiplies intensity by a combo factor (`1 + min((streak-2)×0.05, 0.40)`) so an active kill streak makes every shake hit up to +40% harder. The existing hard cap still prevents a dense swarm from stacking it into a constant rumble.
 
 ### Camera Improvements
 - ~~**Dynamic zoom**: Camera auto-zooms based on nearest enemy distance — zooms in for close combat, out when enemies approach from distance~~ DONE — gentle dynamic zoom nudges based on nearest enemy
@@ -468,6 +469,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Distinct "priority kill" SFX (down-pitched power-down + confirm chime) when a Healer or Necromancer dies, so shutting down a support/summoner target reads as a real win
 - [x] Orbital Guard orbit radius widened (2.5 -> 2.8) so the defensive ring covers more ground
 - [x] Phase Dash recharges 50% faster while critically wounded (<25% HP) — a comeback-mobility beat that pairs with Last Stand and the mercy heal drops
+- [x] Elite flavors — Armored / Swift / Vampiric variants with distinct stats + rim colors (Vampiric heals off contact hits)
+- [x] Bloodlust upgrade (+2 lifesteal & +12% fire rate, sustain/aggression hybrid)
+- [x] Marksman upgrade (+12% damage & +18% projectile speed, precision hybrid)
+- [x] Higher kill-streak tiers (DOMINATING / GODLIKE / LEGENDARY) past RAMPAGE/UNSTOPPABLE
+- [x] Kill-combo screen-shake scaling — active streaks make every shake hit harder (capped), per the roadmap formula
+- [x] Auto-aim priority bias — favors healers/necromancers (treated as ~20% closer) so fire focuses supports
+- [x] Radar flags support enemies (healers green, necromancers purple) alongside bosses/elites
+- [x] Gravity Well defensive payoff — slowed enemies deal 30% less contact damage
+- [x] Boss mid-fight heal orbs — golem drops a generous heal at its 50% and enrage beats
+- [x] Critically-wounded heal-orb rush — orbs magnetize immediately (and faster) below 25% HP
 
 ---
 
