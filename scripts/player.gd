@@ -1092,6 +1092,14 @@ func _find_nearest_enemy() -> Node3D:
 		# something that's already dead and waste a shot on it.
 		if e is Node3D and not e.get("_dead"):
 			var d := global_position.distance_to(e.global_position)
+			# Priority bias: support enemies (healers mend the swarm, necromancers refill
+			# it) are the ones you most want dead, so the auto-aim treats them as ~20%
+			# closer than they really are. It's a gentle nudge — a healer and a minion at
+			# the same range still favors the healer, but a minion in your face out-ranks
+			# a healer across the arena, so it never leaves you defenceless.
+			var e_type: String = e.get("enemy_type") if e.get("enemy_type") != null else ""
+			if e_type == "healer" or e_type == "necromancer":
+				d *= 0.8
 			if d < min_dist:
 				min_dist = d
 				nearest = e
@@ -1110,6 +1118,11 @@ func _check_contact_damage(delta: float) -> void:
 		var dmg := CONTACT_DAMAGE
 		if enemy and enemy.get("contact_damage"):
 			dmg = enemy.contact_damage
+		# Gravity Well defensive payoff — a foe caught in the well is off-balance, so its
+		# contact hits land softer (30% off). Pairs with the well's offensive +25%
+		# vulnerability so investing in it helps both keep you alive and kill faster.
+		if enemy and enemy.get("_gravity_slowed"):
+			dmg *= 0.7
 		contact_cd = CONTACT_COOLDOWN
 		# Bias the damage shake toward whoever hit us so a contact hit reads directionally.
 		var hit_dir := Vector3.ZERO
@@ -1129,6 +1142,10 @@ func _check_contact_damage(delta: float) -> void:
 			if reflect_container and enemy is Node3D:
 				var VFX := preload("res://scripts/vfx.gd")
 				VFX.spawn_spark_burst(reflect_container, (enemy as Node3D).global_position + Vector3(0, 0.5, 0), Color(0.8, 0.9, 1.0), 6, 3.0, 0.2)
+		# Vampiric elite — it heals itself off a slice of the hit it just landed, so
+		# leaving one alive lets it claw its own HP back and drag the fight out.
+		if enemy and enemy.get("_elite_kind") == "vampiric" and enemy.has_method("receive_heal"):
+			enemy.receive_heal(dmg * 0.6)
 		# Contact pushback removed — player no longer gets shoved by creep contact.
 		# Special attacks (warrior lunge, golem slam/charge) still apply their own
 		# knockback because those are telegraphed, intentional hits.

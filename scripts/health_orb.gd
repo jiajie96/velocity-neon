@@ -107,14 +107,21 @@ func _process(delta: float) -> void:
 	var dist: float = global_position.distance_to(player.global_position)
 	if dist < GameState.magnet_range:
 		_magnetized = true
+	# Critically wounded — the moment you drop below 25% HP, every heal orb on the field
+	# comes to you right away (and moves faster), so a clutch drop isn't stranded across
+	# the arena while you're one hit from dead.
+	var hp_ratio: float = GameState.hp / maxf(GameState.max_hp, 1.0)
+	var critical := hp_ratio < 0.25
 	# Auto-magnetize an older orb so a heal dropped across the arena isn't stranded
-	# while the player is hurt and could actually use it.
-	if _time > AUTO_MAGNET_DELAY:
+	# while the player is hurt and could actually use it. Wounded players pull sooner.
+	var delay := 2.2 if hp_ratio < 0.5 else AUTO_MAGNET_DELAY
+	if critical or _time > delay:
 		_magnetized = true
 	if _magnetized:
 		var dir := (player.global_position - global_position).normalized()
 		dir.y = 0.0
-		position += dir * MAGNET_SPEED * delta
+		var pull_speed := MAGNET_SPEED * (1.5 if critical else 1.0)
+		position += dir * pull_speed * delta
 		position.y = 0.0
 
 	if dist < COLLECT_DISTANCE:

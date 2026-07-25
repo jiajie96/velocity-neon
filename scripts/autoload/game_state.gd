@@ -371,7 +371,11 @@ func request_shake(intensity: float, direction: Vector3 = Vector3.ZERO) -> void:
 	# frame hitches in big waves came from per-hit GPU particle bursts (trimmed in
 	# projectile.gd), not from this. Scaled down and hard-capped so a dense swarm
 	# can't stack many calls into a constant rumble.
-	var scaled := intensity * 0.28
+	# Combo weight: an active kill streak makes every shake hit a little harder (up to
+	# +40% at a deep streak), so the screen physically escalates as a run heats up. The
+	# hard cap below still keeps it from ever becoming a constant rumble.
+	var combo_boost := 1.0 + minf(float(maxi(_streak_count - 2, 0)) * 0.05, 0.40)
+	var scaled := intensity * 0.28 * combo_boost
 	shake_amount = minf(maxf(shake_amount, scaled), 1.6)
 	if direction.length_squared() > 0.01:
 		shake_direction = direction.normalized()

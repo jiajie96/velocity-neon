@@ -1036,12 +1036,21 @@ func _draw_minimap() -> void:
 		p.y = clampf(p.y, 2.5, s - 2.5)
 		var col := Color(1.0, 0.25, 0.4)
 		var r := 2.0
+		var e_type: String = e.get("enemy_type") if e.get("enemy_type") != null else ""
 		if e.get("is_boss"):
 			col = Color(1.0, 0.5, 0.0)
 			r = 4.5
 		elif e.get("_elite"):
 			col = Color(1.0, 0.85, 0.2)
 			r = 3.0
+		elif e_type == "healer":
+			# Priority target — green so you can spot the enemy mending the swarm.
+			col = Color(0.2, 1.0, 0.5)
+			r = 2.8
+		elif e_type == "necromancer":
+			# Priority target — purple so you can hunt the enemy refilling the swarm.
+			col = Color(0.7, 0.3, 1.0)
+			r = 2.8
 		_minimap.draw_circle(p, r, col)
 	# Player marker last so it sits on top
 	_minimap.draw_circle(center, 3.5, Color(0.2, 0.9, 1.0))
@@ -1286,8 +1295,22 @@ func _on_kill_streak(count: int) -> void:
 		4: "MULTI KILL",
 		5: "KILLING SPREE",
 		6: "RAMPAGE",
+		7: "UNSTOPPABLE",
+		8: "DOMINATING",
+		10: "GODLIKE",
+		15: "LEGENDARY",
 	}
-	var text: String = streak_names.get(count, "UNSTOPPABLE x%d" % count) if count <= 6 else "UNSTOPPABLE x%d" % count
+	# Named tiers up to LEGENDARY, then a running counter so a monster streak keeps
+	# escalating on-screen instead of flat-lining on the same word.
+	var text: String
+	if streak_names.has(count):
+		text = streak_names[count]
+	elif count >= 15:
+		text = "LEGENDARY x%d" % count
+	elif count >= 10:
+		text = "GODLIKE x%d" % count
+	else:
+		text = "UNSTOPPABLE x%d" % count
 	if count < 2:
 		return
 	# Surface the active combo damage bonus so the streak feels mechanical, not cosmetic

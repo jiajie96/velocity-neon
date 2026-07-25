@@ -37,6 +37,8 @@ static func _ensure_init() -> void:
 		Upgrade.new("bulwark", "TITANIUM PLATING", "+18% max HP & heal", Color(0.4, 0.95, 0.7), "[]", 3),
 		Upgrade.new("swift", "SWIFT", "+12% move speed", Color(0.3, 0.8, 1.0), "~~"),
 		Upgrade.new("frenzy", "FRENZY", "+15% fire rate & +8% move speed", Color(1.0, 0.55, 0.15), "><", 3),
+		Upgrade.new("bloodlust", "BLOODLUST", "+2 heal per kill & +12% fire rate", Color(0.85, 0.1, 0.35), "VV", 2),
+		Upgrade.new("marksman", "MARKSMAN", "+12% damage & +18% projectile speed", Color(0.7, 0.9, 1.0), "=>", 3),
 		Upgrade.new("coolant", "COOLANT", "-12% ultimate cooldown", Color(0.3, 0.9, 1.0), "QQ", 3),
 		Upgrade.new("multi_shot", "MULTI-SHOT", "+1 projectile", Color(0.9, 0.5, 1.0), "**", 5),
 		Upgrade.new("magnet", "MAGNET", "+50% pickup range", Color(0.5, 1.0, 0.8), "<>"),
@@ -103,6 +105,13 @@ static func _stat_preview(u: Upgrade) -> String:
 		"frenzy":
 			var fr := GameState.fire_rate
 			return "+15%% fire rate & +8%% speed (fire %.1f -> %.1f)" % [fr, fr * 1.15]
+		"bloodlust":
+			var ls := GameState.lifesteal
+			return "+2 heal/kill & +12%% fire rate (heal +%.1f -> +%.1f)" % [ls, ls + 2.0]
+		"marksman":
+			var mdmg := GameState.damage
+			var mps := GameState.projectile_speed
+			return "+12%% dmg & +18%% proj speed (dmg %.1f -> %.1f, spd %.0f -> %.0f)" % [mdmg, mdmg * 1.12, mps, mps * 1.18]
 		"coolant":
 			# Coolant is multiplicative (x0.88) with a 0.6 floor, so a flat "+12 points"
 			# preview drifts from reality at higher stacks. Show the true next total.
@@ -212,6 +221,12 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"frenzy":
 			GameState.fire_rate *= 1.15
 			GameState.speed *= 1.08
+		"bloodlust":
+			GameState.lifesteal += 2.0
+			GameState.fire_rate *= 1.12
+		"marksman":
+			GameState.damage *= 1.12
+			GameState.projectile_speed *= 1.18
 		"coolant":
 			# Trim the ultimate cooldown; floored so a maxed stack still leaves a real gap.
 			GameState.ult_cd_mult = maxf(GameState.ult_cd_mult * 0.88, 0.55)

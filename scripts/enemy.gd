@@ -105,6 +105,10 @@ var _boss_half_announced: bool = false
 var _gravity_slowed: bool = false
 # Elite modifier — a rare, tougher, higher-value variant (set in setup()).
 var _elite: bool = false
+# Elite flavor — one of "", "armored", "swift", "vampiric". Each tunes the elite's
+# stats and rim color so a gold target isn't always the same threat: Armored is a
+# tanky wall, Swift is a fragile sprinter, Vampiric heals itself off contact hits.
+var _elite_kind: String = ""
 # How hard the killing blow overshot the enemy's remaining HP (0 = clean kill, 1 = the
 # final hit dealt a full max-HP of overkill). Read by _death_vfx so a big overkill pops
 # harder — a chunky finisher should feel chunkier.
@@ -250,10 +254,25 @@ func _add_glow_light(color: Color) -> void:
 	_glow_light = light
 	_glow_base_energy = light.light_energy
 
+# Rim/marker color per elite flavor so the threat reads at a glance: gold = generic,
+# steel-blue = Armored (tanky), cyan = Swift (fast), crimson = Vampiric (drains).
+func _elite_color() -> Color:
+	match _elite_kind:
+		"armored":
+			return Color(0.55, 0.75, 1.0)
+		"swift":
+			return Color(0.3, 1.0, 0.95)
+		"vampiric":
+			return Color(1.0, 0.2, 0.35)
+		_:
+			return Color(1.0, 0.85, 0.25)
+
 func _apply_elite_visual() -> void:
-	# A larger build + a gold rim light + a floating gold chevron so elites read as
-	# priority/reward targets against the regular swarm's red/purple palette.
+	# A larger build + a colored rim light + a floating chevron so elites read as
+	# priority/reward targets against the regular swarm's red/purple palette. The rim
+	# color also flags which elite flavor this is (see _elite_color).
 	_anim_base_scale *= 1.35
+	var elite_col := _elite_color()
 	var mesh := get_node_or_null("Mesh") as Node3D
 	if mesh:
 		mesh.scale *= 1.35
@@ -262,7 +281,7 @@ func _apply_elite_visual() -> void:
 		_glow_base_energy = _glow_light.light_energy
 	var crown := OmniLight3D.new()
 	crown.name = "EliteGlow"
-	crown.light_color = Color(1.0, 0.85, 0.25)
+	crown.light_color = elite_col
 	crown.light_energy = 1.6
 	crown.omni_range = 3.2
 	crown.omni_attenuation = 2.0
@@ -277,9 +296,9 @@ func _apply_elite_visual() -> void:
 	cone.radial_segments = 4
 	marker.mesh = cone
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.85, 0.2, 0.9)
+	mat.albedo_color = Color(elite_col.r, elite_col.g, elite_col.b, 0.9)
 	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.8, 0.1)
+	mat.emission = elite_col
 	mat.emission_energy_multiplier = 5.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	marker.material_override = mat
@@ -603,6 +622,9 @@ func _process(delta: float) -> void:
 					VFX.spawn_shockwave(enrage_container, global_position, Color(1.0, 0.18, 0.05, 0.6), 4.5, 0.5, 0.12)
 				Audio.sfx_boss_enrage()
 				GameState.golem_enraged.emit()
+				# The enrage phase is the hardest stretch of the fight, so hand the
+				# player a heal orb as it kicks off — a fair shot at surviving the rush.
+				_drop_boss_heal_orb()
 			var boss_spd := spd * (1.6 if enraged else 1.0)
 			# Handle charge state
 			if _golem_charging:
@@ -1582,6 +1604,10 @@ func take_damage(amount: float, weapon_hint: String = "") -> void:
 		GameState.request_shake(2.6)
 		GameState.request_camera_punch(1.4)
 		Audio.sfx_kill_milestone()
+		# Drop a heal orb at the midpoint so a long boss fight has a lifeline partway
+		# through instead of forcing you to survive the whole duel on the HP you walked in
+		# with. Pairs with the bigger heal you already get when the boss actually dies.
+		_drop_boss_heal_orb()
 	if is_crit:
 		GameState.crit_landed.emit()
 		# Crisp audio + a touch more freeze/shake so the 10% crit moments land
@@ -1976,6 +2002,25 @@ func _maybe_drop_health() -> void:
 		orb.set_meta("heal_amount", heal_amt)
 		orb_container.add_child(orb)
 
+func _drop_boss_heal_orb() -> void:
+	# A single, generous heal orb dropped at the boss's feet during the fight (at the
+	# halfway beat and again at enrage) so a long duel offers a lifeline mid-way instead
+	# of being a pure war of attrition against the HP you entered with.
+	var orb_container := get_parent().get_parent().get_node_or_null("XPOrbs")
+	if not orb_container:
+		return
+	var heal_amt := maxf(18.0, GameState.max_hp * 0.22)
+	var orb := Node3D.new()
+	orb.name = "HealthOrb"
+	orb.set_script(load("res://scripts/health_orb.gd"))
+	var offset := Vector3(randf_range(-1.2, 1.2), 0, randf_range(-1.2, 1.2))
+	var spawn_pos := global_position + offset
+	spawn_pos.x = clampf(spawn_pos.x, -GameState.arena_radius, GameState.arena_radius)
+	spawn_pos.z = clampf(spawn_pos.z, -GameState.arena_radius, GameState.arena_radius)
+	orb.position = spawn_pos
+	orb.set_meta("heal_amount", heal_amt)
+	orb_container.add_child(orb)
+
 func _maybe_split() -> void:
 	# Splitting elites — a slain elite bursts into a pair of fresh minions, so a gold
 	# target you ignore can refill the swarm. Only elites split (the spawned minions are
@@ -2161,6 +2206,24 @@ func setup(type: String, wave: int) -> void:
 			speed *= 1.15
 			contact_damage *= 1.3
 			xp_value *= 2.2
+			# Pick an elite flavor so gold targets vary in how they threaten you.
+			_elite_kind = ["armored", "swift", "vampiric"][randi() % 3]
+			match _elite_kind:
+				"armored":
+					# A slow, spongy wall — soak it or it soaks you. Extra HP, less speed.
+					hp *= 1.35
+					speed *= 0.8
+					contact_damage *= 1.1
+				"swift":
+					# A glass sprinter that closes fast — trade some of the elite HP bump
+					# for real speed, so it punishes a player who stops kiting.
+					hp *= 0.72
+					speed *= 1.4
+				"vampiric":
+					# Sustains itself off the player — heals a slice of each contact hit
+					# (handled in player contact), so leaving it alive drags a fight out.
+					hp *= 1.1
+					contact_damage *= 1.15
 	# Small per-instance speed jitter so a swarm of the same type reads as a crowd of
 	# individuals (some surging ahead, some lagging) instead of a rigid grid that moves
 	# in lockstep. Bosses keep their exact tuned speed.
