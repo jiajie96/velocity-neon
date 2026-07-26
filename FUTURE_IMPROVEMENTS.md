@@ -72,7 +72,7 @@
 - ~~**Piercing upgrade**: Projectiles pass through enemies, hitting multiple targets~~ DONE — stackable upgrade (3 levels), damage reduces 25% per pierce
 - **Orbital weapons**: Rotating projectiles that orbit the player, damaging on contact
 - **Mine layer**: Drop proximity mines during dash trail
-- ~~**Hybrid / ability upgrades**~~ DONE (first pass) — **Frenzy** (+15% fire rate & +8% move speed/stack, aggression hybrid) and **Coolant** (−12% Ultimate cooldown/stack, floored) added to the pool for more build variety
+- ~~**Hybrid / ability upgrades**~~ DONE (ongoing) — **Frenzy** (+15% fire rate & +8% move speed/stack), **Coolant** (−12% Ultimate cooldown/stack, floored), **Overcharge**, **Reactive Plating**, **Bloodlust**, **Marksman** and **Overdrive** (+12% fire rate & +8% projectile speed/stack) added to the pool for more build variety
 
 ### Enemy Variety
 - ~~**Skeleton Rogue**: Fast enemy that dodges projectiles by side-stepping~~ DONE — rogues sidestep every ~1.8s
@@ -359,7 +359,7 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Softer early boss HP curve so wave 5/10 golems aren't a slog
 - [x] Bigger base pickup range (3.5 -> 4.2) + sooner XP auto-magnetize (6s -> 4s) so earned XP isn't stranded
 - [x] Healer enemy (wave 4+ support — heals nearby wounded enemies, green ring + shimmer telegraph, priority target)
-- [x] Upgrade reroll (one per level-up screen — button or R key swaps all three choices)
+- [x] Upgrade reroll (one per level-up screen, two from level 10+ — button or R key swaps all three choices)
 - [x] Persistent best-run record (title screen shows personal best; gold NEW RECORD banner + sting on game over)
 - [x] Hit-knockback clamped to the active arena (heavy hits no longer shove enemies through the walls)
 - [x] Guardian Angel HUD badge while the death save is banked
@@ -479,6 +479,16 @@ Improved: `S = α · log₁₀(D + 1) · (1 + combo_multiplier × 0.1)` where co
 - [x] Gravity Well defensive payoff — slowed enemies deal 30% less contact damage
 - [x] Boss mid-fight heal orbs — golem drops a generous heal at its 50% and enrage beats
 - [x] Critically-wounded heal-orb rush — orbs magnetize immediately (and faster) below 25% HP
+- [x] OVERDRIVE upgrade — +12% fire rate & +8% projectile speed per stack (×2), a cadence/velocity hybrid for a fast, flat-shooting build
+- [x] Second upgrade reroll unlocked from level 10+ — deep-run level-up screens can fish harder for the piece a build needs (button label shows the remaining count)
+- [x] Flawless (no-damage) wave now also refunds 40% of the Ultimate's remaining cooldown — clean, aggressive no-hit play gets the panic button back sooner
+- [x] Ultimate cast i-frame window lengthened (0.55s -> 0.7s) so pressing Q while swarmed more reliably buys an escape
+- [x] Ultimate clears more room — base blast radius 8.0 -> 8.5 and non-boss knockback 5.5 -> 6.75 for a stronger panic-button "clear space" feel
+- [x] Guardian Angel revive buffed again (40% -> 45% HP, invuln window 1.5s -> 2.0s) — code + card + README aligned
+- [x] Base crit chance raised 12% -> 15% so early fights land more of the crisp crit pings
+- [x] Base Phase Dash cooldown snappier (1.4s -> 1.25s) for better baseline mobility before Phase Charge
+- [x] Base pickup/magnet range widened (4.6 -> 5.2) so early XP and heal orbs aren't stranded before Magnet
+- [x] P works as an alternate pause key alongside ESC (title + pause controls references updated)
 
 ---
 
