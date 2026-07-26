@@ -3,7 +3,7 @@ extends Node3D
 const DASH_DURATION := 0.2
 const DASH_TRAIL_COUNT := 3
 const ULTIMATE_COOLDOWN := 7.0
-const ULTIMATE_RADIUS := 8.0
+const ULTIMATE_RADIUS := 8.5
 const ULTIMATE_DAMAGE := 50.0
 const CONTACT_DAMAGE := 10.0
 const CONTACT_COOLDOWN := 0.8
@@ -85,6 +85,14 @@ func _ready() -> void:
 	GameState.guardian_save.connect(_on_guardian_save)
 	GameState.kill_streak.connect(_on_kill_streak)
 	GameState.vampire_heal.connect(_on_vampire_heal)
+	GameState.perfect_wave.connect(_on_perfect_wave_refund)
+
+# A flawless (no-damage) wave refunds a chunk of the ultimate's remaining cooldown, so
+# clean, aggressive play gets its panic button back sooner — rewarding skill on top of
+# the existing XP + heal bonus. Only trims the timer (never adds to it).
+func _on_perfect_wave_refund(_bonus_xp: float) -> void:
+	if ult_cd_timer > 0.0:
+		ult_cd_timer = maxf(ult_cd_timer * 0.6, 0.0)
 
 func _build_visual() -> void:
 	var model_path := "res://assets/models/Knight.glb"
@@ -1015,7 +1023,7 @@ func _do_ultimate() -> void:
 		GameState.invincible = true
 		var ult_tree := get_tree()
 		if ult_tree:
-			ult_tree.create_timer(0.55).timeout.connect(func():
+			ult_tree.create_timer(0.7).timeout.connect(func():
 				if not GameState.game_over:
 					GameState.invincible = false
 			)
@@ -1042,7 +1050,7 @@ func _do_ultimate() -> void:
 					push_dir = Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
 				push_dir = push_dir.normalized()
 				var falloff := 1.0 - clampf(dist / ult_radius, 0.0, 1.0)
-				var push_force: float = (2.0 if e.get("is_boss") else 5.5) * (0.4 + falloff)
+				var push_force: float = (2.0 if e.get("is_boss") else 6.75) * (0.4 + falloff)
 				e.position += push_dir * push_force
 				# Clamp to the *active* arena bound (shrinks during boss duels) so the
 				# ult can't shove enemies through the visible boss-fight walls.

@@ -32,6 +32,7 @@ static func _ensure_init() -> void:
 		Upgrade.new("rapid_fire", "RAPID FIRE", "+25% fire rate", Color(1.0, 0.9, 0.2), ">>"),
 		Upgrade.new("power_shot", "POWER SHOT", "+20% damage", Color(1.0, 0.3, 0.1), "!!"),
 		Upgrade.new("overcharge", "OVERCHARGE", "+18% damage & +10% projectile speed", Color(1.0, 0.4, 0.2), "^^", 3),
+		Upgrade.new("overdrive", "OVERDRIVE", "+12% fire rate & +8% projectile speed", Color(1.0, 0.7, 0.2), ">>", 2),
 		Upgrade.new("fortify", "FORTIFY", "+20 max HP, heal 20", Color(0.3, 1.0, 0.5), "++"),
 		Upgrade.new("reactive", "REACTIVE PLATING", "+12% max HP & -6% incoming damage", Color(0.4, 0.7, 0.95), "[]", 2),
 		Upgrade.new("bulwark", "TITANIUM PLATING", "+18% max HP & heal", Color(0.4, 0.95, 0.7), "[]", 3),
@@ -94,6 +95,10 @@ static func _stat_preview(u: Upgrade) -> String:
 		"overcharge":
 			var oc := GameState.damage
 			return "+18%% dmg & +10%% proj speed (dmg %.1f -> %.1f)" % [oc, oc * 1.18]
+		"overdrive":
+			var od_fr := GameState.fire_rate
+			var od_ps := GameState.projectile_speed
+			return "+12%% fire rate & +8%% proj speed (fire %.1f -> %.1f, spd %.0f -> %.0f)" % [od_fr, od_fr * 1.12, od_ps, od_ps * 1.08]
 		"fortify":
 			return "+20 max HP, heal 20 (HP: %d -> %d)" % [int(GameState.max_hp), int(GameState.max_hp + 20)]
 		"reactive":
@@ -206,6 +211,9 @@ static func apply_upgrade(upgrade: Upgrade) -> void:
 		"overcharge":
 			GameState.damage *= 1.18
 			GameState.projectile_speed *= 1.10
+		"overdrive":
+			GameState.fire_rate *= 1.12
+			GameState.projectile_speed *= 1.08
 		"fortify":
 			GameState.max_hp += 20.0
 			GameState.heal(20.0)

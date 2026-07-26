@@ -53,9 +53,9 @@ var fire_rate: float = 2.2
 var damage: float = 7.0
 var projectile_count: int = 1
 var projectile_speed: float = 38.0
-var magnet_range: float = 4.6
+var magnet_range: float = 5.2
 var hp_regen: float = 0.0
-var dash_cooldown: float = 1.4
+var dash_cooldown: float = 1.25
 var dash_speed: float = 25.0
 var dash_max_charges: int = 1   # how many dashes can be banked
 var dash_charges: int = 1       # currently available dashes
@@ -65,7 +65,7 @@ var invincible: bool = false
 var has_shatter: bool = false
 var gravity_well_strength: float = 0.0
 var overclock_active: bool = false
-var crit_chance: float = 0.12
+var crit_chance: float = 0.15
 var crit_damage: float = 2.0    # Crit multiplier; Critical Surge raises it per stack
 var lifesteal: float = 0.0
 var damage_reduction: float = 0.0
@@ -212,7 +212,7 @@ func take_damage(amount: float, is_self_damage: bool = false, source_dir: Vector
 		# HP with a protective burst and a moment of i-frames instead of dying.
 		if revive_available and not is_self_damage:
 			revive_available = false
-			hp = maxf(max_hp * 0.40, 1.0)
+			hp = maxf(max_hp * 0.45, 1.0)
 			invincible = true
 			_damage_immunity_timer = DAMAGE_IMMUNITY_DURATION
 			guardian_save.emit()
@@ -221,7 +221,7 @@ func take_damage(amount: float, is_self_damage: bool = false, source_dir: Vector
 			xp_magnet_pulse.emit()
 			var tree := get_tree()
 			if tree:
-				tree.create_timer(1.5).timeout.connect(func():
+				tree.create_timer(2.0).timeout.connect(func():
 					if not game_over:
 						invincible = false
 				)
@@ -398,9 +398,9 @@ func reset() -> void:
 	damage = 7.0
 	projectile_count = 1
 	projectile_speed = 38.0
-	magnet_range = 4.6
+	magnet_range = 5.2
 	hp_regen = 0.0
-	dash_cooldown = 1.4
+	dash_cooldown = 1.25
 	dash_speed = 25.0
 	dash_max_charges = 1
 	dash_charges = 1
@@ -408,7 +408,7 @@ func reset() -> void:
 	has_shatter = false
 	gravity_well_strength = 0.0
 	overclock_active = false
-	crit_chance = 0.12
+	crit_chance = 0.15
 	crit_damage = 2.0
 	lifesteal = 0.0
 	damage_reduction = 0.0

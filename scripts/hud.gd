@@ -95,7 +95,7 @@ var _streak_bar_bg: ColorRect
 var _guardian_label: Label
 var _record_label: Label
 var _reroll_btn: Button
-var _reroll_used: bool = false
+var _reroll_count: int = 0
 
 var _current_choices: Array = []
 var _prev_hp: float = -1.0
@@ -250,7 +250,7 @@ func _build_title_screen() -> void:
 		["1 / 2 / 3", "Pick upgrade"],
 		["R", "Reroll upgrades"],
 		["SCROLL", "Zoom camera"],
-		["ESC", "Pause"],
+		["ESC / P", "Pause"],
 		["M", "Mute audio"],
 	]
 	for b in bindings:
@@ -688,10 +688,27 @@ func _build_upgrade_panel() -> void:
 	add_child(upgrade_panel)
 
 func _on_reroll_pressed() -> void:
-	if _reroll_used or not upgrade_panel.visible:
+	if not upgrade_panel.visible or _reroll_count >= _reroll_max():
 		return
-	_reroll_used = true
+	_reroll_count += 1
 	_show_upgrade_choices(true)
+
+func _reroll_max() -> int:
+	# Deeper into a run the upgrade pool is bigger, so grant a second reroll from
+	# level 10 on — more agency to fish for the piece a build actually needs.
+	return 2 if GameState.level >= 10 else 1
+
+func _update_reroll_button() -> void:
+	if not _reroll_btn:
+		return
+	var remaining := _reroll_max() - _reroll_count
+	_reroll_btn.disabled = remaining <= 0
+	if remaining <= 0:
+		_reroll_btn.text = "NO REROLLS"
+	elif _reroll_max() > 1:
+		_reroll_btn.text = "REROLL x%d  [R]" % remaining
+	else:
+		_reroll_btn.text = "REROLL  [R]"
 
 func _on_card_hover(index: int, entered: bool) -> void:
 	if index >= _card_containers.size():
@@ -1145,7 +1162,7 @@ func _build_pause_menu() -> void:
 	# A compact controls reference so the pause screen doubles as a quick reminder of
 	# the keybinds — handy after stepping away mid-run.
 	var controls := Label.new()
-	controls.text = "WASD move   •   SPACE dash   •   Q ultimate   •   ESC pause   •   M mute"
+	controls.text = "WASD move   •   SPACE dash   •   Q ultimate   •   ESC / P pause   •   M mute"
 	controls.add_theme_font_size_override("font_size", 10)
 	controls.add_theme_color_override("font_color", Color(0.45, 0.6, 0.85, 0.7))
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1821,12 +1838,10 @@ func _show_upgrade_choices(is_reroll: bool = false) -> void:
 		GameState.pending_levelups = 0
 		_finish_upgrade_selection()
 		return
-	# Each fresh level-up screen grants one reroll
+	# Each fresh level-up screen resets the reroll allowance (1, or 2 from level 10+)
 	if not is_reroll:
-		_reroll_used = false
-	if _reroll_btn:
-		_reroll_btn.disabled = _reroll_used
-		_reroll_btn.text = "REROLLED" if _reroll_used else "REROLL  [R]"
+		_reroll_count = 0
+	_update_reroll_button()
 	Audio.sfx_dice_roll()
 	for i in 3:
 		if i < _current_choices.size():
@@ -2215,6 +2230,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif event.physical_keycode == KEY_R:
 				_on_reroll_pressed()
 				return
+		# P is an alternate pause bind (only while actually playing) for players who
+		# reach for it out of habit; ESC still pauses and doubles as quit/restart.
+		if event.physical_keycode == KEY_P and not GameState.game_over and not GameState.paused_for_upgrade:
+			toggle_pause()
+			return
 		if event.physical_keycode == KEY_ESCAPE:
 			if GameState.game_over:
 				GameState.reset()
